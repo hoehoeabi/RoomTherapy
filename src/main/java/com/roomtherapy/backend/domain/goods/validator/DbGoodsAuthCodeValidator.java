@@ -47,7 +47,7 @@ public class DbGoodsAuthCodeValidator implements GoodsAuthCodeValidator {
         // 2. 해당 유저가 이미 이 굿즈를 수령했는지 검증 (1인 1회 제한)
         if (userId != null && deliveryOrderRepository.existsByUserIdAndGoodsId(userId, goodsId)) {
             log.warn("유저({})가 이미 해당 굿즈({})를 수령 신청했습니다. 중복 신청 불가.", userId, goodsId);
-            throw new IllegalStateException("이미 배송 신청을 완료하신 굿즈입니다. (동일 굿즈는 1인 1회만 신청 가능)");
+            throw new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.DUPLICATE_GOODS_CLAIM);
         }
 
         return true;

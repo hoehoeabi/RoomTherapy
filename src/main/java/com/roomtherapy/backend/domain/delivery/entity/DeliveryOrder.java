@@ -103,7 +103,7 @@ public class DeliveryOrder extends BaseTimeEntity {
 
     public void updateDeliveryInfo(String recipientName, String phone, String zipcode, String address, String detailAddress) {
         if (this.status != DeliveryStatus.ORDERED && this.status != DeliveryStatus.PREPARING) {
-            throw new IllegalStateException("이미 배송이 시작되었거나 완료/취소된 주문은 수정할 수 없습니다.");
+            throw new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.ORDER_CANNOT_BE_MODIFIED);
         }
         this.recipientName = recipientName;
         this.phone = phone;

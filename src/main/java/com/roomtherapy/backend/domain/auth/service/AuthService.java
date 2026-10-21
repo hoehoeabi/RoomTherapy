@@ -3,6 +3,8 @@ package com.roomtherapy.backend.domain.auth.service;
 import com.roomtherapy.backend.domain.auth.dto.TokenResponseDto;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import com.roomtherapy.backend.global.security.jwt.JwtProvider;
 import com.roomtherapy.backend.global.security.jwt.RefreshToken;
 import com.roomtherapy.backend.global.security.jwt.RefreshTokenRepository;
@@ -27,7 +29,7 @@ public class AuthService {
     public TokenResponseDto reissue(String refreshToken) {
         // 1. Refresh Token 자체 서명 및 유효성 검증
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않거나 만료된 Refresh Token입니다.");
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         // 2. 토큰에서 User ID 추출
@@ -37,7 +39,7 @@ public class AuthService {
         RefreshToken savedToken = refreshTokenRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("Redis에 저장된 Refresh Token이 존재하지 않습니다. User ID: {}", userId);
-                    return new IllegalArgumentException("로그아웃되었거나 만료된 세션입니다. 다시 로그인해 주세요.");
+                    return new BusinessException(ErrorCode.UNAUTHORIZED, "로그아웃되었거나 만료된 세션입니다. 다시 로그인해 주세요.");
                 });
 
         // 4. [RTR 탈취 감지]
@@ -46,12 +48,12 @@ public class AuthService {
             log.error("🚨 [탈취 감지] 저장된 토큰과 일치하지 않는 이전 Refresh Token 사용 시도! User ID: {}", userId);
             // 해당 사용자의 모든 세션 무효화 (Redis에서 삭제)
             refreshTokenRepository.delete(savedToken);
-            throw new IllegalStateException("토큰 탈취 위험이 감지되어 강제 로그아웃되었습니다.");
+            throw new BusinessException(ErrorCode.TOKEN_THEFT_DETECTED);
         }
 
         // 5. 유저 정보 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 6. 신규 Access Token & Refresh Token 생성 (RTR)
         String newAccessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());

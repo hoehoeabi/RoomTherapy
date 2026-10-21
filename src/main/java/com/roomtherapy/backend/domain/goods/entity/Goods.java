@@ -81,7 +81,7 @@ public class Goods extends BaseTimeEntity {
     public void decreaseStock(int quantity) {
         int restStock = this.stockQuantity - quantity;
         if (restStock < 0) {
-            throw new IllegalStateException("재고가 부족합니다. (현재 재고: " + this.stockQuantity + ")");
+            throw new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.GOODS_OUT_OF_STOCK);
         }
         this.stockQuantity = restStock;
         if (this.stockQuantity == 0) {

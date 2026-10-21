@@ -40,7 +40,7 @@ public class UserRoleController {
         }
 
         User user = userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.USER_NOT_FOUND));
 
         user.updateRole(targetRole);
         userRepository.save(user);
