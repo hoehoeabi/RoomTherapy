@@ -2,7 +2,11 @@ package com.roomtherapy.backend.domain.delivery.controller;
 
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto;
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderResponseDto;
+import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto;
 import com.roomtherapy.backend.domain.delivery.service.DeliveryOrderService;
+import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
+import com.roomtherapy.backend.domain.user.entity.User;
+import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +19,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -23,25 +30,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class DeliveryController {
 
     private final DeliveryOrderService deliveryOrderService;
-    private final com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
-    private final com.roomtherapy.backend.domain.user.repository.UserRepository userRepository;
+    private final GoodsRepository goodsRepository;
+    private final UserRepository userRepository;
 
     /**
      * 굿즈 배송 신청 폼 화면 (마이페이지 기본 배송지 자동 완성 연동)
      */
     @GetMapping("/delivery")
     public String deliveryForm(
-            @org.springframework.web.bind.annotation.RequestParam(name = "goodsId", required = false) Long goodsId,
+            @RequestParam(name = "goodsId", required = false) Long goodsId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         if (!model.containsAttribute("form")) {
             // 유저의 기본 배송지 정보가 있으면 폼에 자동 입력
-            var userOpt = userDetails != null ? userRepository.findById(userDetails.getUserId()) : java.util.Optional.<com.roomtherapy.backend.domain.user.entity.User>empty();
-            String defaultRecipient = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getRecipientName).orElse("");
-            String defaultPhone = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getPhone).orElse("");
-            String defaultZipcode = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getZipcode).orElse("");
-            String defaultAddress = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getAddress).orElse("");
-            String defaultDetailAddress = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getDetailAddress).orElse("");
+            var userOpt = userDetails != null ? userRepository.findById(userDetails.getUserId()) : Optional.<User>empty();
+            String defaultRecipient = userOpt.map(User::getRecipientName).orElse("");
+            String defaultPhone = userOpt.map(User::getPhone).orElse("");
+            String defaultZipcode = userOpt.map(User::getZipcode).orElse("");
+            String defaultAddress = userOpt.map(User::getAddress).orElse("");
+            String defaultDetailAddress = userOpt.map(User::getDetailAddress).orElse("");
 
             model.addAttribute("form", new DeliveryOrderRequestDto(
                     "", defaultRecipient, defaultPhone, defaultZipcode, defaultAddress, defaultDetailAddress, goodsId, false
@@ -126,7 +133,7 @@ public class DeliveryController {
             Model model) {
         DeliveryOrderResponseDto order = deliveryOrderService.getOrder(orderId);
         if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto(
+            model.addAttribute("form", new DeliveryOrderUpdateRequestDto(
                     order.recipientName(),
                     order.phone(),
                     order.zipcode(),
@@ -146,7 +153,7 @@ public class DeliveryController {
     public String updateDelivery(
             @PathVariable Long orderId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @ModelAttribute("form") com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto form,
+            @Valid @ModelAttribute("form") DeliveryOrderUpdateRequestDto form,
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model) {
