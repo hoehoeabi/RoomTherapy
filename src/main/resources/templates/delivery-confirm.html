@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배송 신청 완료 - Room Therapy</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --success: #10B981;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        .icon-circle {
+            width: 64px;
+            height: 64px;
+            background: #D1FAE5;
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        p.desc {
+            color: var(--text-sub);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .receipt-card {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 28px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .row:last-child {
+            margin-bottom: 0;
+        }
+        .row-label {
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+        .row-val {
+            color: var(--text-main);
+            font-weight: 700;
+            text-align: right;
+            word-break: break-all;
+        }
+        .badge-status {
+            background: #EEF2FF;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon-circle">✓</div>
+        <h1>배송 신청이 완료되었습니다!</h1>
+        <p class="desc">정성껏 준비하여 안전하게 배송해 드리겠습니다.</p>
+
+        <div class="receipt-card" th:object="${order}">
+            <div class="row">
+                <span class="row-label">주문 번호</span>
+                <span class="row-val" th:text="${'#' + order.id}">#1</span>
+            </div>
+            <div class="row">
+                <span class="row-label">인증 코드</span>
+                <span class="row-val" th:text="${order.stageCode}">ew-1010-clear</span>
+            </div>
+            <div class="row">
+                <span class="row-label">리워드 물품</span>
+                <span class="row-val" th:text="${order.goodsName}">스테이지 1 클리어 굿즈</span>
+            </div>
+            <div class="row">
+                <span class="row-label">수령인</span>
+                <span class="row-val" th:text="${order.recipientName}">홍길동</span>
+            </div>
+            <div class="row">
+                <span class="row-label">연락처</span>
+                <span class="row-val" th:text="${order.phone}">010-1234-5678</span>
+            </div>
+            <div class="row">
+                <span class="row-label">우편번호</span>
+                <span class="row-val" th:text="${order.zipcode}">12345</span>
+            </div>
+            <div class="row">
+                <span class="row-label">배송지 주소</span>
+                <span class="row-val" th:text="${order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">서울특별시 강남구 테헤란로 123</span>
+            </div>
+            <div class="row" style="margin-top: 8px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
+                <span class="row-label">진행 상태</span>
+                <span class="badge-status" th:text="${order.statusDescription}">접수 완료</span>
+            </div>
+        </div>
+
+        <a href="/delivery/my" class="btn btn-primary" style="margin-bottom: 10px;">📋 내 배송 신청 내역 확인</a>
+        <a href="/" class="btn" style="background: transparent; color: var(--text-sub); border: 1px solid #E2E8F0;">홈으로 이동</a>
+    </div>
+</body>
+</html>

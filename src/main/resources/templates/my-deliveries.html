@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 배송 신청 내역 - Room Therapy</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+            --badge-bg: #EEF2FF;
+            --success-bg: #ECFDF5;
+            --success-text: #059669;
+            --warning-bg: #FFFBEB;
+            --warning-text: #D97706;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 32px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 680px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .btn-link {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+        }
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #A7F3D0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .order-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+        }
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .order-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .status-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--badge-bg);
+            color: var(--primary);
+        }
+        .modified-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            margin-left: 6px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .info-label {
+            width: 100px;
+            color: var(--text-sub);
+            flex-shrink: 0;
+        }
+        .info-value {
+            color: var(--text-main);
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .card-bottom {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid #F1F5F9;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-edit {
+            text-decoration: none;
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover {
+            background: var(--primary-hover);
+        }
+        .cannot-edit-notice {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+        .empty-state {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-sub);
+            border: 1px solid var(--border);
+        }
+        .btn-new {
+            display: inline-block;
+            margin-top: 16px;
+            background: var(--primary);
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 내 배송 신청 목록</h1>
+            <div>
+                <a href="/delivery" class="btn-link" style="margin-right: 6px; color: var(--primary);">+ 새로 신청</a>
+                <a href="/" class="btn-link">홈으로</a>
+            </div>
+        </div>
+
+        <div class="alert-success" th:if="${successMessage != null}" th:text="${successMessage}">
+            배송지 정보가 성공적으로 수정되었습니다.
+        </div>
+
+        <div th:each="order : ${orders}" class="order-card">
+            <div class="card-top">
+                <div>
+                    <span class="order-title" th:text="${order.goodsName}">스테이지 기본 리워드</span>
+                    <span th:if="${order.isModified}" class="modified-badge">수정됨</span>
+                </div>
+                <div>
+                    <span class="status-badge" th:text="${order.statusDescription}">접수 완료</span>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">클리어 코드</span>
+                <span class="info-value" style="font-family: monospace; font-weight: 700;" th:text="${order.stageCode}">ew-1010-clear</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">수령인</span>
+                <span class="info-value" th:text="${order.recipientName}">홍길동</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">연락처</span>
+                <span class="info-value" th:text="${order.phone}">010-1234-5678</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">배송 주소</span>
+                <span class="info-value" th:text="${'(' + order.zipcode + ') ' + order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">
+                    (12345) 서울특별시 테헤란로 123
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">신청 일시</span>
+                <span class="info-value" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 20:00</span>
+            </div>
+            <div class="info-row" th:if="${order.isModified and order.updatedAt != null}">
+                <span class="info-label">수정 일시</span>
+                <span class="info-value" style="color: var(--warning-text);" th:text="${#temporals.format(order.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 21:00</span>
+            </div>
+
+            <div class="card-bottom">
+                <a th:if="${order.canModify}" th:href="@{'/delivery/edit/' + ${order.id}}" class="btn-edit">
+                    ✏️ 배송지 정보 수정
+                </a>
+                <span th:unless="${order.canModify}" class="cannot-edit-notice">
+                    이미 상품이 출고되어 배송지를 변경할 수 없습니다.
+                </span>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
+            <p>아직 신청하신 배송 내역이 없습니다.</p>
+            <a href="/delivery" class="btn-new">🎁 배송 신청하러 가기</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -23,6 +23,12 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private final UserRepository userRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${admin.kakao-ids:}")
+    private java.util.List<String> adminKakaoIds;
+
+    @org.springframework.beans.factory.annotation.Value("${seller.kakao-ids:}")
+    private java.util.List<String> sellerKakaoIds;
+
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -47,9 +53,28 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private User saveOrUpdate(OAuthAttributes attributes) {
+        boolean isAdmin = adminKakaoIds != null && adminKakaoIds.contains(attributes.getKakaoId());
+        boolean isSeller = sellerKakaoIds != null && sellerKakaoIds.contains(attributes.getKakaoId());
+
         User user = userRepository.findByKakaoId(attributes.getKakaoId())
-                .map(entity -> entity.update(attributes.getNickname(), attributes.getEmail()))
-                .orElseGet(attributes::toEntity);
+                .map(entity -> {
+                    entity.update(attributes.getNickname(), attributes.getEmail());
+                    if (isAdmin) {
+                        entity.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
+                    } else if (isSeller && entity.getRole() != com.roomtherapy.backend.domain.user.entity.Role.ADMIN) {
+                        entity.updateRole(com.roomtherapy.backend.domain.user.entity.Role.SELLER);
+                    }
+                    return entity;
+                })
+                .orElseGet(() -> {
+                    User newUser = attributes.toEntity();
+                    if (isAdmin) {
+                        newUser.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
+                    } else if (isSeller) {
+                        newUser.updateRole(com.roomtherapy.backend.domain.user.entity.Role.SELLER);
+                    }
+                    return newUser;
+                });
 
         return userRepository.save(user);
     }
