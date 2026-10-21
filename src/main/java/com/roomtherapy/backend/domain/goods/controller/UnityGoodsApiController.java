@@ -3,12 +3,12 @@ package com.roomtherapy.backend.domain.goods.controller;
 import com.roomtherapy.backend.domain.goods.dto.UnityCodeIssueResponseDto;
 import com.roomtherapy.backend.domain.goods.dto.UnityGoodsResponseDto;
 import com.roomtherapy.backend.domain.goods.service.GoodsService;
+import com.roomtherapy.backend.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,9 +38,9 @@ public class UnityGoodsApiController {
      */
     @Operation(summary = "유니티 노출용 굿즈 목록 조회", description = "게임 내 리워드 UI 구성을 위한 활성 상태 굿즈 목록을 반환합니다.")
     @GetMapping
-    public ResponseEntity<List<UnityGoodsResponseDto>> getGoodsList() {
+    public ApiResponse<List<UnityGoodsResponseDto>> getGoodsList() {
         List<UnityGoodsResponseDto> list = goodsService.getGoodsForUnity();
-        return ResponseEntity.ok(list);
+        return ApiResponse.success("굿즈 목록 조회 성공", list);
     }
 
     /**
@@ -50,10 +50,10 @@ public class UnityGoodsApiController {
      */
     @Operation(summary = "스테이지 클리어 시 굿즈 동적 인증코드 발급", description = "유저가 스테이지 클리어 시 굿즈 PK를 전송하면, Redis에 TTL(기본 60분)로 저장되는 1회용 고유 난수 코드(예: RT-A8F2K9Z)를 즉시 발급합니다.")
     @PostMapping("/{goodsId}/issue-code")
-    public ResponseEntity<UnityCodeIssueResponseDto> issueAuthCode(
+    public ApiResponse<UnityCodeIssueResponseDto> issueAuthCode(
             @Parameter(description = "리워드 굿즈 PK ID", example = "1") @PathVariable Long goodsId,
             @Parameter(description = "인증코드 유효 시간(분 단위, 기본 60분)", example = "60") @RequestParam(name = "durationMinutes", defaultValue = "60") int durationMinutes) {
         UnityCodeIssueResponseDto response = goodsService.issueDynamicCodeForUnity(goodsId, Duration.ofMinutes(durationMinutes));
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("인증코드 발급 성공", response);
     }
 }

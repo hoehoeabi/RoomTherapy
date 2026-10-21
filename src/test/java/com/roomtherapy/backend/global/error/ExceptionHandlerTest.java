@@ -13,10 +13,11 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-class GlobalExceptionHandlerTest {
+class ExceptionHandlerTest {
 
     @Autowired
     private WebApplicationContext context;
@@ -39,13 +40,16 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("API 요청(/api/**) 중 BusinessException 발생 시 JSON 에러 규격 반환")
+    @DisplayName("API 요청(/api/**) 중 BusinessException 발생 시 ApiResponse JSON 에러 규격 반환")
     void apiRequest_businessException_returnsJson() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
 
-        // 존재하지 않는 굿즈 ID로 유니티 인증코드 발급 요청 -> GOODS_NOT_FOUND (404 JSON)
-        mockMvc.perform(get("/api/unity/goods/999999/issue-code")
+        // 존재하지 않는 굿즈 ID로 유니티 인증코드 발급 요청 -> GOODS_NOT_FOUND (404 JSON ApiResponse)
+        mockMvc.perform(post("/api/unity/goods/999999/issue-code")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("GOODS_404_01"))
+                .andExpect(jsonPath("$.message").value(ErrorCode.GOODS_NOT_FOUND.getMessage()));
     }
 }
