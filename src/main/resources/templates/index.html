@@ -193,6 +193,10 @@
 
             <!-- 판매자 전용 링크 -->
             <a th:if="${user.authorities != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}" 
+               href="/seller/goods/new" class="btn btn-outline" style="color: #059669; font-weight: 700; border-color: #A7F3D0;">
+               🎁 새 굿즈 & 인증코드 등록
+            </a>
+            <a th:if="${user.authorities != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}" 
                href="/seller/deliveries" class="btn btn-outline" style="color: #059669; font-weight: 700; border-color: #A7F3D0;">
                🏪 판매자 굿즈 배송 관리
             </a>

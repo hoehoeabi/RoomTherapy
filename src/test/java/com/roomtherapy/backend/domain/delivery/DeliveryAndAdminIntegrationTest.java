@@ -41,6 +41,9 @@ class DeliveryAndAdminIntegrationTest {
     private com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
 
     @Autowired
+    private com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository goodsAuthCodeRepository;
+
+    @Autowired
     private JwtProvider jwtProvider;
 
     private User normalUser;
@@ -56,6 +59,7 @@ class DeliveryAndAdminIntegrationTest {
                 .build();
 
         deliveryOrderRepository.deleteAll();
+        goodsAuthCodeRepository.deleteAll();
         goodsRepository.deleteAll();
         userRepository.deleteAll();
 

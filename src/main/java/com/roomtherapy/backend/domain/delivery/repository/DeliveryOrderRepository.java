@@ -13,6 +13,9 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
     // 동일 유저가 동일 코드로 이미 신청했는지 검증
     boolean existsByUserIdAndStageCode(Long userId, String stageCode);
 
+    // 동일 유저가 동일 굿즈를 이미 신청했는지 검증 (중복 수령 방지)
+    boolean existsByUserIdAndGoodsId(Long userId, Long goodsId);
+
     // 해당 인증코드가 이미 누군가에 의해 사용되었는지 검증
     boolean existsByStageCode(String stageCode);
 

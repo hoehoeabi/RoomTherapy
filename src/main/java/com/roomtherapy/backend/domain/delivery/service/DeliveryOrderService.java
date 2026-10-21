@@ -25,6 +25,8 @@ public class DeliveryOrderService {
     private final UserRepository userRepository;
     private final GoodsRepository goodsRepository;
     private final StageCodeService stageCodeService;
+    private final com.roomtherapy.backend.domain.goods.service.GoodsAuthCodeManager goodsAuthCodeManager;
+    private final com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService redisGoodsStockService;
 
     /**
      * 굿즈 배송 신청 처리 및 DB 저장
@@ -40,17 +42,31 @@ public class DeliveryOrderService {
             throw new IllegalStateException("해당 인증코드로 이미 배송 신청을 완료하셨습니다.");
         }
 
-        // 3. 인증코드 유효성 검증 및 소모 처리
-        stageCodeService.validateAndConsume(request.stageCode(), userId);
-
-        // 4. (선택적) 굿즈 조회 및 재고 차감
+        // 3. 굿즈 지정 배송 신청 시: 1인 1회 제한 + 굿즈별 인증코드 검증 + 선착순 재고 경합 제어
         Goods goods = null;
         if (request.goodsId() != null) {
             goods = goodsRepository.findById(request.goodsId())
-                    .orElse(null);
-            if (goods != null) {
-                goods.decreaseStock(1);
+                    .orElseThrow(() -> new IllegalArgumentException("선택하신 굿즈를 찾을 수 없습니다: " + request.goodsId()));
+
+            // 1인 1회 신청 제한 (동일 굿즈 중복 수령 방지)
+            if (deliveryOrderRepository.existsByUserIdAndGoodsId(userId, goods.getId())) {
+                throw new IllegalStateException("이미 배송 신청을 완료하신 굿즈입니다. (동일 굿즈는 1인 1회만 신청 가능)");
             }
+
+            // 굿즈 인증코드 적격성 검증 및 소진 (DB 판매자 코드 또는 Redis 동적 코드)
+            goodsAuthCodeManager.validateAndConsume(goods.getId(), request.stageCode().trim(), userId);
+
+            // Redis 기반 원자적 재고 차감 (선착순 경합 방지)
+            boolean stockDecreased = redisGoodsStockService.tryDecreaseStock(goods.getId(), 1);
+            if (!stockDecreased) {
+                throw new IllegalStateException("해당 굿즈의 재고가 모두 소진되었습니다.");
+            }
+
+            // DB 엔티티 재고 차감 동기화
+            goods.decreaseStock(1);
+        } else {
+            // 굿즈 미지정 신청인 경우 (기존 레거시 스테이지 코드 검증)
+            stageCodeService.validateAndConsume(request.stageCode(), userId);
         }
 
         // 5. 배송 신청 엔티티 생성 및 DB 저장

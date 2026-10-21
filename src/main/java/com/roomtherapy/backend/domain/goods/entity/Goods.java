@@ -52,6 +52,9 @@ public class Goods extends BaseTimeEntity {
     @JoinColumn(name = "seller_id")
     private User seller;
 
+    @jakarta.persistence.OneToMany(mappedBy = "goods", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<GoodsAuthCode> authCodes = new java.util.ArrayList<>();
+
     @Builder
     public Goods(String name, String description, int price, String imageUrl,
                  int stockQuantity, GoodsStatus status, User seller) {
