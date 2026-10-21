@@ -1,0 +1,28 @@
+# ==========================================
+# Production 운영 환경 (MySQL DB & 보안 강화)
+# ==========================================
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true # HTTPS 환경에서만 쿠키 전송
+
+spring:
+  # 운영용 MySQL DB 연동
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:roomtherapy}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 초기 운영 시 스키마 자동 동기화 (운영 안정화 시 validate 전환 권장)
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false

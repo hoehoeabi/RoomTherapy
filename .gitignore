@@ -40,5 +40,7 @@ out/
 *secret*.yml
 *secret*.properties
 !*secret*.sample.yml
+.env
+!.env.example
 
 .DS_Store

@@ -144,8 +144,8 @@
             
             <a href="/goods" class="btn btn-outline" style="font-weight: 700;">🛍️ 굿즈 리워드 둘러보기</a>
 
-            <!-- 로컬 테스트용 빠른 계정 로그인 -->
-            <div style="margin-top: 20px; padding: 16px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px; text-align: left;">
+            <!-- 로컬 테스트용 빠른 계정 로그인 (운영 환경 노출 차단) -->
+            <div th:if="${@profileUtil.isDev()}" style="margin-top: 20px; padding: 16px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px; text-align: left;">
                 <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px;">⚡ 빠른 테스트 계정 체험 (OAuth 없이 즉시 로그인)</div>
                 <div style="display: flex; flex-direction: column; gap: 6px;">
                     <a href="/test/login?role=SELLER" class="btn-outline" style="display: block; text-align: center; text-decoration: none; padding: 8px; font-size: 13px; font-weight: 700; border-radius: 10px; color: #059669; background: #FFFFFF;">
@@ -176,8 +176,8 @@
                 <div class="user-name" th:text="${user.nickname}">홍길동</div>
                 <div class="user-email" th:text="${user.email != null ? user.email : '이메일 미제공'}">user@kakao.com</div>
 
-                <!-- 권한 간편 전환 스위처 (테스트 및 UI 확인용) -->
-                <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
+                <!-- 권한 간편 전환 스위처 (운영 환경 노출 차단) -->
+                <div th:if="${@profileUtil.isDev()}" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
                     <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600;">🛠️ 빠른 권한 변경 (UI 테스트)</div>
                     <form action="/user/role" method="post" style="display: flex; gap: 6px;">
                         <button type="submit" name="role" value="USER" class="btn-outline" style="padding: 5px 8px; font-size: 12px; border-radius: 8px; cursor: pointer; flex: 1;">👤 일반</button>

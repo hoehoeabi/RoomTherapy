@@ -3,12 +3,26 @@ package com.roomtherapy.backend.global.util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Optional;
 
+@Component
 public class CookieUtil {
+
+    private static boolean secure = false;
+
+    @Value("${server.servlet.session.cookie.secure:false}")
+    public void setSecure(boolean secure) {
+        CookieUtil.secure = secure;
+    }
+
+    public static boolean isSecure() {
+        return secure;
+    }
 
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
@@ -24,7 +38,7 @@ public class CookieUtil {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path("/")
                 .httpOnly(true)
-                .secure(false) // 로컬 개발: false, HTTPS 배포 시 true
+                .secure(secure)
                 .sameSite("Lax")
                 .maxAge(maxAgeSec)
                 .build();
@@ -35,7 +49,7 @@ public class CookieUtil {
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .path("/")
                 .httpOnly(true)
-                .secure(false)
+                .secure(secure)
                 .sameSite("Lax")
                 .maxAge(0)
                 .build();
