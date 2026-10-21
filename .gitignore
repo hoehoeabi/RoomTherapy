@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Secrets ###
+*secret*.yml
+*secret*.properties
+!*secret*.sample.yml

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Therapy - 룸 테라피</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --kakao: #FEE500;
+            --kakao-text: #191919;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 36px 28px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+            text-align: center;
+        }
+        .logo-badge {
+            display: inline-block;
+            background: #EEF2FF;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        p.desc {
+            color: var(--text-sub);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 28px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+        .btn-kakao {
+            background-color: var(--kakao);
+            color: var(--kakao-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-kakao:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #FFFFFF;
+        }
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-sub);
+            border: 1px solid #E2E8F0;
+        }
+        .btn-outline:hover {
+            background-color: #F1F5F9;
+        }
+        .user-card {
+            background: #F1F5F9;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .user-card-title {
+            font-size: 12px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .user-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+        .user-email {
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="logo-badge">ROOM THERAPY</span>
+        <h1>룸 테라피</h1>
+        <p class="desc">편안한 나만의 방 꾸미기와 굿즈 리워드</p>
+
+        <!-- 비로그인 상태 -->
+        <div th:if="${user == null}">
+            <a href="/oauth2/authorization/kakao" class="btn btn-kakao">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.05 1.365 3.848 3.447 4.887l-.74 2.766a.375.375 0 00.56.402l3.356-2.222c.287.037.58.056.877.056 4.142 0 7.5-2.634 7.5-5.889C16.5 4.134 13.142 1.5 9 1.5z" fill="#000000"/>
+                </svg>
+                카카오로 시작하기
+            </a>
+            <p style="font-size: 13px; color: #94A3B8; margin-top: 16px;">
+                로그인 후 클리어 인증코드를 입력하여 굿즈를 신청하세요.
+            </p>
+        </div>
+
+        <!-- 로그인 완료 상태 -->
+        <div th:if="${user != null}">
+            <div class="user-card">
+                <div class="user-card-title">로그인 계정</div>
+                <div class="user-name" th:text="${user.nickname}">홍길동</div>
+                <div class="user-email" th:text="${user.email != null ? user.email : '이메일 미제공'}">user@kakao.com</div>
+            </div>
+
+            <a href="/delivery" class="btn btn-primary">🎁 굿즈 배송 신청하러 가기</a>
+            <form action="/logout" method="post">
+                <button type="submit" class="btn btn-outline">로그아웃</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
