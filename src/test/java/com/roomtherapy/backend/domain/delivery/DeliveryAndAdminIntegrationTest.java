@@ -166,4 +166,72 @@ class DeliveryAndAdminIntegrationTest {
         DeliveryOrder updated = deliveryOrderRepository.findById(order.getId()).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo(DeliveryStatus.PREPARING);
     }
+
+    @Test
+    @DisplayName("사용자가 내 배송 목록(/delivery/my) 조회 시 본인의 주문 내역 렌더링")
+    void user_getMyDeliveries_success() throws Exception {
+        deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .stageCode("ew-my-code-1")
+                .recipientName("내이름")
+                .phone("010-1234-5678")
+                .zipcode("11111")
+                .address("서울시 송파구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+
+        mockMvc.perform(get("/delivery/my")
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("my-deliveries"))
+                .andExpect(model().attributeExists("orders"));
+    }
+
+    @Test
+    @DisplayName("사용자가 배송지 정보를 수정하면 isModified가 true가 되고 어드민 수정 목록에 노출")
+    void user_updateDeliveryOrder_marksModified_andAppearsInAdminFilter() throws Exception {
+        DeliveryOrder order = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .stageCode("ew-edit-code-1")
+                .recipientName("초기수령인")
+                .phone("010-1111-2222")
+                .zipcode("12345")
+                .address("초기주소")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+
+        // 1. 배송지 수정 폼 조회
+        mockMvc.perform(get("/delivery/edit/" + order.getId())
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("delivery-edit"))
+                .andExpect(model().attributeExists("form", "order"));
+
+        // 2. 배송지 수정 제출
+        mockMvc.perform(post("/delivery/edit/" + order.getId())
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("recipientName", "수정된수령인")
+                        .param("phone", "010-9999-7777")
+                        .param("zipcode", "54321")
+                        .param("address", "수정된주소")
+                        .param("detailAddress", "302호"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/delivery/my"))
+                .andExpect(flash().attributeExists("successMessage"));
+
+        // 3. DB 확인: isModified == true, 수령인 및 주소 업데이트 확인
+        DeliveryOrder modifiedOrder = deliveryOrderRepository.findById(order.getId()).orElseThrow();
+        assertThat(modifiedOrder.isModified()).isTrue();
+        assertThat(modifiedOrder.getRecipientName()).isEqualTo("수정된수령인");
+        assertThat(modifiedOrder.getPhone()).isEqualTo("010-9999-7777");
+        assertThat(modifiedOrder.getAddress()).isEqualTo("수정된주소");
+
+        // 4. 어드민이 수정된 신청 목록 필터링(?filter=modified) 조회 시 해당 주문이 포함되는지 검증
+        mockMvc.perform(get("/admin/deliveries?filter=modified")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/deliveries"))
+                .andExpect(model().attribute("currentFilter", "modified"))
+                .andExpect(model().attribute("modifiedCount", 1));
+    }
 }

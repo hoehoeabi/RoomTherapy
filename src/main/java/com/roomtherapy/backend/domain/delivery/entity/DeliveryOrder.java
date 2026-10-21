@@ -75,6 +75,10 @@ public class DeliveryOrder extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private DeliveryStatus status;
 
+    // 사용자가 배송 정보를 수정한 적이 있는지 여부
+    @Column(nullable = false)
+    private boolean isModified = false;
+
     @Builder
     public DeliveryOrder(User user, Goods goods, String stageCode, String recipientName,
                          String phone, String zipcode, String address, String detailAddress,
@@ -88,11 +92,24 @@ public class DeliveryOrder extends BaseTimeEntity {
         this.address = address;
         this.detailAddress = detailAddress;
         this.status = status != null ? status : DeliveryStatus.ORDERED;
+        this.isModified = false;
     }
 
     public void updateStatus(DeliveryStatus status) {
         if (status != null) {
             this.status = status;
         }
+    }
+
+    public void updateDeliveryInfo(String recipientName, String phone, String zipcode, String address, String detailAddress) {
+        if (this.status != DeliveryStatus.ORDERED && this.status != DeliveryStatus.PREPARING) {
+            throw new IllegalStateException("이미 배송이 시작되었거나 완료/취소된 주문은 수정할 수 없습니다.");
+        }
+        this.recipientName = recipientName;
+        this.phone = phone;
+        this.zipcode = zipcode;
+        this.address = address;
+        this.detailAddress = detailAddress;
+        this.isModified = true;
     }
 }

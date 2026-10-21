@@ -27,14 +27,24 @@ public class AdminDeliveryController {
     private final DeliveryOrderService deliveryOrderService;
 
     /**
-     * 관리자용 배송 신청 목록 대시보드
+     * 관리자용 배송 신청 목록 대시보드 (전체 또는 수정된 신청 목록 필터링)
      */
     @GetMapping("/deliveries")
     public String deliveriesList(
+            @RequestParam(name = "filter", defaultValue = "all") String filter,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
-        List<DeliveryOrderResponseDto> deliveries = deliveryOrderService.getAllOrdersForAdmin();
-        model.addAttribute("deliveries", deliveries);
+        List<DeliveryOrderResponseDto> allDeliveries = deliveryOrderService.getAllOrdersForAdmin();
+        List<DeliveryOrderResponseDto> modifiedDeliveries = deliveryOrderService.getModifiedOrdersForAdmin();
+
+        List<DeliveryOrderResponseDto> displayDeliveries = "modified".equalsIgnoreCase(filter) 
+                ? modifiedDeliveries 
+                : allDeliveries;
+
+        model.addAttribute("deliveries", displayDeliveries);
+        model.addAttribute("allCount", allDeliveries.size());
+        model.addAttribute("modifiedCount", modifiedDeliveries.size());
+        model.addAttribute("currentFilter", filter);
         model.addAttribute("user", userDetails);
         model.addAttribute("statuses", DeliveryStatus.values());
         return "admin/deliveries";

@@ -124,6 +124,56 @@
             border-radius: 10px;
             background: #FFFFFF;
         }
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: var(--text-sub);
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+        .tab-count {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .tab-btn.active .tab-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+        }
+        .modified-pill {
+            display: inline-block;
+            background: #FEF3C7;
+            color: #D97706;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            margin-left: 4px;
+        }
+        .modified-time {
+            display: block;
+            font-size: 11px;
+            color: #D97706;
+            margin-top: 3px;
+        }
     </style>
 </head>
 <body>
@@ -134,6 +184,22 @@
         </div>
         <div>
             <a href="/" class="btn-home">홈으로 가기</a>
+        </div>
+    </div>
+
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <!-- 탭 네비게이션: 전체 목록 vs 수정된 신청 목록 -->
+        <div class="tabs">
+            <a th:href="@{/admin/deliveries(filter='all')}" 
+               th:class="${currentFilter == 'all' ? 'tab-btn active' : 'tab-btn'}">
+                전체 배송 신청
+                <span class="tab-count" th:text="${allCount}">0</span>
+            </a>
+            <a th:href="@{/admin/deliveries(filter='modified')}" 
+               th:class="${currentFilter == 'modified' ? 'tab-btn active' : 'tab-btn'}">
+                ⚠️ 사용자가 수정한 신청
+                <span class="tab-count" th:text="${modifiedCount}">0</span>
+            </a>
         </div>
     </div>
 
@@ -154,9 +220,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="delivery : ${deliveries}">
-                        <td th:text="${'#' + delivery.id}">#1</td>
-                        <td th:text="${#temporals.format(delivery.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 20:00</td>
+                    <tr th:each="delivery : ${deliveries}" th:style="${delivery.isModified ? 'background-color: #FFFDF5;' : ''}">
+                        <td>
+                            <span th:text="${'#' + delivery.id}">#1</span>
+                            <span th:if="${delivery.isModified}" class="modified-pill">수정됨</span>
+                        </td>
+                        <td>
+                            <div th:text="${#temporals.format(delivery.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 20:00</div>
+                            <span th:if="${delivery.isModified and delivery.updatedAt != null}" class="modified-time" 
+                                  th:text="${'수정: ' + #temporals.format(delivery.updatedAt, 'MM-dd HH:mm')}">수정: 10-21 21:00</span>
+                        </td>
                         <td th:text="${delivery.applicantNickname}">홍길동</td>
                         <td><span class="code-tag" th:text="${delivery.stageCode}">ew-1010-clear</span></td>
                         <td th:text="${delivery.recipientName}">홍길동</td>
@@ -180,7 +253,8 @@
                     </tr>
                     <tr th:if="${#lists.isEmpty(deliveries)}">
                         <td colspan="9" class="empty-state">
-                            아직 접수된 배송 신청 내역이 없습니다.
+                            <span th:if="${currentFilter == 'modified'}">사용자가 수정한 배송 신청 건이 없습니다.</span>
+                            <span th:unless="${currentFilter == 'modified'}">아직 접수된 배송 신청 내역이 없습니다.</span>
                         </td>
                     </tr>
                 </tbody>

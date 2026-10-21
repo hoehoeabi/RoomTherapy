@@ -85,11 +85,55 @@ public class DeliveryOrderService {
     }
 
     /**
+     * 현재 로그인한 사용자의 배송 신청 내역 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrderResponseDto> getMyOrders(Long userId) {
+        return deliveryOrderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(DeliveryOrderResponseDto::from)
+                .toList();
+    }
+
+    /**
+     * 사용자의 배송지 정보 수정 처리 (ORDERED/PREPARING 상태만 가능)
+     */
+    @Transactional
+    public DeliveryOrderResponseDto updateDeliveryOrder(Long userId, Long orderId, com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto request) {
+        DeliveryOrder order = deliveryOrderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("배송 신청 내역을 찾을 수 없습니다: " + orderId));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 배송 신청 건만 수정할 수 있습니다.");
+        }
+
+        order.updateDeliveryInfo(
+                request.recipientName().trim(),
+                request.phone().trim(),
+                request.zipcode().trim(),
+                request.address().trim(),
+                request.detailAddress() != null ? request.detailAddress().trim() : ""
+        );
+
+        log.info("배송 정보 사용자 수정 완료 - OrderId: {}, UserId: {}", orderId, userId);
+        return DeliveryOrderResponseDto.from(order);
+    }
+
+    /**
      * 관리자용 전체 배송 신청 목록 조회
      */
     @Transactional(readOnly = true)
     public List<DeliveryOrderResponseDto> getAllOrdersForAdmin() {
         return deliveryOrderRepository.findAllWithUserAndGoodsOrderByCreatedAtDesc().stream()
+                .map(DeliveryOrderResponseDto::from)
+                .toList();
+    }
+
+    /**
+     * 관리자용 수정된 배송 신청 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrderResponseDto> getModifiedOrdersForAdmin() {
+        return deliveryOrderRepository.findAllModifiedWithUserAndGoods().stream()
                 .map(DeliveryOrderResponseDto::from)
                 .toList();
     }

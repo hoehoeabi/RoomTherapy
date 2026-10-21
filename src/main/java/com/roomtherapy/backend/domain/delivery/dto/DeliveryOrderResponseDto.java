@@ -17,8 +17,14 @@ public record DeliveryOrderResponseDto(
         String detailAddress,
         DeliveryStatus status,
         String statusDescription,
-        LocalDateTime createdAt
+        boolean isModified,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
+    public boolean isCanModify() {
+        return this.status == DeliveryStatus.ORDERED || this.status == DeliveryStatus.PREPARING;
+    }
+
     public static DeliveryOrderResponseDto from(DeliveryOrder order) {
         return new DeliveryOrderResponseDto(
                 order.getId(),
@@ -32,7 +38,9 @@ public record DeliveryOrderResponseDto(
                 order.getDetailAddress(),
                 order.getStatus(),
                 order.getStatus().getDescription(),
-                order.getCreatedAt()
+                order.isModified(),
+                order.getCreatedAt(),
+                order.getUpdatedAt()
         );
     }
 }
