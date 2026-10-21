@@ -16,12 +16,4 @@ public class HomeController {
         }
         return "index";
     }
-
-    @GetMapping("/delivery")
-    public String delivery(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        if (userDetails != null) {
-            model.addAttribute("user", userDetails);
-        }
-        return "delivery";
-    }
 }

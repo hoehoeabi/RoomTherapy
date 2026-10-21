@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 - 배송 신청 목록 관리</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 32px 24px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto 28px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .admin-badge {
+            display: inline-block;
+            background: #EEF2FF;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-right: 12px;
+        }
+        .card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background: #F1F5F9;
+            color: var(--text-sub);
+            font-weight: 600;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:hover {
+            background-color: #F8FAFC;
+        }
+        .code-tag {
+            background: #F1F5F9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .status-select {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            background: #FFFFFF;
+        }
+        .btn-update {
+            padding: 6px 12px;
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 6px;
+        }
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-sub);
+        }
+        .btn-home {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <span class="admin-badge">ADMIN DASHBOARD</span>
+            <h1>📦 굿즈 배송 신청 관리</h1>
+        </div>
+        <div>
+            <a href="/" class="btn-home">홈으로 가기</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>주문 ID</th>
+                        <th>신청일시</th>
+                        <th>신청 계정</th>
+                        <th>인증코드</th>
+                        <th>수령인</th>
+                        <th>연락처</th>
+                        <th>우편번호</th>
+                        <th>배송지 주소</th>
+                        <th>배송 상태 변경</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="delivery : ${deliveries}">
+                        <td th:text="${'#' + delivery.id}">#1</td>
+                        <td th:text="${#temporals.format(delivery.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 20:00</td>
+                        <td th:text="${delivery.applicantNickname}">홍길동</td>
+                        <td><span class="code-tag" th:text="${delivery.stageCode}">ew-1010-clear</span></td>
+                        <td th:text="${delivery.recipientName}">홍길동</td>
+                        <td th:text="${delivery.phone}">010-1234-5678</td>
+                        <td th:text="${delivery.zipcode}">12345</td>
+                        <td th:text="${delivery.address + ' ' + (delivery.detailAddress != null ? delivery.detailAddress : '')}">
+                            서울특별시 강남구 테헤란로 123 402호
+                        </td>
+                        <td>
+                            <form th:action="@{'/admin/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: flex; align-items: center;">
+                                <select name="status" class="status-select">
+                                    <option th:each="st : ${statuses}" 
+                                            th:value="${st}" 
+                                            th:text="${st.description}"
+                                            th:selected="${st == delivery.status}">
+                                    </option>
+                                </select>
+                                <button type="submit" class="btn-update">변경</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(deliveries)}">
+                        <td colspan="9" class="empty-state">
+                            아직 접수된 배송 신청 내역이 없습니다.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
