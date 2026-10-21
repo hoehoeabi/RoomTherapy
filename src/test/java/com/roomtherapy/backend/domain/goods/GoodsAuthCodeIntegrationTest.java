@@ -264,8 +264,10 @@ class GoodsAuthCodeIntegrationTest {
 
         mockMvc.perform(get("/api/unity/goods"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("유니티 연동 굿즈"))
-                .andExpect(jsonPath("$[0].stockQuantity").value(20));
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data[0].name").value("유니티 연동 굿즈"))
+                .andExpect(jsonPath("$.data[0].stockQuantity").value(20));
     }
 
     @Test
@@ -280,10 +282,12 @@ class GoodsAuthCodeIntegrationTest {
         String responseJson = mockMvc.perform(post("/api/unity/goods/" + goods.id() + "/issue-code")
                         .param("durationMinutes", "30"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.code").exists())
                 .andReturn().getResponse().getContentAsString();
 
-        String dynamicCode = JsonPath.read(responseJson, "$.code");
+        String dynamicCode = JsonPath.read(responseJson, "$.data.code");
 
         // Redis에 저장되었는지 확인
         String redisKey = RedisGoodsAuthCodeValidator.REDIS_GOODS_CODE_PREFIX + dynamicCode.toUpperCase();
