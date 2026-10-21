@@ -23,17 +23,27 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class DeliveryController {
 
     private final DeliveryOrderService deliveryOrderService;
+    private final com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
 
     /**
      * 굿즈 배송 신청 폼 화면
      */
     @GetMapping("/delivery")
     public String deliveryForm(
+            @org.springframework.web.bind.annotation.RequestParam(name = "goodsId", required = false) Long goodsId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new DeliveryOrderRequestDto("", "", "", "", "", "", null));
+            model.addAttribute("form", new DeliveryOrderRequestDto("", "", "", "", "", "", goodsId));
         }
+
+        var goodsList = goodsRepository.findAll();
+        model.addAttribute("goodsList", goodsList);
+
+        if (goodsId != null) {
+            goodsRepository.findById(goodsId).ifPresent(g -> model.addAttribute("selectedGoods", g));
+        }
+
         model.addAttribute("user", userDetails);
         return "delivery";
     }
@@ -51,6 +61,10 @@ public class DeliveryController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("user", userDetails);
+            model.addAttribute("goodsList", goodsRepository.findAll());
+            if (form.goodsId() != null) {
+                goodsRepository.findById(form.goodsId()).ifPresent(g -> model.addAttribute("selectedGoods", g));
+            }
             return "delivery";
         }
 
@@ -60,6 +74,10 @@ public class DeliveryController {
         } catch (Exception e) {
             log.warn("배송 신청 실패: {}", e.getMessage());
             model.addAttribute("user", userDetails);
+            model.addAttribute("goodsList", goodsRepository.findAll());
+            if (form.goodsId() != null) {
+                goodsRepository.findById(form.goodsId()).ifPresent(g -> model.addAttribute("selectedGoods", g));
+            }
             model.addAttribute("errorMessage", e.getMessage());
             return "delivery";
         }

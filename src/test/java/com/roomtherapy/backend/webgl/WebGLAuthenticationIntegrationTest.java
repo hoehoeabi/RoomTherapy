@@ -48,6 +48,9 @@ class WebGLAuthenticationIntegrationTest {
     @Autowired
     private com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository deliveryOrderRepository;
 
+    @Autowired
+    private com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
+
     private User testUser;
     private String validAccessToken;
     private String validRefreshToken;
@@ -60,6 +63,7 @@ class WebGLAuthenticationIntegrationTest {
                 .build();
 
         deliveryOrderRepository.deleteAll();
+        goodsRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 

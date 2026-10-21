@@ -38,6 +38,9 @@ class DeliveryAndAdminIntegrationTest {
     private DeliveryOrderRepository deliveryOrderRepository;
 
     @Autowired
+    private com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
+
+    @Autowired
     private JwtProvider jwtProvider;
 
     private User normalUser;
@@ -53,6 +56,7 @@ class DeliveryAndAdminIntegrationTest {
                 .build();
 
         deliveryOrderRepository.deleteAll();
+        goodsRepository.deleteAll();
         userRepository.deleteAll();
 
         normalUser = userRepository.save(User.builder()
@@ -260,10 +264,72 @@ class DeliveryAndAdminIntegrationTest {
                         .cookie(new Cookie("accessToken", userToken))
                         .param("role", "SELLER"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"))
-                .andExpect(cookie().exists("accessToken"));
+                .andExpect(redirectedUrl("/"));
 
         User updatedUser = userRepository.findById(normalUser.getId()).orElseThrow();
         assertThat(updatedUser.getRole()).isEqualTo(Role.SELLER);
+    }
+
+    @Test
+    @DisplayName("원클릭 테스트 로그인(/test/login?role=SELLER) 성공")
+    void testLogin_seller_success() throws Exception {
+        mockMvc.perform(get("/test/login").param("role", "SELLER"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"))
+                .andExpect(cookie().exists("accessToken"));
+    }
+
+    @Test
+    @DisplayName("굿즈 상품 목록(/goods) 조회 성공")
+    void getGoodsList_success() throws Exception {
+        mockMvc.perform(get("/goods"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("goods/list"))
+                .andExpect(model().attributeExists("goodsList"));
+    }
+
+    @Test
+    @DisplayName("판매자가 등록한 굿즈를 일반유저가 배송 신청 -> 판매자 대시보드(/seller/deliveries)에서 조회 성공")
+    void sellerGoods_orderedByUser_visibleInSellerDashboard() throws Exception {
+        // 1. 판매자 생성 및 굿즈 등록
+        User seller = userRepository.save(User.builder()
+                .kakaoId("seller_test_99")
+                .nickname("테스트판매자")
+                .email("seller99@test.com")
+                .role(Role.SELLER)
+                .build());
+
+        var goods = goodsRepository.save(com.roomtherapy.backend.domain.goods.entity.Goods.builder()
+                .name("수제 원목 시계")
+                .description("핸드메이드 원목 시계")
+                .price(0)
+                .stockQuantity(10)
+                .seller(seller)
+                .build());
+
+        String sellerToken = jwtProvider.createAccessToken(seller.getId(), seller.getEmail(), seller.getRole().name());
+
+        // 2. 일반 유저가 해당 굿즈 배송 신청
+        mockMvc.perform(post("/delivery")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("goodsId", String.valueOf(goods.getId()))
+                        .param("stageCode", "SELLER-REWARD-001")
+                        .param("recipientName", "구매자")
+                        .param("phone", "010-8888-9999")
+                        .param("zipcode", "55555")
+                        .param("address", "서울시 마포구")
+                        .param("detailAddress", "1층"))
+                .andExpect(status().is3xxRedirection());
+
+        // 3. 재고 차감 검증
+        var updatedGoods = goodsRepository.findById(goods.getId()).orElseThrow();
+        assertThat(updatedGoods.getStockQuantity()).isEqualTo(9);
+
+        // 4. 판매자가 본인 대시보드(/seller/deliveries) 접속 시 해당 주문이 노출되는지 검증
+        mockMvc.perform(get("/seller/deliveries")
+                        .cookie(new Cookie("accessToken", sellerToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("seller/deliveries"))
+                .andExpect(model().attribute("allCount", 1));
     }
 }

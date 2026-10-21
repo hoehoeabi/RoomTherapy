@@ -166,6 +166,19 @@
         </div>
 
         <form th:action="@{/delivery}" th:object="${form}" method="post" id="deliveryForm" onsubmit="syncPhoneNumber()">
+            <!-- 리워드 굿즈 선택 -->
+            <div class="form-group" th:if="${goodsList != null and not #lists.isEmpty(goodsList)}">
+                <label for="goodsId">신청할 리워드 굿즈 선택</label>
+                <select id="goodsId" th:field="*{goodsId}" style="width: 100%; padding: 13px 15px; border-radius: 12px; border: 1px solid #CBD5E1; font-size: 15px; outline: none; background: #FFFFFF;">
+                    <option value="">스테이지 기본 리워드 (선택 안 함)</option>
+                    <option th:each="goods : ${goodsList}" 
+                            th:value="${goods.id}" 
+                            th:text="${goods.name + ' (남은 재고: ' + goods.stockQuantity + '개)'}"
+                            th:selected="${form.goodsId != null and form.goodsId == goods.id}">
+                    </option>
+                </select>
+            </div>
+
             <div class="form-group">
                 <label for="stageCode">클리어 인증코드</label>
                 <input type="text" id="stageCode" th:field="*{stageCode}" placeholder="인증코드를 입력하세요 (예: ew-1010-clear)" required>

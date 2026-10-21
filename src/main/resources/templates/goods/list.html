@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>굿즈 리워드 상품 목록 - Room Therapy</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 32px 20px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .btn-home {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: #FFFFFF;
+        }
+        .goods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .goods-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .goods-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+        .badge-seller {
+            display: inline-block;
+            background: #ECFDF5;
+            color: #059669;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+        .goods-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .goods-desc {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        .goods-footer {
+            border-top: 1px solid #F1F5F9;
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stock-tag {
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+        .stock-tag strong {
+            color: var(--primary);
+        }
+        .btn-apply {
+            text-decoration: none;
+            background: var(--primary);
+            color: #FFFFFF;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .btn-apply:hover {
+            background: var(--primary-hover);
+        }
+        .btn-sold-out {
+            background: #E2E8F0;
+            color: #94A3B8;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🎁 굿즈 리워드 둘러보기</h1>
+                <p style="color: var(--text-sub); font-size: 14px; margin-top: 4px;">
+                    스테이지 클리어 인증코드로 원하는 리워드를 신청하세요.
+                </p>
+            </div>
+            <div>
+                <a href="/" class="btn-home">홈으로</a>
+            </div>
+        </div>
+
+        <div class="goods-grid">
+            <div th:each="goods : ${goodsList}" class="goods-card">
+                <div>
+                    <span class="badge-seller" th:text="${goods.seller != null ? goods.seller.nickname : '공식 리워드'}">포근한 공방</span>
+                    <h3 class="goods-title" th:text="${goods.name}">룸테라피 아늑한 무드등</h3>
+                    <p class="goods-desc" th:text="${goods.description}">은은하고 따뜻한 주황빛 감성 무드등</p>
+                </div>
+
+                <div class="goods-footer">
+                    <span class="stock-tag">
+                        남은 수량: <strong th:text="${goods.stockQuantity + '개'}">50개</strong>
+                    </span>
+                    <a th:if="${goods.stockQuantity > 0}" th:href="@{'/delivery?goodsId=' + ${goods.id}}" class="btn-apply">
+                        🎁 배송 신청
+                    </a>
+                    <span th:unless="${goods.stockQuantity > 0}" class="btn-sold-out">
+                        품절
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
