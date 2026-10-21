@@ -77,3 +77,14 @@ admin:
 
 seller:
   kakao-ids: ${SELLER_KAKAO_IDS:}
+
+# Springdoc OpenAPI / Swagger 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true
+    doc-expansion: none

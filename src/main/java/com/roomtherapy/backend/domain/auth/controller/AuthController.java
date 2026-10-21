@@ -17,8 +17,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 
+@Tag(name = "2. Auth API", description = "인증 및 RTR 토큰 갱신 관련 API")
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class AuthController {
     /**
      * RTR 토큰 재발급 엔드포인트 (웹 브라우저 쿠키 및 REST API/유니티 겸용)
      */
+    @Operation(summary = "RTR 토큰 재발급", description = "Refresh Token(쿠키 또는 JSON 바디)을 검증하여 새로운 Access Token 및 Refresh Token을 재발급합니다.")
     @PostMapping("/api/auth/reissue")
     @ResponseBody
     public ResponseEntity<TokenResponseDto> reissue(
