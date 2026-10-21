@@ -12,9 +12,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import com.roomtherapy.backend.global.util.CookieUtil;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@Profile("!prod")
 @Tag(name = "3. Test & Utility API", description = "로컬 개발 및 테스트 편의를 위한 유틸리티 API")
 @Slf4j
 @Controller
@@ -59,11 +62,7 @@ public class TestAuthController {
         // AccessToken 발급 및 쿠키 저장
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
 
-        Cookie cookie = new Cookie("accessToken", accessToken);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(1800); // 30분
-        response.addCookie(cookie);
+        CookieUtil.addCookie(response, "accessToken", accessToken, 1800); // 30분
 
         log.info("테스트 계정 로그인 성공 - UserId: {}, Nickname: {}, Role: {}", user.getId(), user.getNickname(), user.getRole());
         return "redirect:/";

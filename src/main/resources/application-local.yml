@@ -1,0 +1,29 @@
+# ==========================================
+# Local 개발 환경 (H2 In-Memory DB & 개발용 콘솔)
+# ==========================================
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+spring:
+  # 로컬 개발용 인메모리 H2 DB
+  datasource:
+    url: jdbc:h2:mem:roomtherapydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
