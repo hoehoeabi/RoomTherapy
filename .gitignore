@@ -40,3 +40,5 @@ out/
 *secret*.yml
 *secret*.properties
 !*secret*.sample.yml
+
+.DS_Store

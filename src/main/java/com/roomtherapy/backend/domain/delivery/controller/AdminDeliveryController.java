@@ -27,24 +27,27 @@ public class AdminDeliveryController {
     private final DeliveryOrderService deliveryOrderService;
 
     /**
-     * 관리자용 배송 신청 목록 대시보드 (전체 또는 수정된 신청 목록 필터링)
+     * 관리자용 배송 신청 목록 대시보드 (페이징, 날짜 범위 검색, 수정 필터링)
      */
     @GetMapping("/deliveries")
     public String deliveriesList(
             @RequestParam(name = "filter", defaultValue = "all") String filter,
+            @RequestParam(name = "startDate", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(name = "endDate", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @org.springframework.data.web.PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
-        List<DeliveryOrderResponseDto> allDeliveries = deliveryOrderService.getAllOrdersForAdmin();
-        List<DeliveryOrderResponseDto> modifiedDeliveries = deliveryOrderService.getModifiedOrdersForAdmin();
 
-        List<DeliveryOrderResponseDto> displayDeliveries = "modified".equalsIgnoreCase(filter) 
-                ? modifiedDeliveries 
-                : allDeliveries;
+        org.springframework.data.domain.Page<DeliveryOrderResponseDto> deliveryPage =
+                deliveryOrderService.getAdminOrdersWithPaging(startDate, endDate, filter, pageable);
 
-        model.addAttribute("deliveries", displayDeliveries);
-        model.addAttribute("allCount", allDeliveries.size());
-        model.addAttribute("modifiedCount", modifiedDeliveries.size());
+        model.addAttribute("deliveryPage", deliveryPage);
+        model.addAttribute("deliveries", deliveryPage.getContent());
+        model.addAttribute("allCount", deliveryOrderService.getAllOrdersForAdmin().size());
+        model.addAttribute("modifiedCount", deliveryOrderService.getModifiedOrdersForAdmin().size());
         model.addAttribute("currentFilter", filter);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
         model.addAttribute("user", userDetails);
         model.addAttribute("statuses", DeliveryStatus.values());
         return "admin/deliveries";
@@ -56,8 +59,9 @@ public class AdminDeliveryController {
     @PostMapping("/deliveries/{orderId}/status")
     public String updateStatus(
             @PathVariable Long orderId,
-            @RequestParam DeliveryStatus status) {
+            @RequestParam DeliveryStatus status,
+            @RequestParam(name = "redirect", required = false) String redirect) {
         deliveryOrderService.updateOrderStatus(orderId, status);
-        return "redirect:/admin/deliveries";
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/admin/deliveries";
     }
 }

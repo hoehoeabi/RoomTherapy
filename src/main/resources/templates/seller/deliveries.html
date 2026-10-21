@@ -29,8 +29,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto 28px;
+            max-width: 1300px;
+            margin: 0 auto 24px;
         }
         h1 {
             font-size: 26px;
@@ -47,8 +47,77 @@
             border-radius: 999px;
             margin-right: 12px;
         }
+        .filter-container {
+            max-width: 1300px;
+            margin: 0 auto 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+        }
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: var(--text-sub);
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+        .date-filter-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .date-input {
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            outline: none;
+        }
+        .btn-filter {
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-reset {
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
         .card {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             background: var(--card-bg);
             border-radius: 20px;
@@ -63,44 +132,35 @@
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 14px;
+            font-size: 13px;
         }
         th {
             background: #F1F5F9;
             color: var(--text-sub);
             font-weight: 600;
-            padding: 14px 16px;
+            padding: 12px 14px;
             border-bottom: 1px solid var(--border);
             white-space: nowrap;
         }
         td {
-            padding: 16px;
+            padding: 14px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
         tr:hover {
             background-color: #F8FAFC;
         }
-        .code-tag {
-            background: #F1F5F9;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--primary);
-        }
         .status-select {
-            padding: 6px 10px;
+            padding: 6px 8px;
             border-radius: 8px;
             border: 1px solid var(--border);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             outline: none;
             background: #FFFFFF;
         }
         .btn-update {
-            padding: 6px 12px;
+            padding: 6px 10px;
             background: var(--primary);
             color: #FFFFFF;
             border: none;
@@ -108,12 +168,57 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            margin-left: 6px;
+            margin-left: 4px;
         }
-        .empty-state {
-            padding: 60px 20px;
-            text-align: center;
-            color: var(--text-sub);
+        .btn-quick-deliver {
+            padding: 5px 8px;
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 4px;
+            display: inline-block;
+        }
+        .modified-pill {
+            display: inline-block;
+            background: #FEF3C7;
+            color: #D97706;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 4px;
+        }
+        .modified-time {
+            display: block;
+            font-size: 11px;
+            color: #D97706;
+            margin-top: 2px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .page-link {
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            background: #FFFFFF;
+        }
+        .page-link.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
         }
         .btn-home {
             text-decoration: none;
@@ -125,55 +230,10 @@
             border-radius: 10px;
             background: #FFFFFF;
         }
-        .tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .tab-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            text-decoration: none;
-            border: 1px solid var(--border);
-            background: #FFFFFF;
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
             color: var(--text-sub);
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--primary);
-            color: #FFFFFF;
-            border-color: var(--primary);
-        }
-        .tab-count {
-            background: rgba(0, 0, 0, 0.08);
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 12px;
-        }
-        .tab-btn.active .tab-count {
-            background: rgba(255, 255, 255, 0.25);
-            color: #FFFFFF;
-        }
-        .modified-pill {
-            display: inline-block;
-            background: #FEF3C7;
-            color: #D97706;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 2px 7px;
-            border-radius: 6px;
-            margin-left: 4px;
-        }
-        .modified-time {
-            display: block;
-            font-size: 11px;
-            color: #D97706;
-            margin-top: 3px;
         }
     </style>
 </head>
@@ -188,20 +248,28 @@
         </div>
     </div>
 
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <!-- 탭 네비게이션: 전체 목록 vs 수정된 신청 목록 -->
+    <!-- 필터 바: 탭 + 기간 검색 -->
+    <div class="filter-container">
         <div class="tabs">
-            <a th:href="@{/seller/deliveries(filter='all')}" 
+            <a th:href="@{/seller/deliveries(filter='all', startDate=${startDate}, endDate=${endDate})}" 
                th:class="${currentFilter == 'all' ? 'tab-btn active' : 'tab-btn'}">
-                전체 주문 신청
-                <span class="tab-count" th:text="${allCount}">0</span>
+                전체 주문 목록
             </a>
-            <a th:href="@{/seller/deliveries(filter='modified')}" 
+            <a th:href="@{/seller/deliveries(filter='modified', startDate=${startDate}, endDate=${endDate})}" 
                th:class="${currentFilter == 'modified' ? 'tab-btn active' : 'tab-btn'}">
                 ⚠️ 사용자가 수정한 주문
-                <span class="tab-count" th:text="${modifiedCount}">0</span>
             </a>
         </div>
+
+        <form th:action="@{/seller/deliveries}" method="get" class="date-filter-form">
+            <input type="hidden" name="filter" th:value="${currentFilter}">
+            <span>신청일:</span>
+            <input type="date" name="startDate" th:value="${startDate}" class="date-input">
+            <span>~</span>
+            <input type="date" name="endDate" th:value="${endDate}" class="date-input">
+            <button type="submit" class="btn-filter">조회</button>
+            <a th:href="@{/seller/deliveries(filter=${currentFilter})}" class="btn-reset">초기화</a>
+        </form>
     </div>
 
     <div class="card">
@@ -210,13 +278,14 @@
                 <thead>
                     <tr>
                         <th>주문 ID</th>
-                        <th>신청일시</th>
+                        <th>신청일시 (수정일시)</th>
+                        <th>신청자 계정</th>
                         <th>신청 상품</th>
                         <th>수령인</th>
                         <th>연락처</th>
                         <th>우편번호</th>
                         <th>배송지 주소</th>
-                        <th>배송 상태 변경</th>
+                        <th>배송 상태 / 원클릭 완료</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -230,6 +299,7 @@
                             <span th:if="${delivery.isModified and delivery.updatedAt != null}" class="modified-time" 
                                   th:text="${'수정: ' + #temporals.format(delivery.updatedAt, 'MM-dd HH:mm')}">수정: 10-21 21:00</span>
                         </td>
+                        <td><strong th:text="${delivery.applicantNickname}">홍길동</strong></td>
                         <td th:text="${delivery.goodsName}">스테이지 리워드</td>
                         <td th:text="${delivery.recipientName}">홍길동</td>
                         <td th:text="${delivery.phone}">010-1234-5678</td>
@@ -238,7 +308,7 @@
                             서울특별시 강남구 테헤란로 123 402호
                         </td>
                         <td>
-                            <form th:action="@{'/seller/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: flex; align-items: center;">
+                            <form th:action="@{'/seller/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: flex; align-items: center; margin-bottom: 4px;">
                                 <select name="status" class="status-select">
                                     <option th:each="st : ${statuses}" 
                                             th:value="${st}" 
@@ -248,16 +318,37 @@
                                 </select>
                                 <button type="submit" class="btn-update">변경</button>
                             </form>
+                            <!-- 실제 배송 완료 원클릭 토글 버튼 -->
+                            <form th:if="${delivery.status != T(com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus).DELIVERED}" 
+                                  th:action="@{'/seller/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: inline;">
+                                <input type="hidden" name="status" value="DELIVERED">
+                                <button type="submit" class="btn-quick-deliver">✅ 배송완료 원클릭</button>
+                            </form>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(deliveries)}">
-                        <td colspan="8" class="empty-state">
-                            <span th:if="${currentFilter == 'modified'}">사용자가 수정한 배송 신청 건이 없습니다.</span>
-                            <span th:unless="${currentFilter == 'modified'}">아직 등록된 굿즈 배송 주문이 없습니다.</span>
+                        <td colspan="9" class="empty-state">
+                            조회된 굿즈 배송 주문 내역이 없습니다.
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 페이지네이션 바 -->
+        <div class="pagination" th:if="${deliveryPage != null and deliveryPage.totalPages > 1}">
+            <a th:if="${deliveryPage.hasPrevious()}" 
+               th:href="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${deliveryPage.number - 1})}" 
+               class="page-link">‹ 이전</a>
+
+            <a th:each="i : ${#numbers.sequence(0, deliveryPage.totalPages - 1)}"
+               th:href="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${i})}"
+               th:class="${i == deliveryPage.number ? 'page-link active' : 'page-link'}"
+               th:text="${i + 1}">1</a>
+
+            <a th:if="${deliveryPage.hasNext()}" 
+               th:href="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${deliveryPage.number + 1})}" 
+               class="page-link">다음 ›</a>
         </div>
     </div>
 </body>

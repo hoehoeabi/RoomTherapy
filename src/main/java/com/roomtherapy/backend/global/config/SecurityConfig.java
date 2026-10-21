@@ -51,7 +51,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
-                        .requestMatchers("/delivery/**", "/user/role").authenticated()
+                        .requestMatchers("/delivery/**", "/user/role", "/mypage/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 // OAuth2 로그인 설정 (JWT 발급 핸들러 연동)

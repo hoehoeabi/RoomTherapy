@@ -216,6 +216,10 @@
                 </div>
                 <input type="text" id="address" th:field="*{address}" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 10px;" readonly required>
                 <input type="text" id="detailAddress" th:field="*{detailAddress}" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 13px; margin-top: 12px; cursor: pointer; color: var(--text-sub);">
+                    <input type="checkbox" id="saveAsDefaultAddress" th:field="*{saveAsDefaultAddress}" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                    이 정보를 마이페이지 기본 배송지로 저장
+                </label>
                 <span class="field-error" th:errors="*{address}"></span>
                 <span class="field-error" th:errors="*{zipcode}"></span>
             </div>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - Room Therapy</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+            --success-bg: #ECFDF5;
+            --success-text: #059669;
+            --warning-bg: #FFFBEB;
+            --warning-text: #D97706;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 32px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .btn-home {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: #FFFFFF;
+        }
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #A7F3D0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        /* 프로필 상단 요약 카드 */
+        .profile-summary {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+        .profile-name {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .profile-meta {
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #EEF2FF;
+            color: var(--primary);
+        }
+        /* 탭 네비게이션 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-sub);
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #FFFFFF;
+        }
+        /* 섹션 카드 */
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        .section-desc {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .field-error {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .phone-grid {
+            display: grid;
+            grid-template-columns: 80px 20px 1fr 20px 1fr;
+            align-items: center;
+            text-align: center;
+        }
+        .phone-separator {
+            color: var(--text-sub);
+            font-weight: 700;
+        }
+        .address-top-grid {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-search-addr {
+            background: #F1F5F9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 12px;
+        }
+        .btn-submit {
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover {
+            background: var(--primary-hover);
+        }
+        /* 배송 내역 카드 */
+        .order-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 14px;
+            background: #FFFFFF;
+        }
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .order-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .badge-status {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #EEF2FF;
+            color: var(--primary);
+        }
+        .info-row {
+            display: flex;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .info-label {
+            width: 90px;
+            color: var(--text-sub);
+            flex-shrink: 0;
+        }
+        .info-val {
+            font-weight: 500;
+        }
+        .btn-edit-order {
+            display: inline-block;
+            margin-top: 10px;
+            background: var(--primary);
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+        /* 페이지네이션 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 24px;
+        }
+        .page-link {
+            text-decoration: none;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            background: #FFFFFF;
+        }
+        .page-link.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+    </style>
+    <!-- 카카오 우편번호 스크립트 -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>마이페이지</h1>
+                <p style="color: var(--text-sub); font-size: 14px; margin-top: 4px;">내 프로필 정보와 기본 배송지, 굿즈 신청 내역을 관리합니다.</p>
+            </div>
+            <div>
+                <a href="/" class="btn-home">홈으로</a>
+            </div>
+        </div>
+
+        <div class="alert-success" th:if="${successMessage != null}" th:text="${successMessage}">
+            성공적으로 저장되었습니다.
+        </div>
+
+        <!-- 프로필 요약 카드 -->
+        <div class="profile-summary">
+            <div>
+                <div class="profile-name" th:text="${profile.nickname}">홍길동</div>
+                <div class="profile-meta">
+                    연동 계정 ID: <span th:text="${profile.kakaoId}">kakao_12345</span>
+                </div>
+            </div>
+            <div>
+                <span class="role-badge" th:text="${profile.roleTitle}">일반 사용자</span>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tabs">
+            <a th:href="@{/mypage(tab='profile')}" 
+               th:class="${currentTab == 'profile' ? 'tab-btn active' : 'tab-btn'}">
+                👤 프로필 & 기본 배송지
+            </a>
+            <a th:href="@{/mypage(tab='orders')}" 
+               th:class="${currentTab == 'orders' ? 'tab-btn active' : 'tab-btn'}">
+                📦 내 굿즈 신청 내역
+                <span th:text="${'(' + myOrders.totalElements + ')'}"></span>
+            </a>
+        </div>
+
+        <!-- 탭 1: 프로필 & 기본 배송지 -->
+        <div th:if="${currentTab == 'profile'}">
+            <!-- 닉네임 수정 섹션 -->
+            <div class="section-card">
+                <h3 class="section-title">닉네임 변경</h3>
+                <p class="section-desc">카카오 계정 닉네임과 별도로 서비스 내에서 표시될 닉네임을 변경할 수 있습니다.</p>
+                <form th:action="@{/mypage/nickname}" th:object="${nicknameForm}" method="post">
+                    <div class="form-group">
+                        <label for="nickname">닉네임</label>
+                        <input type="text" id="nickname" th:field="*{nickname}" placeholder="2자 이상 20자 이하" required>
+                        <span class="field-error" th:errors="*{nickname}"></span>
+                    </div>
+                    <button type="submit" class="btn-submit">닉네임 저장</button>
+                </form>
+            </div>
+
+            <!-- 기본 배송지 설정 섹션 -->
+            <div class="section-card">
+                <h3 class="section-title">기본 배송지 관리</h3>
+                <p class="section-desc">기본 배송지를 등록해 두면 굿즈 신청 시 주소가 자동으로 입력되어 편리합니다.</p>
+                <form th:action="@{/mypage/delivery-info}" th:object="${deliveryForm}" method="post" id="deliveryInfoForm" onsubmit="syncPhoneNumber()">
+                    <div class="form-group">
+                        <label for="recipientName">기본 수령인 성함</label>
+                        <input type="text" id="recipientName" th:field="*{recipientName}" placeholder="실명을 입력하세요" required>
+                        <span class="field-error" th:errors="*{recipientName}"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>기본 연락처 (휴대폰)</label>
+                        <input type="hidden" id="phone" th:field="*{phone}">
+                        <div class="phone-grid">
+                            <input type="text" id="phone1" value="010" maxlength="3" style="text-align: center;" required>
+                            <span class="phone-separator">-</span>
+                            <input type="text" id="phone2" maxlength="4" placeholder="0000" style="text-align: center;" required 
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 4) document.getElementById('phone3').focus();">
+                            <span class="phone-separator">-</span>
+                            <input type="text" id="phone3" maxlength="4" placeholder="0000" style="text-align: center;" required
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                        </div>
+                        <span class="field-error" th:errors="*{phone}"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>기본 배송지 주소 및 우편번호</label>
+                        <div class="address-top-grid">
+                            <input type="text" id="zipcode" th:field="*{zipcode}" placeholder="우편번호" maxlength="5" pattern="^\d{5}$" readonly required>
+                            <button type="button" class="btn-search-addr" onclick="openDaumPostcode()">🔍 주소 찾기</button>
+                        </div>
+                        <input type="text" id="address" th:field="*{address}" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 10px;" readonly required>
+                        <input type="text" id="detailAddress" th:field="*{detailAddress}" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
+                        <span class="field-error" th:errors="*{address}"></span>
+                        <span class="field-error" th:errors="*{zipcode}"></span>
+                    </div>
+
+                    <button type="submit" class="btn-submit">기본 배송지 저장</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 탭 2: 내 굿즈 신청 내역 -->
+        <div th:if="${currentTab == 'orders'}">
+            <div class="section-card">
+                <h3 class="section-title">내 굿즈 신청 내역</h3>
+                <p class="section-desc">클리어 인증코드로 신청하신 굿즈의 배송 현황입니다.</p>
+
+                <div th:each="order : ${myOrders.content}" class="order-card">
+                    <div class="order-top">
+                        <div class="order-title" th:text="${order.goodsName}">룸테라피 아늑한 무드등</div>
+                        <span class="badge-status" th:text="${order.statusDescription}">접수 완료</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">클리어 코드</span>
+                        <span class="info-val" style="font-family: monospace; font-weight: 700;" th:text="${order.stageCode}">ew-1010-clear</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">수령인 / 연락처</span>
+                        <span class="info-val" th:text="${order.recipientName + ' (' + order.phone + ')'}">홍길동 (010-1234-5678)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">배송 주소</span>
+                        <span class="info-val" th:text="${'(' + order.zipcode + ') ' + order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">(12345) 서울시 강남구</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">신청 일시</span>
+                        <span class="info-val" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-21 20:00</span>
+                    </div>
+
+                    <div th:if="${order.canModify}" style="margin-top: 10px;">
+                        <a th:href="@{'/delivery/edit/' + ${order.id}}" class="btn-edit-order">✏️ 배송지 변경</a>
+                    </div>
+                </div>
+
+                <div th:if="${myOrders.empty}" style="padding: 40px 0; text-align: center; color: var(--text-sub);">
+                    아직 신청하신 굿즈 배송 내역이 없습니다.
+                </div>
+
+                <!-- 페이지네이션 바 -->
+                <div class="pagination" th:if="${myOrders.totalPages > 1}">
+                    <a th:if="${myOrders.hasPrevious()}" 
+                       th:href="@{/mypage(tab='orders', page=${myOrders.number - 1})}" 
+                       class="page-link">‹ 이전</a>
+
+                    <a th:each="i : ${#numbers.sequence(0, myOrders.totalPages - 1)}"
+                       th:href="@{/mypage(tab='orders', page=${i})}"
+                       th:class="${i == myOrders.number ? 'page-link active' : 'page-link'}"
+                       th:text="${i + 1}">1</a>
+
+                    <a th:if="${myOrders.hasNext()}" 
+                       th:href="@{/mypage(tab='orders', page=${myOrders.number + 1})}" 
+                       class="page-link">다음 ›</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    var fullAddr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                    document.getElementById('zipcode').value = data.zonecode;
+                    document.getElementById('address').value = fullAddr;
+                    document.getElementById('detailAddress').focus();
+                }
+            }).open();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var fullPhone = document.getElementById("phone").value;
+            if (fullPhone && fullPhone.includes("-")) {
+                var parts = fullPhone.split("-");
+                if (parts.length === 3) {
+                    document.getElementById("phone1").value = parts[0];
+                    document.getElementById("phone2").value = parts[1];
+                    document.getElementById("phone3").value = parts[2];
+                }
+            }
+        });
+
+        function syncPhoneNumber() {
+            var p1 = document.getElementById("phone1").value.trim();
+            var p2 = document.getElementById("phone2").value.trim();
+            var p3 = document.getElementById("phone3").value.trim();
+            document.getElementById("phone").value = p1 + "-" + p2 + "-" + p3;
+        }
+    </script>
+</body>
+</html>
