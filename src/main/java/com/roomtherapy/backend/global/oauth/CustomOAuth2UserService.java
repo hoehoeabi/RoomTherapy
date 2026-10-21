@@ -23,6 +23,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private final UserRepository userRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${admin.kakao-ids:}")
+    private java.util.List<String> adminKakaoIds;
+
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -47,9 +50,23 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private User saveOrUpdate(OAuthAttributes attributes) {
+        boolean isAdmin = adminKakaoIds != null && adminKakaoIds.contains(attributes.getKakaoId());
+
         User user = userRepository.findByKakaoId(attributes.getKakaoId())
-                .map(entity -> entity.update(attributes.getNickname(), attributes.getEmail()))
-                .orElseGet(attributes::toEntity);
+                .map(entity -> {
+                    entity.update(attributes.getNickname(), attributes.getEmail());
+                    if (isAdmin) {
+                        entity.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
+                    }
+                    return entity;
+                })
+                .orElseGet(() -> {
+                    User newUser = attributes.toEntity();
+                    if (isAdmin) {
+                        newUser.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
+                    }
+                    return newUser;
+                });
 
         return userRepository.save(user);
     }

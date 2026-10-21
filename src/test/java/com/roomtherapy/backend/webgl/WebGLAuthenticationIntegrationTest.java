@@ -45,6 +45,9 @@ class WebGLAuthenticationIntegrationTest {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository deliveryOrderRepository;
+
     private User testUser;
     private String validAccessToken;
     private String validRefreshToken;
@@ -56,6 +59,7 @@ class WebGLAuthenticationIntegrationTest {
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
 
+        deliveryOrderRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 

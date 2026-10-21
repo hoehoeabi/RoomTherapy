@@ -19,6 +19,11 @@ class StageCodeValidatorTest {
     @Autowired
     private DeliveryOrderRepository deliveryOrderRepository;
 
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        deliveryOrderRepository.deleteAll();
+    }
+
     @Test
     @DisplayName("고정 Set 기반 인증코드(ew 접두사) 검증 성공")
     void validateFixedSetCode_success() {
