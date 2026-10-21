@@ -6,12 +6,16 @@ import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.security.jwt.JwtProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@Tag(name = "3. Test & Utility API", description = "로컬 개발 및 테스트 편의를 위한 유틸리티 API")
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -24,9 +28,10 @@ public class TestAuthController {
      * 개발 및 테스트 편의를 위한 원클릭 테스트 계정 로그인
      * /test/login?role=SELLER | ADMIN | USER
      */
+    @Operation(summary = "원클릭 테스트 계정 로그인", description = "OAuth 없이 SELLER, ADMIN, USER 권한의 테스트 계정으로 즉시 로그인 쿠키를 발급받습니다.")
     @GetMapping("/test/login")
     public String testLogin(
-            @RequestParam(name = "role", defaultValue = "USER") String roleStr,
+            @Parameter(description = "부여할 권한 (SELLER, ADMIN, USER)", example = "SELLER") @RequestParam(name = "role", defaultValue = "USER") String roleStr,
             HttpServletResponse response) {
 
         Role role;
