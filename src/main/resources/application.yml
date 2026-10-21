@@ -71,6 +71,9 @@ jwt:
   access-token-expiration: 1800000   # 30분 (ms 단위)
   refresh-token-expiration: 604800000 # 7일 (ms 단위)
 
-# 관리자 계정 설정 (카카오 ID 목록)
+# 관리자 및 판매자 계정 설정 (카카오 ID 목록)
 admin:
   kakao-ids: ${ADMIN_KAKAO_IDS:}
+
+seller:
+  kakao-ids: ${SELLER_KAKAO_IDS:}

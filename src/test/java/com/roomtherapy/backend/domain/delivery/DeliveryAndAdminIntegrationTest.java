@@ -234,4 +234,36 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(model().attribute("currentFilter", "modified"))
                 .andExpect(model().attribute("modifiedCount", 1));
     }
+
+    @Test
+    @DisplayName("인증코드에 형식 제한 없이 임의의 코드(예: ㅁㅁ)로도 정상 신청 가능")
+    void submitDelivery_arbitraryStageCode_success() throws Exception {
+        mockMvc.perform(post("/delivery")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("stageCode", "ㅁㅁ") // 임의의 한글/자유 형식 코드
+                        .param("recipientName", "홍길동")
+                        .param("phone", "010-1234-5678")
+                        .param("zipcode", "12345")
+                        .param("address", "서울특별시 강남구 테헤란로 123")
+                        .param("detailAddress", "101호"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/delivery/confirm/*"));
+
+        DeliveryOrder saved = deliveryOrderRepository.findAll().get(0);
+        assertThat(saved.getStageCode()).isEqualTo("ㅁㅁ");
+    }
+
+    @Test
+    @DisplayName("사용자 권한 전환 API(/user/role) 호출 시 SELLER로 변경되고 새 토큰 쿠키 발급")
+    void switchRole_updatesUserRoleAndCookie() throws Exception {
+        mockMvc.perform(post("/user/role")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("role", "SELLER"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"))
+                .andExpect(cookie().exists("accessToken"));
+
+        User updatedUser = userRepository.findById(normalUser.getId()).orElseThrow();
+        assertThat(updatedUser.getRole()).isEqualTo(Role.SELLER);
+    }
 }

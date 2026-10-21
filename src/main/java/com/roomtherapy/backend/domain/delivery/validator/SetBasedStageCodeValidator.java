@@ -41,10 +41,9 @@ public class SetBasedStageCodeValidator implements StageCodeValidator {
 
     @Override
     public boolean supports(String code) {
-        if (code == null) return false;
-        String trimmed = code.trim().toLowerCase();
-        // 'ew' 접두사로 시작하거나 고정 Set에 포함되어 있는 경우 지원
-        return trimmed.startsWith(STAGE_1_PREFIX) || validCodeSet.contains(trimmed);
+        if (code == null || code.isBlank()) return false;
+        // RedisDynamicStageCodeValidator가 'RT-'를 처리하고, 나머지 모든 코드를 지원
+        return true;
     }
 
     @Override
@@ -55,14 +54,7 @@ public class SetBasedStageCodeValidator implements StageCodeValidator {
 
         String targetCode = code.trim();
 
-        // 1. 접두사 또는 고정 Set 포함 여부 확인
-        boolean isValidFormat = targetCode.toLowerCase().startsWith(STAGE_1_PREFIX) || validCodeSet.contains(targetCode);
-        if (!isValidFormat) {
-            log.warn("유효하지 않은 고정 인증코드 포맷입니다: {}", targetCode);
-            return false;
-        }
-
-        // 2. 이미 배송 신청에 사용된 코드인지 중복 검사
+        // 이미 배송 신청에 사용된 코드인지 중복 검사 (1회용 보장)
         if (deliveryOrderRepository.existsByStageCode(targetCode)) {
             log.warn("이미 사용된 인증코드입니다: {}", targetCode);
             return false;

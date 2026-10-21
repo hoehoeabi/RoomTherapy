@@ -27,11 +27,11 @@ public class StageCodeService {
 
         String targetCode = code.trim();
 
-        // 1. 해당 코드를 지원하는 검증기 찾기 (동적 Redis 검증기 -> 고정 Set 검증기 순)
+        // 1. 해당 코드를 지원하는 검증기 찾기
         StageCodeValidator matchingValidator = validators.stream()
                 .filter(validator -> validator.supports(targetCode))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("올바른 형식의 인증코드가 아닙니다. (예: ew-xxx 또는 RT-xxx)"));
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 인증코드입니다. 다시 확인해 주세요."));
 
         // 2. 유효성 및 중복 검증
         if (!matchingValidator.validate(targetCode)) {

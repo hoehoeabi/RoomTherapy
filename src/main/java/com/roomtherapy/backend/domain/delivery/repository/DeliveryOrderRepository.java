@@ -27,6 +27,14 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
     @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods WHERE d.isModified = true ORDER BY d.updatedAt DESC")
     List<DeliveryOrder> findAllModifiedWithUserAndGoods();
 
+    // 판매자용 본인 굿즈 배송 신청 목록 조회
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user JOIN FETCH d.goods g WHERE g.seller.id = :sellerId ORDER BY d.createdAt DESC")
+    List<DeliveryOrder> findAllBySellerId(@org.springframework.data.repository.query.Param("sellerId") Long sellerId);
+
+    // 판매자용 수정된 본인 굿즈 배송 신청 목록 조회
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user JOIN FETCH d.goods g WHERE g.seller.id = :sellerId AND d.isModified = true ORDER BY d.updatedAt DESC")
+    List<DeliveryOrder> findModifiedBySellerId(@org.springframework.data.repository.query.Param("sellerId") Long sellerId);
+
     // 상태별 조회
     List<DeliveryOrder> findAllByStatusOrderByCreatedAtDesc(DeliveryStatus status);
 }

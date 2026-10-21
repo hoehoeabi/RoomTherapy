@@ -50,7 +50,8 @@ public class SecurityConfig {
                                 "/api/auth/**"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/delivery/**").authenticated()
+                        .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
+                        .requestMatchers("/delivery/**", "/user/role").authenticated()
                         .anyRequest().permitAll()
                 )
                 // OAuth2 로그인 설정 (JWT 발급 핸들러 연동)

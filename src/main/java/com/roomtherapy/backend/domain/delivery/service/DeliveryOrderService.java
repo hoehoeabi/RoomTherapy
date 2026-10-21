@@ -148,4 +148,40 @@ public class DeliveryOrderService {
         order.updateStatus(newStatus);
         log.info("배송 상태 업데이트 완료 - OrderId: {}, Status: {}", orderId, newStatus);
     }
+
+    /**
+     * 판매자용 본인 굿즈 배송 신청 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrderResponseDto> getOrdersForSeller(Long sellerId) {
+        return deliveryOrderRepository.findAllBySellerId(sellerId).stream()
+                .map(DeliveryOrderResponseDto::from)
+                .toList();
+    }
+
+    /**
+     * 판매자용 본인 굿즈 수정된 배송 신청 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrderResponseDto> getModifiedOrdersForSeller(Long sellerId) {
+        return deliveryOrderRepository.findModifiedBySellerId(sellerId).stream()
+                .map(DeliveryOrderResponseDto::from)
+                .toList();
+    }
+
+    /**
+     * 판매자용 본인 굿즈 배송 상태 변경 처리
+     */
+    @Transactional
+    public void updateOrderStatusBySeller(Long sellerId, Long orderId, DeliveryStatus newStatus) {
+        DeliveryOrder order = deliveryOrderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("배송 내역을 찾을 수 없습니다: " + orderId));
+
+        if (order.getGoods() == null || order.getGoods().getSeller() == null || !order.getGoods().getSeller().getId().equals(sellerId)) {
+            throw new IllegalArgumentException("본인이 등록한 굿즈의 배송 주문만 상태를 변경할 수 있습니다.");
+        }
+
+        order.updateStatus(newStatus);
+        log.info("판매자에 의한 배송 상태 업데이트 완료 - SellerId: {}, OrderId: {}, Status: {}", sellerId, orderId, newStatus);
+    }
 }

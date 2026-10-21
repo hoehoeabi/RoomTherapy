@@ -34,13 +34,15 @@ class StageCodeValidatorTest {
     }
 
     @Test
-    @DisplayName("지원하지 않는 잘못된 형식의 코드는 예외 발생")
-    void validateUnsupportedCode_throwsException() {
-        String invalidCode = "unknown-invalid-code";
-
-        assertThatThrownBy(() -> stageCodeService.validateAndConsume(invalidCode, 1L))
+    @DisplayName("빈 문자열이거나 null인 코드는 예외 발생")
+    void validateBlankCode_throwsException() {
+        assertThatThrownBy(() -> stageCodeService.validateAndConsume("   ", 1L))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("올바른 형식의 인증코드가 아닙니다");
+                .hasMessageContaining("인증코드를 입력해 주세요");
+
+        assertThatThrownBy(() -> stageCodeService.validateAndConsume(null, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("인증코드를 입력해 주세요");
     }
 
     @Test
