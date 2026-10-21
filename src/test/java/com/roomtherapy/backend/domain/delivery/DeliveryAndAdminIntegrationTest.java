@@ -172,23 +172,12 @@ class DeliveryAndAdminIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자가 내 배송 목록(/delivery/my) 조회 시 본인의 주문 내역 렌더링")
-    void user_getMyDeliveries_success() throws Exception {
-        deliveryOrderRepository.save(DeliveryOrder.builder()
-                .user(normalUser)
-                .stageCode("ew-my-code-1")
-                .recipientName("내이름")
-                .phone("010-1234-5678")
-                .zipcode("11111")
-                .address("서울시 송파구")
-                .status(DeliveryStatus.ORDERED)
-                .build());
-
+    @DisplayName("사용자가 내 배송 목록(/delivery/my) 조회 시 마이페이지 배송 내역 탭으로 리다이렉트")
+    void user_getMyDeliveries_redirectsToMyPage() throws Exception {
         mockMvc.perform(get("/delivery/my")
                         .cookie(new Cookie("accessToken", userToken)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("my-deliveries"))
-                .andExpect(model().attributeExists("orders"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mypage?tab=orders"));
     }
 
     @Test
@@ -220,7 +209,7 @@ class DeliveryAndAdminIntegrationTest {
                         .param("address", "수정된주소")
                         .param("detailAddress", "302호"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/delivery/my"))
+                .andExpect(redirectedUrl("/mypage?tab=orders"))
                 .andExpect(flash().attributeExists("successMessage"));
 
         // 3. DB 확인: isModified == true, 수령인 및 주소 업데이트 확인
@@ -331,5 +320,147 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("seller/deliveries"))
                 .andExpect(model().attribute("allCount", 1));
+    }
+
+    @Test
+    @DisplayName("마이페이지(/mypage) 프로필 탭 기본 조회 성공")
+    void myPage_viewProfile_success() throws Exception {
+        mockMvc.perform(get("/mypage")
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("mypage"))
+                .andExpect(model().attributeExists("userProfile", "nicknameForm", "deliveryInfoForm"))
+                .andExpect(model().attribute("currentTab", "profile"));
+    }
+
+    @Test
+    @DisplayName("마이페이지(/mypage?tab=orders) 주문 내역 탭 조회 및 페이징 객체 검증")
+    void myPage_viewOrdersTab_success() throws Exception {
+        deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .stageCode("ew-my-tab-1")
+                .recipientName("홍길동")
+                .phone("010-1234-5678")
+                .zipcode("12345")
+                .address("서울특별시")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+
+        mockMvc.perform(get("/mypage?tab=orders")
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("mypage"))
+                .andExpect(model().attributeExists("orders"))
+                .andExpect(model().attribute("currentTab", "orders"));
+    }
+
+    @Test
+    @DisplayName("마이페이지 닉네임 수정 시 커스텀 플래그 설정 및 카카오 동기화 시 덮어쓰기 방지 검증")
+    void myPage_updateNickname_preservesAgainstKakaoSync() throws Exception {
+        mockMvc.perform(post("/mypage/nickname")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("nickname", "수정된마이닉네임"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mypage?tab=profile"))
+                .andExpect(flash().attributeExists("successMessage"));
+
+        User updatedUser = userRepository.findById(normalUser.getId()).orElseThrow();
+        assertThat(updatedUser.getNickname()).isEqualTo("수정된마이닉네임");
+        assertThat(updatedUser.isCustomNickname()).isTrue();
+
+        // 카카오 로그인 재진입 시도시 닉네임이 카카오 정보로 덮어씌워지지 않는지 도메인 검증
+        updatedUser.update("카카오새로운이름", null);
+        assertThat(updatedUser.getNickname()).isEqualTo("수정된마이닉네임");
+    }
+
+    @Test
+    @DisplayName("마이페이지 기본 배송지 저장 성공")
+    void myPage_updateDeliveryInfo_success() throws Exception {
+        mockMvc.perform(post("/mypage/delivery-info")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("recipientName", "기본수령인")
+                        .param("phone", "010-3333-4444")
+                        .param("zipcode", "06000")
+                        .param("address", "서울시 강남구 압구정로")
+                        .param("detailAddress", "101호"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mypage?tab=profile"))
+                .andExpect(flash().attributeExists("successMessage"));
+
+        User updatedUser = userRepository.findById(normalUser.getId()).orElseThrow();
+        assertThat(updatedUser.getRecipientName()).isEqualTo("기본수령인");
+        assertThat(updatedUser.getPhone()).isEqualTo("010-3333-4444");
+        assertThat(updatedUser.getZipcode()).isEqualTo("06000");
+        assertThat(updatedUser.getAddress()).isEqualTo("서울시 강남구 압구정로");
+        assertThat(updatedUser.getDetailAddress()).isEqualTo("101호");
+    }
+
+    @Test
+    @DisplayName("기본 배송지가 등록된 유저는 배송 신청 페이지(/delivery) 진입 시 폼에 기본 정보 자동 채움")
+    void deliveryForm_autoFillsDefaultDeliveryInfo() throws Exception {
+        normalUser.updateDefaultDeliveryInfo("자동완성수령인", "010-7777-8888", "04524", "서울시 중구 세종대로", "본관 3층");
+        userRepository.save(normalUser);
+
+        mockMvc.perform(get("/delivery")
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("delivery"))
+                .andExpect(model().attributeExists("form"))
+                .andExpect(result -> {
+                    var form = (com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
+                    assertThat(form.recipientName()).isEqualTo("자동완성수령인");
+                    assertThat(form.phone()).isEqualTo("010-7777-8888");
+                    assertThat(form.zipcode()).isEqualTo("04524");
+                    assertThat(form.address()).isEqualTo("서울시 중구 세종대로");
+                    assertThat(form.detailAddress()).isEqualTo("본관 3층");
+                });
+    }
+
+    @Test
+    @DisplayName("배송 신청 시 '기본 배송지로 저장' 체크 시 마이페이지 기본 배송지로 자동 동기화")
+    void deliverySubmit_saveAsDefaultAddress_updatesUserProfile() throws Exception {
+        mockMvc.perform(post("/delivery")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("stageCode", "ew-autofill-test")
+                        .param("recipientName", "새기본수령인")
+                        .param("phone", "010-5555-6666")
+                        .param("zipcode", "03186")
+                        .param("address", "서울시 종로구 세종대로")
+                        .param("detailAddress", "201호")
+                        .param("saveAsDefaultAddress", "true"))
+                .andExpect(status().is3xxRedirection());
+
+        User updatedUser = userRepository.findById(normalUser.getId()).orElseThrow();
+        assertThat(updatedUser.getRecipientName()).isEqualTo("새기본수령인");
+        assertThat(updatedUser.getPhone()).isEqualTo("010-5555-6666");
+        assertThat(updatedUser.getZipcode()).isEqualTo("03186");
+        assertThat(updatedUser.getAddress()).isEqualTo("서울시 종로구 세종대로");
+    }
+
+    @Test
+    @DisplayName("관리자 대시보드 날짜 필터링 및 페이징 파라미터 정상 동작 검증")
+    void adminDeliveries_dateFilterAndPagination() throws Exception {
+        // 주문 2건 생성
+        deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .stageCode("ew-date-1")
+                .recipientName("수령인1")
+                .phone("010-1111-2222")
+                .zipcode("11111")
+                .address("서울")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+
+        mockMvc.perform(get("/admin/deliveries")
+                        .cookie(new Cookie("accessToken", adminToken))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("startDate", "2026-01-01")
+                        .param("endDate", "2026-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/deliveries"))
+                .andExpect(model().attributeExists("deliveries", "allCount"))
+                .andExpect(model().attribute("startDate", java.time.LocalDate.of(2026, 1, 1)))
+                .andExpect(model().attribute("endDate", java.time.LocalDate.of(2026, 12, 31)));
     }
 }

@@ -24,9 +24,10 @@ public class DeliveryController {
 
     private final DeliveryOrderService deliveryOrderService;
     private final com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
+    private final com.roomtherapy.backend.domain.user.repository.UserRepository userRepository;
 
     /**
-     * 굿즈 배송 신청 폼 화면
+     * 굿즈 배송 신청 폼 화면 (마이페이지 기본 배송지 자동 완성 연동)
      */
     @GetMapping("/delivery")
     public String deliveryForm(
@@ -34,7 +35,17 @@ public class DeliveryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new DeliveryOrderRequestDto("", "", "", "", "", "", goodsId));
+            // 유저의 기본 배송지 정보가 있으면 폼에 자동 입력
+            var userOpt = userDetails != null ? userRepository.findById(userDetails.getUserId()) : java.util.Optional.<com.roomtherapy.backend.domain.user.entity.User>empty();
+            String defaultRecipient = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getRecipientName).orElse("");
+            String defaultPhone = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getPhone).orElse("");
+            String defaultZipcode = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getZipcode).orElse("");
+            String defaultAddress = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getAddress).orElse("");
+            String defaultDetailAddress = userOpt.map(com.roomtherapy.backend.domain.user.entity.User::getDetailAddress).orElse("");
+
+            model.addAttribute("form", new DeliveryOrderRequestDto(
+                    "", defaultRecipient, defaultPhone, defaultZipcode, defaultAddress, defaultDetailAddress, goodsId, false
+            ));
         }
 
         var goodsList = goodsRepository.findAll();
@@ -98,16 +109,11 @@ public class DeliveryController {
     }
 
     /**
-     * 내가 신청한 배송 목록 조회 페이지
+     * 내가 신청한 배송 목록 조회 (마이페이지의 배송 내역 탭으로 통합 리다이렉트)
      */
     @GetMapping("/delivery/my")
-    public String myDeliveries(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            Model model) {
-        var myOrders = deliveryOrderService.getMyOrders(userDetails.getUserId());
-        model.addAttribute("orders", myOrders);
-        model.addAttribute("user", userDetails);
-        return "my-deliveries";
+    public String myDeliveries() {
+        return "redirect:/mypage?tab=orders";
     }
 
     /**
@@ -155,7 +161,7 @@ public class DeliveryController {
         try {
             deliveryOrderService.updateDeliveryOrder(userDetails.getUserId(), orderId, form);
             redirectAttributes.addFlashAttribute("successMessage", "배송지 정보가 성공적으로 수정되었습니다.");
-            return "redirect:/delivery/my";
+            return "redirect:/mypage?tab=orders";
         } catch (Exception e) {
             log.warn("배송지 정보 수정 실패: {}", e.getMessage());
             DeliveryOrderResponseDto order = deliveryOrderService.getOrder(orderId);

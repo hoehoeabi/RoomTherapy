@@ -23,6 +23,8 @@ public record DeliveryOrderRequestDto(
 
         String detailAddress,
 
-        Long goodsId // 선택적 리워드 물품 ID
+        Long goodsId, // 선택적 리워드 물품 ID
+
+        Boolean saveAsDefaultAddress // 기본 배송지로 저장 여부
 ) {
 }

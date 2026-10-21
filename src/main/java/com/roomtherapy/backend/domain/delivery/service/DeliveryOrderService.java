@@ -68,6 +68,19 @@ public class DeliveryOrderService {
 
         DeliveryOrder savedOrder = deliveryOrderRepository.save(deliveryOrder);
 
+        // 6. 사용자가 '기본 배송지로 저장'을 체크했거나, 기존 기본 배송지가 없으면 마이페이지 기본 배송지로 자동 동기화
+        if (Boolean.TRUE.equals(request.saveAsDefaultAddress()) || user.getAddress() == null) {
+            user.updateDefaultDeliveryInfo(
+                    request.recipientName().trim(),
+                    request.phone().trim(),
+                    request.zipcode().trim(),
+                    request.address().trim(),
+                    request.detailAddress() != null ? request.detailAddress().trim() : ""
+            );
+            userRepository.save(user);
+            log.info("마이페이지 기본 배송지 정보 자동 동기화 완료 - UserId: {}", userId);
+        }
+
         log.info("굿즈 배송 신청 DB 저장 완료 - OrderId: {}, UserId: {}, StageCode: {}",
                 savedOrder.getId(), userId, savedOrder.getStageCode());
 
@@ -183,5 +196,43 @@ public class DeliveryOrderService {
 
         order.updateStatus(newStatus);
         log.info("판매자에 의한 배송 상태 업데이트 완료 - SellerId: {}, OrderId: {}, Status: {}", sellerId, orderId, newStatus);
+    }
+
+    /**
+     * 관리자용 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getAdminOrdersWithPaging(
+            java.time.LocalDate startDate, java.time.LocalDate endDate, String filter, org.springframework.data.domain.Pageable pageable) {
+        java.time.LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        java.time.LocalDateTime end = endDate != null ? endDate.atTime(java.time.LocalTime.MAX) : null;
+        Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
+
+        return deliveryOrderRepository.findAdminOrdersWithFilter(start, end, isModified, pageable)
+                .map(DeliveryOrderResponseDto::from);
+    }
+
+    /**
+     * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getSellerOrdersWithPaging(
+            Long sellerId, java.time.LocalDate startDate, java.time.LocalDate endDate, String filter, org.springframework.data.domain.Pageable pageable) {
+        java.time.LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        java.time.LocalDateTime end = endDate != null ? endDate.atTime(java.time.LocalTime.MAX) : null;
+        Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
+
+        return deliveryOrderRepository.findSellerOrdersWithFilter(sellerId, start, end, isModified, pageable)
+                .map(DeliveryOrderResponseDto::from);
+    }
+
+    /**
+     * 사용자 마이페이지용 내 배송 신청 내역 페이징 조회
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getMyOrdersWithPaging(
+            Long userId, org.springframework.data.domain.Pageable pageable) {
+        return deliveryOrderRepository.findMyOrdersWithPaging(userId, pageable)
+                .map(DeliveryOrderResponseDto::from);
     }
 }
