@@ -2,11 +2,14 @@ package com.roomtherapy.backend.domain.delivery.service;
 
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto;
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderResponseDto;
+import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
+import com.roomtherapy.backend.domain.goods.service.GoodsAuthCodeManager;
+import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +28,8 @@ public class DeliveryOrderService {
     private final UserRepository userRepository;
     private final GoodsRepository goodsRepository;
     private final StageCodeService stageCodeService;
-    private final com.roomtherapy.backend.domain.goods.service.GoodsAuthCodeManager goodsAuthCodeManager;
-    private final com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService redisGoodsStockService;
+    private final GoodsAuthCodeManager goodsAuthCodeManager;
+    private final RedisGoodsStockService redisGoodsStockService;
 
     /**
      * 굿즈 배송 신청 처리 및 DB 저장
@@ -127,7 +130,7 @@ public class DeliveryOrderService {
      * 사용자의 배송지 정보 수정 처리 (ORDERED/PREPARING 상태만 가능)
      */
     @Transactional
-    public DeliveryOrderResponseDto updateDeliveryOrder(Long userId, Long orderId, com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto request) {
+    public DeliveryOrderResponseDto updateDeliveryOrder(Long userId, Long orderId, DeliveryOrderUpdateRequestDto request) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("배송 신청 내역을 찾을 수 없습니다: " + orderId));
 

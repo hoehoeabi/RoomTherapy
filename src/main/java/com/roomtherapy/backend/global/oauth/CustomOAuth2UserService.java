@@ -1,5 +1,6 @@
 package com.roomtherapy.backend.global.oauth;
 
+import com.roomtherapy.backend.domain.user.entity.Role;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.oauth.dto.OAuthAttributes;
@@ -60,18 +61,18 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .map(entity -> {
                     entity.update(attributes.getNickname(), attributes.getEmail());
                     if (isAdmin) {
-                        entity.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
-                    } else if (isSeller && entity.getRole() != com.roomtherapy.backend.domain.user.entity.Role.ADMIN) {
-                        entity.updateRole(com.roomtherapy.backend.domain.user.entity.Role.SELLER);
+                        entity.updateRole(Role.ADMIN);
+                    } else if (isSeller && entity.getRole() != Role.ADMIN) {
+                        entity.updateRole(Role.SELLER);
                     }
                     return entity;
                 })
                 .orElseGet(() -> {
                     User newUser = attributes.toEntity();
                     if (isAdmin) {
-                        newUser.updateRole(com.roomtherapy.backend.domain.user.entity.Role.ADMIN);
+                        newUser.updateRole(Role.ADMIN);
                     } else if (isSeller) {
-                        newUser.updateRole(com.roomtherapy.backend.domain.user.entity.Role.SELLER);
+                        newUser.updateRole(Role.SELLER);
                     }
                     return newUser;
                 });
