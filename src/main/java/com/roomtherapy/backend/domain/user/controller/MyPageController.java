@@ -7,6 +7,8 @@ import com.roomtherapy.backend.domain.user.dto.UserNicknameUpdateRequestDto;
 import com.roomtherapy.backend.domain.user.dto.UserProfileResponseDto;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +49,7 @@ public class MyPageController {
             Model model) {
 
         User user = userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         UserProfileResponseDto profile = UserProfileResponseDto.from(user);
         Page<DeliveryOrderResponseDto> myOrders = deliveryOrderService.getMyOrdersWithPaging(user.getId(), pageable);
@@ -93,7 +95,7 @@ public class MyPageController {
         }
 
         User user = userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         user.updateNickname(form.nickname());
         redirectAttributes.addFlashAttribute("successMessage", "닉네임이 성공적으로 변경되었습니다.");
@@ -119,7 +121,7 @@ public class MyPageController {
         }
 
         User user = userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         user.updateDefaultDeliveryInfo(
                 form.recipientName(),

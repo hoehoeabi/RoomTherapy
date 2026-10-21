@@ -2,6 +2,8 @@ package com.roomtherapy.backend.domain.delivery.service;
 
 import com.roomtherapy.backend.domain.delivery.validator.RedisDynamicStageCodeValidator;
 import com.roomtherapy.backend.domain.delivery.validator.StageCodeValidator;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +24,7 @@ public class StageCodeService {
      */
     public void validateAndConsume(String code, Long userId) {
         if (code == null || code.isBlank()) {
-            throw new IllegalArgumentException("인증코드를 입력해 주세요.");
+            throw new BusinessException(ErrorCode.BLANK_AUTH_CODE);
         }
 
         String targetCode = code.trim();
@@ -31,11 +33,11 @@ public class StageCodeService {
         StageCodeValidator matchingValidator = validators.stream()
                 .filter(validator -> validator.supports(targetCode))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 인증코드입니다. 다시 확인해 주세요."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_AUTH_CODE));
 
         // 2. 유효성 및 중복 검증
         if (!matchingValidator.validate(targetCode)) {
-            throw new IllegalArgumentException("유효하지 않거나 이미 사용된 인증코드입니다.");
+            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
         }
 
         // 3. 코드 소모 처리

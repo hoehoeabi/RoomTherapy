@@ -2,6 +2,8 @@ package com.roomtherapy.backend.domain.goods.service;
 
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.validator.GoodsAuthCodeValidator;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class GoodsAuthCodeManager {
             if (validator.supports(goodsId, code)) {
                 boolean isValid = validator.validate(goodsId, code, userId);
                 if (!isValid) {
-                    throw new IllegalArgumentException("입력하신 인증코드가 해당 굿즈의 인증코드와 일치하지 않거나 유효하지 않습니다.");
+                    throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
                 }
                 validator.consume(goodsId, code, userId);
                 return;
@@ -43,7 +45,7 @@ public class GoodsAuthCodeManager {
         // 지원하는 검증기가 없는 경우:
         // 만약 해당 굿즈에 판매자가 등록해둔 인증코드가 존재한다면, 입력한 코드가 틀린 것이므로 예외 발생
         if (goodsAuthCodeRepository.countByGoodsId(goodsId) > 0) {
-            throw new IllegalArgumentException("입력하신 인증코드가 해당 굿즈에 등록된 유효 인증코드가 아닙니다.");
+            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
         }
     }
 }

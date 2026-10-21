@@ -147,7 +147,7 @@ class WebGLAuthenticationIntegrationTest {
 
         // 공격자(또는 과거 토큰)가 이전 validRefreshToken으로 재발급을 시도할 때 탈취 감지 예외 발생
         assertThatThrownBy(() -> authService.reissue(validRefreshToken))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(com.roomtherapy.backend.global.error.BusinessException.class)
                 .hasMessageContaining("토큰 탈취 위험이 감지되어 강제 로그아웃되었습니다.");
 
         // Redis에 보관된 해당 유저의 세션이 전면 삭제되었는지 검증

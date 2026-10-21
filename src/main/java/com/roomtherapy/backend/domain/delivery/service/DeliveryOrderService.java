@@ -12,6 +12,8 @@ import com.roomtherapy.backend.domain.goods.service.GoodsAuthCodeManager;
 import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,22 +40,22 @@ public class DeliveryOrderService {
     public DeliveryOrderResponseDto createDeliveryOrder(Long userId, DeliveryOrderRequestDto request) {
         // 1. 유저 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 2. 동일 유저의 동일 인증코드 중복 신청 방지
         if (deliveryOrderRepository.existsByUserIdAndStageCode(userId, request.stageCode().trim())) {
-            throw new IllegalStateException("해당 인증코드로 이미 배송 신청을 완료하셨습니다.");
+            throw new BusinessException(ErrorCode.ALREADY_CLAIMED_CODE);
         }
 
         // 3. 굿즈 지정 배송 신청 시: 1인 1회 제한 + 굿즈별 인증코드 검증 + 선착순 재고 경합 제어
         Goods goods = null;
         if (request.goodsId() != null) {
             goods = goodsRepository.findById(request.goodsId())
-                    .orElseThrow(() -> new IllegalArgumentException("선택하신 굿즈를 찾을 수 없습니다: " + request.goodsId()));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.GOODS_NOT_FOUND));
 
             // 1인 1회 신청 제한 (동일 굿즈 중복 수령 방지)
             if (deliveryOrderRepository.existsByUserIdAndGoodsId(userId, goods.getId())) {
-                throw new IllegalStateException("이미 배송 신청을 완료하신 굿즈입니다. (동일 굿즈는 1인 1회만 신청 가능)");
+                throw new BusinessException(ErrorCode.DUPLICATE_GOODS_CLAIM);
             }
 
             // 굿즈 인증코드 적격성 검증 및 소진 (DB 판매자 코드 또는 Redis 동적 코드)
@@ -62,7 +64,7 @@ public class DeliveryOrderService {
             // Redis 기반 원자적 재고 차감 (선착순 경합 방지)
             boolean stockDecreased = redisGoodsStockService.tryDecreaseStock(goods.getId(), 1);
             if (!stockDecreased) {
-                throw new IllegalStateException("해당 굿즈의 재고가 모두 소진되었습니다.");
+                throw new BusinessException(ErrorCode.GOODS_OUT_OF_STOCK);
             }
 
             // DB 엔티티 재고 차감 동기화
@@ -112,7 +114,7 @@ public class DeliveryOrderService {
     @Transactional(readOnly = true)
     public DeliveryOrderResponseDto getOrder(Long orderId) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("배송 신청 내역을 찾을 수 없습니다: " + orderId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
         return DeliveryOrderResponseDto.from(order);
     }
 
@@ -132,10 +134,10 @@ public class DeliveryOrderService {
     @Transactional
     public DeliveryOrderResponseDto updateDeliveryOrder(Long userId, Long orderId, DeliveryOrderUpdateRequestDto request) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("배송 신청 내역을 찾을 수 없습니다: " + orderId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!order.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("본인의 배송 신청 건만 수정할 수 있습니다.");
+            throw new BusinessException(ErrorCode.NOT_ORDER_OWNER);
         }
 
         order.updateDeliveryInfo(
@@ -176,7 +178,7 @@ public class DeliveryOrderService {
     @Transactional
     public void updateOrderStatus(Long orderId, DeliveryStatus newStatus) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("배송 내역을 찾을 수 없습니다: " + orderId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
         order.updateStatus(newStatus);
         log.info("배송 상태 업데이트 완료 - OrderId: {}, Status: {}", orderId, newStatus);
     }
@@ -207,10 +209,10 @@ public class DeliveryOrderService {
     @Transactional
     public void updateOrderStatusBySeller(Long sellerId, Long orderId, DeliveryStatus newStatus) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("배송 내역을 찾을 수 없습니다: " + orderId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         if (order.getGoods() == null || order.getGoods().getSeller() == null || !order.getGoods().getSeller().getId().equals(sellerId)) {
-            throw new IllegalArgumentException("본인이 등록한 굿즈의 배송 주문만 상태를 변경할 수 있습니다.");
+            throw new BusinessException(ErrorCode.NOT_SELLER_OWNER);
         }
 
         order.updateStatus(newStatus);

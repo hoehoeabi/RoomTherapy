@@ -12,6 +12,8 @@ import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.domain.goods.validator.RedisGoodsAuthCodeValidator;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.BusinessException;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -95,10 +97,10 @@ public class GoodsService {
      */
     public UnityCodeIssueResponseDto issueDynamicCodeForUnity(Long goodsId, Duration validDuration) {
         Goods goods = goodsRepository.findById(goodsId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 굿즈입니다: " + goodsId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.GOODS_NOT_FOUND));
 
         if (goods.getStockQuantity() <= 0 || goods.getStatus() == GoodsStatus.SOLD_OUT) {
-            throw new IllegalStateException("해당 굿즈는 품절되어 인증코드를 발급할 수 없습니다.");
+            throw new BusinessException(ErrorCode.GOODS_OUT_OF_STOCK);
         }
 
         // 고유 난수 코드 생성 (예: RT-A7X9K2M3)
