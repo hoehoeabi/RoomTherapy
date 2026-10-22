@@ -2,9 +2,13 @@ package com.roomtherapy.backend.webgl;
 
 import com.roomtherapy.backend.domain.auth.dto.TokenResponseDto;
 import com.roomtherapy.backend.domain.auth.service.AuthService;
+import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
+import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
+import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.domain.user.entity.Role;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.BusinessException;
 import com.roomtherapy.backend.global.security.jwt.JwtProvider;
 import com.roomtherapy.backend.global.security.jwt.RefreshToken;
 import com.roomtherapy.backend.global.security.jwt.RefreshTokenRepository;
@@ -46,13 +50,13 @@ class WebGLAuthenticationIntegrationTest {
     private AuthService authService;
 
     @Autowired
-    private com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository deliveryOrderRepository;
+    private DeliveryOrderRepository deliveryOrderRepository;
 
     @Autowired
-    private com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
+    private GoodsRepository goodsRepository;
 
     @Autowired
-    private com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository goodsAuthCodeRepository;
+    private GoodsAuthCodeRepository goodsAuthCodeRepository;
 
     private User testUser;
     private String validAccessToken;
@@ -147,7 +151,7 @@ class WebGLAuthenticationIntegrationTest {
 
         // 공격자(또는 과거 토큰)가 이전 validRefreshToken으로 재발급을 시도할 때 탈취 감지 예외 발생
         assertThatThrownBy(() -> authService.reissue(validRefreshToken))
-                .isInstanceOf(com.roomtherapy.backend.global.error.BusinessException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("토큰 탈취 위험이 감지되어 강제 로그아웃되었습니다.");
 
         // Redis에 보관된 해당 유저의 세션이 전면 삭제되었는지 검증

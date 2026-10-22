@@ -1,8 +1,13 @@
 package com.roomtherapy.backend.domain.delivery;
 
+import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
+import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
+import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
+import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
 import com.roomtherapy.backend.domain.user.entity.Role;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
@@ -38,10 +43,13 @@ class DeliveryAndAdminIntegrationTest {
     private DeliveryOrderRepository deliveryOrderRepository;
 
     @Autowired
-    private com.roomtherapy.backend.domain.goods.repository.GoodsRepository goodsRepository;
+    private GoodsRepository goodsRepository;
 
     @Autowired
-    private com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository goodsAuthCodeRepository;
+    private GoodsAuthCodeRepository goodsAuthCodeRepository;
+
+    @Autowired
+    private RedisGoodsStockService redisGoodsStockService;
 
     @Autowired
     private JwtProvider jwtProvider;
@@ -292,13 +300,15 @@ class DeliveryAndAdminIntegrationTest {
                 .role(Role.SELLER)
                 .build());
 
-        var goods = goodsRepository.save(com.roomtherapy.backend.domain.goods.entity.Goods.builder()
+        var goods = goodsRepository.save(Goods.builder()
                 .name("수제 원목 시계")
                 .description("핸드메이드 원목 시계")
                 .price(0)
                 .stockQuantity(10)
                 .seller(seller)
                 .build());
+
+        redisGoodsStockService.syncStock(goods.getId(), 10);
 
         String sellerToken = jwtProvider.createAccessToken(seller.getId(), seller.getEmail(), seller.getRole().name());
 
@@ -411,7 +421,7 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(view().name("delivery"))
                 .andExpect(model().attributeExists("form"))
                 .andExpect(result -> {
-                    var form = (com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
+                    var form = (DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
                     assertThat(form.recipientName()).isEqualTo("자동완성수령인");
                     assertThat(form.phone()).isEqualTo("010-7777-8888");
                     assertThat(form.zipcode()).isEqualTo("04524");

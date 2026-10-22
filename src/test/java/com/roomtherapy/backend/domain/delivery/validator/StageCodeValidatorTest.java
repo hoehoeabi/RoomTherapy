@@ -2,6 +2,7 @@ package com.roomtherapy.backend.domain.delivery.validator;
 
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
 import com.roomtherapy.backend.domain.delivery.service.StageCodeService;
+import com.roomtherapy.backend.global.error.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +38,11 @@ class StageCodeValidatorTest {
     @DisplayName("빈 문자열이거나 null인 코드는 예외 발생")
     void validateBlankCode_throwsException() {
         assertThatThrownBy(() -> stageCodeService.validateAndConsume("   ", 1L))
-                .isInstanceOf(com.roomtherapy.backend.global.error.BusinessException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("인증코드를 입력해 주세요");
 
         assertThatThrownBy(() -> stageCodeService.validateAndConsume(null, 1L))
-                .isInstanceOf(com.roomtherapy.backend.global.error.BusinessException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("인증코드를 입력해 주세요");
     }
 
@@ -59,7 +60,7 @@ class StageCodeValidatorTest {
 
         // 3. 2회차 재사용 시도 - 이미 Redis에서 소모(삭제)되었으므로 차단
         assertThatThrownBy(() -> stageCodeService.validateAndConsume(issuedCode, 1L))
-                .isInstanceOf(com.roomtherapy.backend.global.error.BusinessException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("유효하지 않거나 일치하지 않는 인증코드입니다");
     }
 }
