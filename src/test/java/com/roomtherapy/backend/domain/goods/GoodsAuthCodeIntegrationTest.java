@@ -308,4 +308,36 @@ class GoodsAuthCodeIntegrationTest {
         assertThat(redisTemplate.hasKey(redisKey)).isFalse();
         assertThat(deliveryOrderRepository.count()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("인증코드 사전 검증 API: 등록된 DB 코드 검증 시 valid=true 및 DB_STATIC 반환")
+    void verifyCode_dbCode_success() throws Exception {
+        GoodsResponseDto goods = goodsService.registerGoods(seller.getId(), new GoodsCreateRequestDto(
+                "사전코드 굿즈", "설명", 0, "", 10, "VALID-CODE-123", null
+        ));
+
+        mockMvc.perform(get("/api/goods/verify-code")
+                        .param("goodsId", String.valueOf(goods.id()))
+                        .param("code", "VALID-CODE-123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.valid").value(true))
+                .andExpect(jsonPath("$.data.codeType").value("DB_STATIC"));
+    }
+
+    @Test
+    @DisplayName("인증코드 사전 검증 API: 등록되지 않은 코드 검증 시 valid=false 반환")
+    void verifyCode_invalidCode_fails() throws Exception {
+        GoodsResponseDto goods = goodsService.registerGoods(seller.getId(), new GoodsCreateRequestDto(
+                "사전코드 굿즈", "설명", 0, "", 10, "VALID-CODE-123", null
+        ));
+
+        mockMvc.perform(get("/api/goods/verify-code")
+                        .param("goodsId", String.valueOf(goods.id()))
+                        .param("code", "WRONG-CODE-999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.valid").value(false))
+                .andExpect(jsonPath("$.data.message").value("해당 굿즈에 유효하지 않거나 일치하지 않는 인증코드입니다."));
+    }
 }

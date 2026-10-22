@@ -1,5 +1,6 @@
 package com.roomtherapy.backend.domain.goods.service;
 
+import com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto;
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.validator.GoodsAuthCodeValidator;
 import com.roomtherapy.backend.global.error.BusinessException;
@@ -47,5 +48,40 @@ public class GoodsAuthCodeManager {
         if (goodsAuthCodeRepository.countByGoodsId(goodsId) > 0) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
         }
+    }
+
+    /**
+     * 굿즈 배송 신청 전 인증코드 유효성 사전 검사 (소진하지 않고 적격 여부만 판별)
+     */
+    public com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto verifyOnly(Long goodsId, String code, Long userId) {
+        if (code == null || code.isBlank()) {
+            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, "인증코드를 입력해주세요.", null);
+        }
+
+        if (goodsId == null) {
+            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "굿즈 미선택 기본 코드입니다.", "DEFAULT");
+        }
+
+        for (GoodsAuthCodeValidator validator : validators) {
+            if (validator.supports(goodsId, code)) {
+                try {
+                    boolean isValid = validator.validate(goodsId, code, userId);
+                    if (isValid) {
+                        String type = validator.getClass().getSimpleName().contains("Redis") ? "REDIS_DYNAMIC" : "DB_STATIC";
+                        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "유효한 인증코드입니다!", type);
+                    } else {
+                        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, "해당 굿즈에 유효하지 않거나 일치하지 않는 인증코드입니다.", null);
+                    }
+                } catch (BusinessException e) {
+                    return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, e.getMessage(), null);
+                }
+            }
+        }
+
+        if (goodsAuthCodeRepository.countByGoodsId(goodsId) > 0) {
+            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, "해당 굿즈에 등록되지 않은 인증코드입니다.", null);
+        }
+
+        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "사용 가능한 코드입니다.", "GENERAL");
     }
 }

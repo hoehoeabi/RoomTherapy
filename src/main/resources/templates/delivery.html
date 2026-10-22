@@ -181,7 +181,11 @@
 
             <div class="form-group">
                 <label for="stageCode">클리어 인증코드</label>
-                <input type="text" id="stageCode" th:field="*{stageCode}" placeholder="인증코드를 입력하세요 (예: ew-1010-clear)" required>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="stageCode" th:field="*{stageCode}" placeholder="인증코드를 입력하세요 (예: RT-A8F2K9Z 또는 사전 등록 코드)" style="flex: 1;" required>
+                    <button type="button" class="btn-verify-code" onclick="verifyAuthCode()" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 0 16px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">🔍 코드 검증</button>
+                </div>
+                <div id="codeVerifyFeedback" style="display: none; margin-top: 8px; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px;"></div>
                 <span class="field-error" th:errors="*{stageCode}"></span>
             </div>
 
@@ -263,6 +267,56 @@
             var p2 = document.getElementById("phone2").value.trim();
             var p3 = document.getElementById("phone3").value.trim();
             document.getElementById("phone").value = p1 + "-" + p2 + "-" + p3;
+        }
+
+        // 인증코드 실시간 비동기 검증
+        async function verifyAuthCode() {
+            const codeInput = document.getElementById('stageCode');
+            const goodsSelect = document.getElementById('goodsId');
+            const feedback = document.getElementById('codeVerifyFeedback');
+            const code = codeInput.value.trim();
+            const goodsId = goodsSelect ? goodsSelect.value : '';
+
+            if (!code) {
+                feedback.style.display = 'block';
+                feedback.style.background = '#FEF2F2';
+                feedback.style.color = '#EF4444';
+                feedback.innerHTML = '❌ 인증코드를 입력해주세요.';
+                codeInput.style.borderColor = '#EF4444';
+                return;
+            }
+
+            feedback.style.display = 'block';
+            feedback.style.background = '#F1F5F9';
+            feedback.style.color = '#64748B';
+            feedback.innerHTML = '⏳ 인증코드 유효성 검사 중...';
+
+            try {
+                let url = `/api/goods/verify-code?code=${encodeURIComponent(code)}`;
+                if (goodsId) {
+                    url += `&goodsId=${encodeURIComponent(goodsId)}`;
+                }
+                const res = await fetch(url);
+                const result = await res.json();
+
+                if (result.data && result.data.valid) {
+                    feedback.style.background = '#ECFDF5';
+                    feedback.style.color = '#059669';
+                    const typeLabel = result.data.codeType === 'REDIS_DYNAMIC' ? ' (유니티 동적 난수 코드)' 
+                                    : (result.data.codeType === 'DB_STATIC' ? ' (사전 등록 정적 코드)' : '');
+                    feedback.innerHTML = `✅ ${result.data.message}${typeLabel}`;
+                    codeInput.style.borderColor = '#10B981';
+                } else {
+                    feedback.style.background = '#FEF2F2';
+                    feedback.style.color = '#EF4444';
+                    feedback.innerHTML = `❌ ${result.data ? result.data.message : '유효하지 않은 인증코드입니다.'}`;
+                    codeInput.style.borderColor = '#EF4444';
+                }
+            } catch (err) {
+                feedback.style.background = '#FEF2F2';
+                feedback.style.color = '#EF4444';
+                feedback.innerHTML = '❌ 서버 검증 통신 중 오류가 발생했습니다.';
+            }
         }
     </script>
 </body>
