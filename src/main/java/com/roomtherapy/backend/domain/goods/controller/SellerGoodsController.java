@@ -53,7 +53,14 @@ public class SellerGoodsController {
             RedirectAttributes redirectAttributes,
             Model model) {
 
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
         if (bindingResult.hasErrors()) {
+            String firstError = bindingResult.getAllErrors().isEmpty() ? "입력값을 다시 확인해주세요."
+                    : bindingResult.getAllErrors().get(0).getDefaultMessage();
+            model.addAttribute("errorMessage", firstError);
             model.addAttribute("user", userDetails);
             return "seller/goods-new";
         }
@@ -65,8 +72,9 @@ public class SellerGoodsController {
                             response.name(), response.stockQuantity(), response.authCodeCount()));
             return "redirect:/goods";
         } catch (Exception e) {
-            log.warn("굿즈 등록 실패: {}", e.getMessage());
-            model.addAttribute("errorMessage", e.getMessage());
+            log.error("굿즈 등록 실패", e);
+            String message = (e.getMessage() != null && !e.getMessage().isBlank()) ? e.getMessage() : "굿즈 등록 처리 중 오류가 발생했습니다.";
+            model.addAttribute("errorMessage", message);
             model.addAttribute("user", userDetails);
             return "seller/goods-new";
         }

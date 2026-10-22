@@ -76,7 +76,11 @@ public class GoodsService {
         }
 
         // Redis 재고 동기화 (선착순 경합 방지용)
-        redisGoodsStockService.syncStock(savedGoods.getId(), savedGoods.getStockQuantity());
+        try {
+            redisGoodsStockService.syncStock(savedGoods.getId(), savedGoods.getStockQuantity());
+        } catch (Exception e) {
+            log.warn("Redis 재고 동기화 실패 (DB 저장은 정상 완료): {}", e.getMessage());
+        }
 
         return GoodsResponseDto.from(savedGoods, codes);
     }
