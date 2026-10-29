@@ -84,6 +84,7 @@ public class DeliveryOrderService {
                 .zipcode(request.zipcode().trim())
                 .address(request.address().trim())
                 .detailAddress(request.detailAddress() != null ? request.detailAddress().trim() : "")
+                .feedback(request.feedback() != null ? request.feedback().trim() : null)
                 .status(DeliveryStatus.ORDERED)
                 .build();
 

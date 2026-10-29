@@ -25,6 +25,15 @@ public record DeliveryOrderRequestDto(
 
         Long goodsId, // 선택적 리워드 물품 ID
 
-        Boolean saveAsDefaultAddress // 기본 배송지로 저장 여부
+        Boolean saveAsDefaultAddress, // 기본 배송지로 저장 여부
+
+        String feedback // 선택적 게임 피드백
 ) {
+    public DeliveryOrderRequestDto(
+            String stageCode, String recipientName, String phone,
+            String zipcode, String address, String detailAddress,
+            Long goodsId, Boolean saveAsDefaultAddress
+    ) {
+        this(stageCode, recipientName, phone, zipcode, address, detailAddress, goodsId, saveAsDefaultAddress, null);
+    }
 }

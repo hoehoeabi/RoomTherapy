@@ -70,6 +70,10 @@ public class DeliveryOrder extends BaseTimeEntity {
     @Column(length = 255)
     private String detailAddress;
 
+    // 유저 게임 피드백 (선택 작성)
+    @Column(length = 500)
+    private String feedback;
+
     // 배송 진행 상태
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -82,7 +86,7 @@ public class DeliveryOrder extends BaseTimeEntity {
     @Builder
     public DeliveryOrder(User user, Goods goods, String stageCode, String recipientName,
                          String phone, String zipcode, String address, String detailAddress,
-                         DeliveryStatus status) {
+                         String feedback, DeliveryStatus status) {
         this.user = user;
         this.goods = goods;
         this.stageCode = stageCode;
@@ -91,6 +95,7 @@ public class DeliveryOrder extends BaseTimeEntity {
         this.zipcode = zipcode;
         this.address = address;
         this.detailAddress = detailAddress;
+        this.feedback = feedback;
         this.status = status != null ? status : DeliveryStatus.ORDERED;
         this.isModified = false;
     }
