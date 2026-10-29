@@ -54,8 +54,8 @@ public class DeliveryOrder extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String recipientName;
 
-    // 연락처 (010-0000-0000 포맷)
-    @Column(nullable = false, length = 20)
+    // 연락처 (일반우편 배송 시 선택 사항)
+    @Column(length = 20)
     private String phone;
 
     // 우편번호

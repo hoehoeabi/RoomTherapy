@@ -80,7 +80,7 @@ public class DeliveryOrderService {
                 .goods(goods)
                 .stageCode(request.stageCode().trim())
                 .recipientName(request.recipientName().trim())
-                .phone(request.phone().trim())
+                .phone(request.phone() != null ? request.phone().trim() : "")
                 .zipcode(request.zipcode().trim())
                 .address(request.address().trim())
                 .detailAddress(request.detailAddress() != null ? request.detailAddress().trim() : "")
@@ -94,7 +94,7 @@ public class DeliveryOrderService {
         if (Boolean.TRUE.equals(request.saveAsDefaultAddress()) || user.getAddress() == null) {
             user.updateDefaultDeliveryInfo(
                     request.recipientName().trim(),
-                    request.phone().trim(),
+                    request.phone() != null ? request.phone().trim() : "",
                     request.zipcode().trim(),
                     request.address().trim(),
                     request.detailAddress() != null ? request.detailAddress().trim() : ""
@@ -161,7 +161,7 @@ public class DeliveryOrderService {
 
         order.updateDeliveryInfo(
                 request.recipientName().trim(),
-                request.phone().trim(),
+                request.phone() != null ? request.phone().trim() : "",
                 request.zipcode().trim(),
                 request.address().trim(),
                 request.detailAddress() != null ? request.detailAddress().trim() : ""

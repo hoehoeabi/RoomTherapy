@@ -7,9 +7,7 @@ public record UserDeliveryInfoUpdateRequestDto(
         @NotBlank(message = "기본 수령인 성함을 입력해 주세요.")
         String recipientName,
 
-        @NotBlank(message = "기본 연락처를 입력해 주세요.")
-        @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "연락처는 010-XXXX-XXXX 형식이어야 합니다.")
-        String phone,
+        String phone, // 수집 제외 (선택/하위호환)
 
         @NotBlank(message = "우편번호를 입력해 주세요.")
         @Pattern(regexp = "^\\d{5}$", message = "우편번호는 5자리 숫자여야 합니다.")

@@ -114,21 +114,19 @@ class DeliveryAndAdminIntegrationTest {
     }
 
     @Test
-    @DisplayName("연락처 정규식 형식(010-XXXX-XXXX)이 아닐 경우 유효성 검증 실패로 폼 페이지 재표시")
-    void submitDelivery_invalidPhone_failsValidation() throws Exception {
+    @DisplayName("연락처 없이도 우편번호/주소만으로 정상 배송 신청 완료 (일반우편 연락처 미수집 정책)")
+    void submitDelivery_withoutPhone_success() throws Exception {
         mockMvc.perform(post("/delivery")
                         .cookie(new Cookie("accessToken", userToken))
                         .param("stageCode", "ew-stage1-clear-02")
                         .param("recipientName", "홍길동")
-                        .param("phone", "01012345678") // 하이픈 없는 잘못된 포맷
                         .param("zipcode", "12345")
                         .param("address", "서울특별시 서초구 반포대로 1")
                         .param("detailAddress", "101호"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
-                .andExpect(model().hasErrors());
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/delivery/confirm/*"));
 
-        assertThat(deliveryOrderRepository.count()).isEqualTo(0);
+        assertThat(deliveryOrderRepository.count()).isEqualTo(1);
     }
 
     @Test
