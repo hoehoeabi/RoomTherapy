@@ -129,6 +129,24 @@ public class DeliveryOrderService {
                 .toList();
     }
 
+    private static final java.time.format.DateTimeFormatter SUMMARY_DATE_FORMATTER =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /**
+     * 메인 화면 노출용 최신 주문 요약 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<String> findLatestOrderSummary(Long userId) {
+        return deliveryOrderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .findFirst()
+                .map(order -> {
+                    String formattedDate = order.getCreatedAt() != null
+                            ? order.getCreatedAt().format(SUMMARY_DATE_FORMATTER)
+                            : "";
+                    return formattedDate + " 주문 건 현재 " + order.getStatus().getDescription();
+                });
+    }
+
     /**
      * 사용자의 배송지 정보 수정 처리 (ORDERED/PREPARING 상태만 가능)
      */
