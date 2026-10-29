@@ -2,159 +2,274 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배송 신청 완료 - Room Therapy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>배송 신청 완료 - 룸테라피</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --success: #10B981;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --text-main: #0F172A;
-            --text-sub: #64748B;
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #EEEEEE;
         }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
+            background-color: #EFEFEF;
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 24px 16px;
         }
-        .container {
+        .app-container {
             width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 36px 32px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FFFFFF;
+            padding: 36px 20px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
         }
-        .icon-circle {
-            width: 64px;
-            height: 64px;
-            background: #D1FAE5;
-            color: var(--success);
+        @media (max-width: 440px) {
+            body {
+                background-color: #FFFFFF;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 28px 16px 36px;
+            }
+        }
+        .check-circle {
+            width: 48px;
+            height: 48px;
+            background: #FFEBEB;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 32px;
+            margin-bottom: 14px;
+        }
+        .check-circle svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--red);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
         }
         h1 {
-            font-size: 24px;
+            font-size: 19px;
             font-weight: 800;
-            margin-bottom: 8px;
+            color: var(--title);
+            letter-spacing: -0.4px;
+            margin-bottom: 4px;
         }
-        p.desc {
-            color: var(--text-sub);
-            font-size: 14px;
-            margin-bottom: 28px;
+        .congrats-sub {
+            font-size: 11.5px;
+            color: var(--gray);
+            margin-bottom: 20px;
+            letter-spacing: -0.2px;
         }
-        .receipt-card {
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            border-radius: 16px;
-            padding: 20px;
+        /* 가로 슬라이더 */
+        .thumb-slider {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 20px;
+            padding-bottom: 4px;
+        }
+        .thumb-slider::-webkit-scrollbar {
+            display: none;
+        }
+        .thumb-box {
+            flex: 0 0 77px;
+            width: 77px;
+            height: 77px;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            background: #FAFAFA;
+            scroll-snap-align: start;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .thumb-placeholder {
+            font-size: 22px;
+            color: #C0C0C0;
+        }
+        /* 상세 내역 카드 */
+        .details-card {
+            width: 100%;
             text-align: left;
             margin-bottom: 28px;
         }
-        .row {
-            display: flex;
-            justify-content: space-between;
+        .goods-name-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--title);
             margin-bottom: 12px;
-            font-size: 14px;
+            letter-spacing: -0.3px;
         }
-        .row:last-child {
-            margin-bottom: 0;
+        .info-table {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 11.5px;
         }
-        .row-label {
-            color: var(--text-sub);
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+        }
+        .info-key {
+            flex: 0 0 68px;
+            color: var(--gray);
             font-weight: 500;
         }
-        .row-val {
-            color: var(--text-main);
-            font-weight: 700;
-            text-align: right;
+        .info-value {
+            flex: 1;
+            color: var(--title);
+            font-weight: 600;
+            line-height: 1.4;
             word-break: break-all;
         }
-        .badge-status {
-            background: #EEF2FF;
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        .btn {
-            display: block;
+        /* 액션 버튼 */
+        .actions-wrap {
             width: 100%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .btn-primary {
-            background-color: var(--primary);
+        .btn-cta {
+            width: 100%;
+            height: 44px;
+            background: var(--red);
             color: #FFFFFF;
+            font-size: 13.5px;
+            font-weight: 700;
+            border-radius: 10px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            transition: opacity 0.15s ease;
+        }
+        .btn-cta:active {
+            opacity: 0.92;
+        }
+        .btn-outline {
+            width: 100%;
+            height: 42px;
+            background: #FFFFFF;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            color: var(--title);
+            font-size: 13.5px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-outline:active {
+            background: #F8F9FA;
+        }
+        .link-home {
+            font-size: 12px;
+            color: var(--gray);
+            text-decoration: none;
+            margin-top: 6px;
+        }
+        .link-home:hover {
+            color: var(--title);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon-circle">✓</div>
-        <h1>배송 신청이 완료되었습니다!</h1>
-        <p class="desc">정성껏 준비하여 안전하게 배송해 드리겠습니다.</p>
+    <div class="app-container">
+        <!-- 체크 아이콘 -->
+        <div class="check-circle">
+            <svg viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
 
-        <div class="receipt-card" th:object="${order}">
-            <div class="row">
-                <span class="row-label">주문 번호</span>
-                <span class="row-val" th:text="${'#' + order.id}">#1</span>
+        <h1>배송 신청이 완료되었습니다!</h1>
+        <p class="congrats-sub">룸테라피 스테이지 클리어를 축하해요!</p>
+
+        <!-- 리워드 가로 썸네일 슬라이더 -->
+        <div class="thumb-slider">
+            <div class="thumb-box">
+                <span class="thumb-placeholder">🎁</span>
             </div>
-            <div class="row">
-                <span class="row-label">인증 코드</span>
-                <span class="row-val" th:text="${order.stageCode}">ew-1010-clear</span>
+            <div class="thumb-box">
+                <span class="thumb-placeholder">✨</span>
             </div>
-            <div class="row">
-                <span class="row-label">리워드 물품</span>
-                <span class="row-val" th:text="${order.goodsName}">스테이지 1 클리어 굿즈</span>
+            <div class="thumb-box">
+                <span class="thumb-placeholder">🛋️</span>
             </div>
-            <div class="row">
-                <span class="row-label">수령인</span>
-                <span class="row-val" th:text="${order.recipientName}">홍길동</span>
-            </div>
-            <div class="row">
-                <span class="row-label">연락처</span>
-                <span class="row-val" th:text="${order.phone}">010-1234-5678</span>
-            </div>
-            <div class="row">
-                <span class="row-label">우편번호</span>
-                <span class="row-val" th:text="${order.zipcode}">12345</span>
-            </div>
-            <div class="row">
-                <span class="row-label">배송지 주소</span>
-                <span class="row-val" th:text="${order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">서울특별시 강남구 테헤란로 123</span>
-            </div>
-            <div class="row" style="margin-top: 8px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
-                <span class="row-label">진행 상태</span>
-                <span class="badge-status" th:text="${order.statusDescription}">접수 완료</span>
+            <div class="thumb-box">
+                <span class="thumb-placeholder">⭐</span>
             </div>
         </div>
 
-        <a href="/delivery/my" class="btn btn-primary" style="margin-bottom: 10px;">📋 내 배송 신청 내역 확인</a>
-        <a href="/" class="btn" style="background: transparent; color: var(--text-sub); border: 1px solid #E2E8F0;">홈으로 이동</a>
+        <!-- 신청 내역 상세 -->
+        <div class="details-card" th:object="${order}">
+            <div class="goods-name-title" th:text="${order.goodsName}">룸테라피 아늑한 무드등 (스테이지 1 리워드)</div>
+            <div class="info-table">
+                <div class="info-row">
+                    <span class="info-key">수령인</span>
+                    <span class="info-value" th:text="${order.recipientName}">에이치</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">배송 주소</span>
+                    <span class="info-value" th:text="${'(' + order.zipcode + ') ' + order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">(13479) 경기 성남시 분당구 서판교로 32 301동 302호</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">신청 일시</span>
+                    <span class="info-value" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-22 18:05</span>
+                </div>
+                <div class="info-row" th:if="${order.feedback != null and !order.feedback.isEmpty()}">
+                    <span class="info-key">피드백</span>
+                    <span class="info-value" th:text="${order.feedback}">물건들이 너무 작아요</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 액션 버튼들 -->
+        <div class="actions-wrap">
+            <a href="/mypage?tab=orders" class="btn-cta">
+                내 배송 신청 내역 확인 &nbsp;|&nbsp; 배송지 변경
+            </a>
+            <a href="/goods" class="btn-outline">
+                굿즈 리워드 둘러보기
+            </a>
+            <a href="/" class="link-home">
+                홈으로 이동
+            </a>
+        </div>
     </div>
 </body>
 </html>
