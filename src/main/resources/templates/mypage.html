@@ -116,7 +116,7 @@
             padding: 3px 10px;
             border-radius: 9999px;
         }
-        /* 탭 네비게이션 */
+        /* 탭 네비게이션 버튼 */
         .tab-bar {
             display: flex;
             align-items: center;
@@ -124,12 +124,14 @@
             margin-bottom: 18px;
         }
         .tab-btn {
-            text-decoration: none;
+            background: none;
+            border: none;
             font-size: 12px;
             font-weight: 600;
             padding: 6px 14px;
             border-radius: 9999px;
             color: var(--gray);
+            cursor: pointer;
             transition: all 0.15s ease;
         }
         .tab-btn.active {
@@ -196,35 +198,6 @@
         }
         .btn-small-red:active {
             opacity: 0.9;
-        }
-        /* 연락처 3분할 */
-        .phone-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .phone-input {
-            height: 36px;
-            border-radius: var(--input-radius);
-            border: 1px solid var(--border-light);
-            text-align: center;
-            font-size: 13px;
-            color: var(--text);
-            outline: none;
-            background: #FFFFFF;
-        }
-        .phone-input:focus {
-            border-color: var(--red);
-        }
-        .phone-part1 {
-            flex: 0 0 65px;
-        }
-        .phone-part2, .phone-part3 {
-            flex: 1;
-        }
-        .phone-dash {
-            color: var(--gray);
-            font-size: 12px;
         }
         /* 주소 & 우편번호 */
         .zip-row {
@@ -390,20 +363,20 @@
             </div>
         </div>
 
-        <!-- 탭 네비게이션 -->
+        <!-- 탭 네비게이션: 새로고침 없는 즉시 토글 -->
         <div class="tab-bar">
-            <a th:href="@{/mypage(tab='profile')}" 
-               th:class="${currentTab == 'profile' ? 'tab-btn active' : 'tab-btn'}">
+            <button type="button" id="tab-btn-profile" onclick="switchTab('profile')"
+                    th:class="${currentTab == 'profile' ? 'tab-btn active' : 'tab-btn'}">
                 프로필 | 기본 배송지
-            </a>
-            <a th:href="@{/mypage(tab='orders')}" 
-               th:class="${currentTab == 'orders' ? 'tab-btn active' : 'tab-btn'}">
+            </button>
+            <button type="button" id="tab-btn-orders" onclick="switchTab('orders')"
+                    th:class="${currentTab == 'orders' ? 'tab-btn active' : 'tab-btn'}">
                 내 굿즈 신청 내역 <span th:text="${'(' + myOrders.totalElements + ')'}">(2)</span>
-            </a>
+            </button>
         </div>
 
-        <!-- 탭 1: 프로필 & 기본 배송지 -->
-        <div th:if="${currentTab == 'profile'}">
+        <!-- 탭 1: 프로필 & 기본 배송지 (새로고침 없는 즉시 토글) -->
+        <div id="tab-profile-content" th:style="${currentTab == 'profile' ? 'display: block;' : 'display: none;'}">
             <!-- 닉네임 변경 카드 -->
             <div class="section-card">
                 <h2 class="section-title">닉네임 변경</h2>
@@ -418,30 +391,15 @@
                 </form>
             </div>
 
-            <!-- 기본 배송지 관리 카드 -->
+            <!-- 기본 배송지 관리 카드 (연락처 필드 제거 완료) -->
             <div class="section-card">
                 <h2 class="section-title">기본 배송지 관리</h2>
                 <p class="section-desc">기본 배송지 등록해 두면 굿즈 신청 시 주소가 자동으로 입력됩니다.</p>
-                <form th:action="@{/mypage/delivery-info}" th:object="${deliveryForm}" method="post" id="deliveryInfoForm" onsubmit="syncPhoneNumber()">
+                <form th:action="@{/mypage/delivery-info}" th:object="${deliveryForm}" method="post" id="deliveryInfoForm">
                     <div class="form-group">
                         <label class="form-label" for="recipientName">기본 수령인 성함</label>
                         <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="송혜정" required>
                         <span class="field-error" th:errors="*{recipientName}"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">기본 연락처 (휴대폰)</label>
-                        <input type="hidden" id="phone" th:field="*{phone}">
-                        <div class="phone-row">
-                            <input type="text" id="phone1" class="phone-input phone-part1" value="010" maxlength="3" required>
-                            <span class="phone-dash">-</span>
-                            <input type="text" id="phone2" class="phone-input phone-part2" maxlength="4" placeholder="0000" required 
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 4) document.getElementById('phone3').focus();">
-                            <span class="phone-dash">-</span>
-                            <input type="text" id="phone3" class="phone-input phone-part3" maxlength="4" placeholder="0000" required
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                        </div>
-                        <span class="field-error" th:errors="*{phone}"></span>
                     </div>
 
                     <div class="form-group">
@@ -461,8 +419,8 @@
             </div>
         </div>
 
-        <!-- 탭 2: 내 굿즈 신청 내역 -->
-        <div th:if="${currentTab == 'orders'}">
+        <!-- 탭 2: 내 굿즈 신청 내역 (새로고침 없는 즉시 토글) -->
+        <div id="tab-orders-content" th:style="${currentTab == 'orders' ? 'display: block;' : 'display: none;'}">
             <div class="section-card" style="padding: 16px 14px;">
                 <h2 class="section-title">내 굿즈 신청 내역</h2>
                 <p class="section-desc">클리어 인증코드로 신청하신 굿즈의 우편 배송 현황입니다.</p>
@@ -526,6 +484,29 @@
     </div>
 
     <script>
+        // 새로고침 없는 원터치 탭 전환 함수
+        function switchTab(tabName) {
+            const profileContent = document.getElementById('tab-profile-content');
+            const ordersContent = document.getElementById('tab-orders-content');
+            const btnProfile = document.getElementById('tab-btn-profile');
+            const btnOrders = document.getElementById('tab-btn-orders');
+
+            if (tabName === 'profile') {
+                profileContent.style.display = 'block';
+                ordersContent.style.display = 'none';
+                btnProfile.className = 'tab-btn active';
+                btnOrders.className = 'tab-btn';
+            } else {
+                profileContent.style.display = 'none';
+                ordersContent.style.display = 'block';
+                btnProfile.className = 'tab-btn';
+                btnOrders.className = 'tab-btn active';
+            }
+            // URL 파라미터 갱신 (뒤로가기/새로고침 호환)
+            window.history.replaceState(null, '', '/mypage?tab=' + tabName);
+        }
+
+        // 다음 주소 검색 API
         function openDaumPostcode() {
             new daum.Postcode({
                 oncomplete: function(data) {
@@ -537,24 +518,14 @@
             }).open();
         }
 
+        // 페이지 진입 시 URL 파라미터에 따른 탭 자동 선택
         document.addEventListener("DOMContentLoaded", function() {
-            var fullPhone = document.getElementById("phone").value;
-            if (fullPhone && fullPhone.includes("-")) {
-                var parts = fullPhone.split("-");
-                if (parts.length === 3) {
-                    document.getElementById("phone1").value = parts[0];
-                    document.getElementById("phone2").value = parts[1];
-                    document.getElementById("phone3").value = parts[2];
-                }
+            const params = new URLSearchParams(window.location.search);
+            const currentTab = params.get('tab');
+            if (currentTab === 'orders') {
+                switchTab('orders');
             }
         });
-
-        function syncPhoneNumber() {
-            var p1 = document.getElementById("phone1").value.trim();
-            var p2 = document.getElementById("phone2").value.trim();
-            var p3 = document.getElementById("phone3").value.trim();
-            document.getElementById("phone").value = p1 + "-" + p2 + "-" + p3;
-        }
     </script>
 </body>
 </html>

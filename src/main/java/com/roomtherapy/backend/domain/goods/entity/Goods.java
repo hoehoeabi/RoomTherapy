@@ -37,7 +37,7 @@ public class Goods extends BaseTimeEntity {
     @Column(nullable = false)
     private int price; // 리워드 상품인 경우 0원
 
-    @Column(length = 500)
+    @Column(length = 2000)
     private String imageUrl;
 
     @Column(nullable = false)
@@ -91,5 +91,18 @@ public class Goods extends BaseTimeEntity {
 
     public boolean isOwnedBy(Long userId) {
         return this.seller != null && this.seller.getId().equals(userId);
+    }
+
+    /**
+     * 다중 이미지 URL 목록 반환 (쉼표 구분 문자열 파싱)
+     */
+    public java.util.List<String> getImageList() {
+        if (this.imageUrl == null || this.imageUrl.isBlank()) {
+            return java.util.Collections.emptyList();
+        }
+        return java.util.Arrays.stream(this.imageUrl.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }

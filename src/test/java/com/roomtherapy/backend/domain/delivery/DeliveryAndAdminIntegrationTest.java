@@ -5,6 +5,7 @@ import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsAuthCode;
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
@@ -305,6 +306,8 @@ class DeliveryAndAdminIntegrationTest {
                 .stockQuantity(10)
                 .seller(seller)
                 .build());
+
+        goodsAuthCodeRepository.save(new GoodsAuthCode(goods, "SELLER-REWARD-001"));
 
         redisGoodsStockService.syncStock(goods.getId(), 10);
 

@@ -31,6 +31,10 @@ public class GoodsAuthCodeManager {
             return;
         }
 
+        if (code == null || code.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
+        }
+
         // 해당 굿즈에 DB 인증코드가 있거나 Redis에 코드가 있는 경우 검증 필수
         for (GoodsAuthCodeValidator validator : validators) {
             if (validator.supports(goodsId, code)) {
@@ -43,11 +47,9 @@ public class GoodsAuthCodeManager {
             }
         }
 
-        // 지원하는 검증기가 없는 경우:
-        // 만약 해당 굿즈에 판매자가 등록해둔 인증코드가 존재한다면, 입력한 코드가 틀린 것이므로 예외 발생
-        if (goodsAuthCodeRepository.countByGoodsId(goodsId) > 0) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
-        }
+        // 지원하는 검증기가 없거나 일치하는 유효 인증코드가 존재하지 않는 경우 무조건 차단
+        log.warn("굿즈({})에 일치하거나 유효한 인증코드가 없습니다: {}", goodsId, code);
+        throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
     }
 
     /**
@@ -78,10 +80,6 @@ public class GoodsAuthCodeManager {
             }
         }
 
-        if (goodsAuthCodeRepository.countByGoodsId(goodsId) > 0) {
-            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, "해당 굿즈에 등록되지 않은 인증코드입니다.", null);
-        }
-
-        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "사용 가능한 코드입니다.", "GENERAL");
+        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, "해당 굿즈에 등록되지 않았거나 일치하지 않는 인증코드입니다.", null);
     }
 }

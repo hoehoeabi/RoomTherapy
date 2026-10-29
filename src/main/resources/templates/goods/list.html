@@ -89,6 +89,12 @@
             display: flex;
             flex-direction: column;
         }
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
         .badge-stock-in {
             display: inline-block;
             background: #FFEBEB;
@@ -109,6 +115,12 @@
             border-radius: 9999px;
             width: fit-content;
         }
+        .stock-count-text {
+            font-size: 11.5px;
+            color: var(--gray);
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
         .goods-title {
             font-size: 14.5px;
             font-weight: 700;
@@ -124,22 +136,28 @@
             letter-spacing: -0.2px;
             margin-bottom: 12px;
         }
-        /* 가로 슬라이더 & 신청 버튼 행 */
-        .slider-action-row {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 12px;
+        /* 가로 슬라이더: 카드 너비 전체 사용, 터치 스와이프 + PC 마우스 드래그 + 좌우 버튼 지원 */
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 12px;
         }
         .slider-container {
-            flex: 1;
+            width: 100%;
             display: flex;
             gap: 8px;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding-bottom: 2px;
+            padding-bottom: 4px;
+            cursor: grab;
+            user-select: none;
+            scroll-behavior: smooth;
+        }
+        .slider-container.dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
         }
         .slider-container::-webkit-scrollbar {
             display: none;
@@ -156,11 +174,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .slide-thumb img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
         .slide-thumb-placeholder {
             width: 100%;
@@ -172,9 +192,47 @@
             color: #C0C0C0;
             font-size: 20px;
         }
+        .slide-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            border: 1px solid #E0E0E0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--title);
+            transition: all 0.15s ease;
+        }
+        .slide-btn:hover {
+            background: #FFFFFF;
+            transform: translateY(-50%) scale(1.08);
+        }
+        .slide-btn-prev { left: -8px; }
+        .slide-btn-next { right: -8px; }
+        /* 카드 하단 버튼 행 */
+        .card-action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 4px;
+        }
+        .slide-hint {
+            font-size: 10px;
+            color: #B5B5B5;
+            letter-spacing: -0.2px;
+        }
         .btn-reward-apply {
-            flex: 0 0 75px;
-            height: 30px;
+            height: 32px;
+            padding: 0 16px;
             background: var(--red);
             color: #FFFFFF;
             font-size: 12px;
@@ -190,8 +248,8 @@
             opacity: 0.9;
         }
         .btn-reward-disabled {
-            flex: 0 0 75px;
-            height: 30px;
+            height: 32px;
+            padding: 0 16px;
             background: #E9ECEF;
             color: #ADB5BD;
             font-size: 12px;
@@ -236,46 +294,41 @@
         <!-- 리워드 카드 리스트 -->
         <div class="goods-list">
             <div th:each="goods : ${goodsList}" class="goods-card">
-                <!-- 상단 재고 상태 뱃지 -->
-                <span th:if="${goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
-                <span th:unless="${goods.stockQuantity > 0}" class="badge-stock-out">재고 소진</span>
+                <!-- 상단 재고 상태 뱃지 및 우측 남은 개수 -->
+                <div class="card-top-row">
+                    <span th:if="${goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
+                    <span th:unless="${goods.stockQuantity > 0}" class="badge-stock-out">재고 소진</span>
+                    <span class="stock-count-text" th:text="${'남은 수량 ' + goods.stockQuantity + '개'}">남은 수량 50개</span>
+                </div>
 
                 <!-- 굿즈 제목 및 설명 -->
                 <h2 class="goods-title" th:text="${goods.name}">룸테라피 아늑한 무드등 (스테이지 1 리워드)</h2>
                 <p class="goods-desc" th:text="${goods.description}">은은하고 따뜻한 주황빛으로 지친 하루를 편안하게 밝혀주는 침실 감성 무드등입니다.</p>
 
-                <!-- 가로 이미지 슬라이더 & 신청 버튼 행 -->
-                <div class="slider-action-row">
+                <!-- 가로 이미지 슬라이더 (카드 너비 100% 활용, 터치 스와이프 + PC 마우스 드래그 & 화살표) -->
+                <div class="slider-wrapper">
+                    <button type="button" class="slide-btn slide-btn-prev" onclick="scrollSlider(this, -1)" aria-label="이전 사진">‹</button>
                     <div class="slider-container">
-                        <!-- 대표 이미지 -->
-                        <div class="slide-thumb">
-                            <img th:if="${goods.imageUrl != null and !goods.imageUrl.isEmpty()}" 
-                                 th:src="${goods.imageUrl}" 
-                                 alt="굿즈 이미지">
-                            <div th:if="${goods.imageUrl == null or goods.imageUrl.isEmpty()}" class="slide-thumb-placeholder">
-                                🎁
+                        <!-- 업로드된 사진들이 있는 경우 -->
+                        <th:block th:if="${goods.imageList != null and !goods.imageList.empty}">
+                            <div th:each="imgUrl : ${goods.imageList}" class="slide-thumb">
+                                <img th:src="${imgUrl}" th:alt="${goods.name}">
                             </div>
-                        </div>
-                        <!-- 추가 슬라이드 썸네일 (피그마 슬라이드 뷰 지원) -->
-                        <div class="slide-thumb">
-                            <img th:if="${goods.imageUrl != null and !goods.imageUrl.isEmpty()}" 
-                                 th:src="${goods.imageUrl}" 
-                                 alt="굿즈 상세 1">
-                            <div th:if="${goods.imageUrl == null or goods.imageUrl.isEmpty()}" class="slide-thumb-placeholder">
-                                ✨
-                            </div>
-                        </div>
-                        <div class="slide-thumb">
-                            <img th:if="${goods.imageUrl != null and !goods.imageUrl.isEmpty()}" 
-                                 th:src="${goods.imageUrl}" 
-                                 alt="굿즈 상세 2">
-                            <div th:if="${goods.imageUrl == null or goods.imageUrl.isEmpty()}" class="slide-thumb-placeholder">
-                                🛋️
-                            </div>
-                        </div>
+                        </th:block>
+                        <!-- 업로드된 사진이 없는 경우 기본 예시 아이콘 슬라이드 -->
+                        <th:block th:if="${goods.imageList == null or goods.imageList.empty}">
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🎁</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">✨</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🛋️</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">⭐</div></div>
+                        </th:block>
                     </div>
+                    <button type="button" class="slide-btn slide-btn-next" onclick="scrollSlider(this, 1)" aria-label="다음 사진">›</button>
+                </div>
 
-                    <!-- 우측 신청 버튼 -->
+                <!-- 하단 액션 버튼 행 -->
+                <div class="card-action-row">
+                    <span class="slide-hint">← 사진을 좌우로 넘겨보세요 →</span>
                     <a th:if="${goods.stockQuantity > 0}" 
                        th:href="@{'/delivery?goodsId=' + ${goods.id}}" 
                        class="btn-reward-apply">
@@ -288,5 +341,46 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function scrollSlider(button, direction) {
+            const wrapper = button.closest('.slider-wrapper');
+            const container = wrapper ? wrapper.querySelector('.slider-container') : null;
+            if (container) {
+                container.scrollBy({ left: direction * 170, behavior: 'smooth' });
+            }
+        }
+
+        // PC/맥북 마우스 드래그 슬라이드 지원
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.slider-container').forEach(slider => {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.classList.add('dragging');
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                });
+                slider.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mouseup', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walk = (x - startX) * 1.5;
+                    slider.scrollLeft = scrollLeft - walk;
+                });
+            });
+        });
+    </script>
 </body>
 </html>

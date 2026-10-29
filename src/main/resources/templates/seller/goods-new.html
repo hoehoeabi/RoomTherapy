@@ -183,7 +183,7 @@
         <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
 
         <div class="card">
-            <form th:action="@{/seller/goods}" th:object="${form}" method="post">
+            <form th:action="@{/seller/goods}" th:object="${form}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label" for="name">굿즈 명칭 <span style="color: var(--red);">*</span></label>
                     <input type="text" id="name" th:field="*{name}" class="input-text" placeholder="예: 룸테라피 아늑한 무드등 (스테이지 1 리워드)" required>
@@ -197,8 +197,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="imageUrl">대표 이미지 URL</label>
-                    <input type="text" id="imageUrl" th:field="*{imageUrl}" class="input-text" placeholder="https://... 또는 /images/sample.png">
+                    <label class="form-label">굿즈 사진 다중 업로드 (여러 장 선택 가능)</label>
+                    <div class="form-label-desc">스마트폰 앨범 또는 PC에서 사진들을 여러 장 선택해 등록하세요 (슬라이드 뷰 자동 연동).</div>
+                    <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" class="input-text" style="height: auto; padding: 8px;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="imageUrl">또는 이미지 URL 직접 입력</label>
+                    <input type="text" id="imageUrl" th:field="*{imageUrl}" class="input-text" placeholder="https://... 또는 /images/RoomTherapy_logo.png (쉼표로 구분)">
                     <span class="field-error" th:errors="*{imageUrl}"></span>
                 </div>
 
@@ -208,16 +214,16 @@
                     <span class="field-error" th:errors="*{stockQuantity}"></span>
                 </div>
 
-                <!-- 인증코드 등록 영역 -->
+                <!-- 인증코드 등록 영역 (필수) -->
                 <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <label class="form-label" for="authCodesInput" style="margin-bottom: 0;">인증코드 목록</label>
+                        <label class="form-label" for="authCodesInput" style="margin-bottom: 0;">인증코드 목록 <span style="color: var(--red);">*</span></label>
                         <button type="button" class="btn-gen" onclick="generateRandomCodes()">+ 5개 자동 생성</button>
                     </div>
                     <div class="form-label-desc">
-                        유니티에 배포될 클리어 인증코드들을 줄바꿈으로 구분해 입력하세요.
+                        유니티에 배포될 클리어 인증코드들을 줄바꿈(Enter)으로 구분해 입력하세요 (최소 1개 필수).
                     </div>
-                    <textarea id="authCodesInput" th:field="*{authCodesInput}" class="input-text code-area" placeholder="RT-A8F2K9Z&#10;RT-Q7W1E5R"></textarea>
+                    <textarea id="authCodesInput" th:field="*{authCodesInput}" class="input-text code-area" placeholder="RT-A8F2K9Z&#10;RT-Q7W1E5R" required></textarea>
                     <span class="field-error" th:errors="*{authCodesInput}"></span>
                 </div>
 

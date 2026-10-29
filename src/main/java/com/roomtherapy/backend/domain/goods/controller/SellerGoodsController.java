@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class SellerGoodsController {
 
     private final GoodsService goodsService;
+    private final com.roomtherapy.backend.global.storage.StorageService storageService;
 
     /**
      * 판매자 굿즈 및 인증코드 등록 폼 화면
@@ -43,18 +44,24 @@ public class SellerGoodsController {
     }
 
     /**
-     * 판매자 굿즈 및 인증코드 등록 제출 처리
+     * 판매자 굿즈 및 인증코드 등록 제출 처리 (다중 이미지 업로드 지원)
      */
     @PostMapping
     public String createGoods(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute("form") GoodsCreateRequestDto form,
             BindingResult bindingResult,
+            @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
             RedirectAttributes redirectAttributes,
             Model model) {
 
         if (userDetails == null) {
             return "redirect:/login";
+        }
+
+        // 인증코드 필수 검증 (최소 1개 이상 입력)
+        if (form.extractAuthCodes().isEmpty()) {
+            bindingResult.rejectValue("authCodesInput", "required", "인증코드는 최소 1개 이상 필수로 등록해야 합니다.");
         }
 
         if (bindingResult.hasErrors()) {
@@ -66,7 +73,17 @@ public class SellerGoodsController {
         }
 
         try {
-            GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), form);
+            GoodsCreateRequestDto targetForm = form;
+            // 다중 이미지 파일이 업로드된 경우 스토리지 저장 후 URL 결합
+            if (imageFiles != null && !imageFiles.isEmpty()) {
+                java.util.List<String> uploadedUrls = storageService.uploadFiles(imageFiles, "goods");
+                if (!uploadedUrls.isEmpty()) {
+                    String combinedUrls = String.join(",", uploadedUrls);
+                    targetForm = form.withImageUrl(combinedUrls);
+                }
+            }
+
+            GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), targetForm);
             redirectAttributes.addFlashAttribute("successMessage",
                     String.format("굿즈 '%s'(재고: %d개, 인증코드: %d개)가 성공적으로 등록되었습니다.",
                             response.name(), response.stockQuantity(), response.authCodeCount()));

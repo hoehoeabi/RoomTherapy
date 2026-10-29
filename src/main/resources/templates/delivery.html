@@ -106,6 +106,13 @@
             scrollbar-width: none;
             margin-top: 10px;
             padding-bottom: 2px;
+            cursor: grab;
+            user-select: none;
+            scroll-behavior: smooth;
+        }
+        .thumb-slider.dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
         }
         .thumb-slider::-webkit-scrollbar {
             display: none;
@@ -122,11 +129,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .thumb-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
         .thumb-placeholder {
             font-size: 20px;
@@ -176,8 +185,11 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            width: 100%;
         }
         .phone-input {
+            min-width: 0;
+            width: 100%;
             height: 38px;
             border-radius: var(--input-radius);
             border: 1px solid var(--border-light);
@@ -191,7 +203,8 @@
             border-color: var(--red);
         }
         .phone-part1 {
-            flex: 0 0 65px;
+            flex: 0 0 52px;
+            width: 52px;
         }
         .phone-part2, .phone-part3 {
             flex: 1;
@@ -199,6 +212,7 @@
         .phone-dash {
             color: var(--gray);
             font-size: 12px;
+            flex-shrink: 0;
         }
         /* 우편번호 & 주소 */
         .zip-row {
@@ -330,7 +344,7 @@
             인증코드가 올바르지 않거나 이미 사용되었습니다.
         </div>
 
-        <form th:action="@{/delivery}" th:object="${form}" method="post" id="deliveryForm" onsubmit="syncPhoneNumber()">
+        <form th:action="@{/delivery}" th:object="${form}" method="post" id="deliveryForm">
             <!-- 신청할 리워드 굿즈 선택 -->
             <div class="reward-card" th:if="${goodsList != null and not #lists.isEmpty(goodsList)}">
                 <label for="goodsId">신청할 리워드 굿즈 선택</label>
@@ -346,12 +360,18 @@
 
                 <!-- 굿즈 썸네일 가로 슬라이더 -->
                 <div class="thumb-slider">
-                    <div th:each="goods : ${goodsList}" class="thumb-box" th:id="'thumb-' + ${goods.id}">
-                        <img th:if="${goods.imageUrl != null and !goods.imageUrl.isEmpty()}" 
-                             th:src="${goods.imageUrl}" 
-                             th:alt="${goods.name}">
-                        <span th:if="${goods.imageUrl == null or goods.imageUrl.isEmpty()}" class="thumb-placeholder">🎁</span>
-                    </div>
+                    <th:block th:each="goods : ${goodsList}">
+                        <th:block th:if="${goods.imageList != null and !goods.imageList.empty}">
+                            <div th:each="imgUrl : ${goods.imageList}" class="thumb-box" th:id="'thumb-' + ${goods.id}">
+                                <img th:src="${imgUrl}" th:alt="${goods.name}">
+                            </div>
+                        </th:block>
+                        <th:block th:if="${goods.imageList == null or goods.imageList.empty}">
+                            <div class="thumb-box" th:id="'thumb-' + ${goods.id}">
+                                <span class="thumb-placeholder">🎁</span>
+                            </div>
+                        </th:block>
+                    </th:block>
                 </div>
             </div>
 
@@ -371,22 +391,6 @@
                 <label class="form-label" for="recipientName">수령인 성함</label>
                 <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="수령인 성함 입력" required>
                 <span class="field-error" th:errors="*{recipientName}"></span>
-            </div>
-
-            <!-- 연락처 (휴대폰) 3분할 -->
-            <div class="form-group">
-                <label class="form-label">연락처 (휴대폰)</label>
-                <input type="hidden" id="phone" th:field="*{phone}">
-                <div class="phone-row">
-                    <input type="text" id="phone1" class="phone-input phone-part1" value="010" maxlength="3" required>
-                    <span class="phone-dash">-</span>
-                    <input type="text" id="phone2" class="phone-input phone-part2" maxlength="4" placeholder="0000" required 
-                           oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 4) document.getElementById('phone3').focus();">
-                    <span class="phone-dash">-</span>
-                    <input type="text" id="phone3" class="phone-input phone-part3" maxlength="4" placeholder="0000" required
-                           oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                </div>
-                <span class="field-error" th:errors="*{phone}"></span>
             </div>
 
             <!-- 배송지 주소 및 우편번호 -->
@@ -510,6 +514,36 @@
                 feedback.innerHTML = '❌ 검증 중 통신 오류가 발생했습니다.';
             }
         }
+
+        // 썸네일 슬라이더 마우스 드래그 지원
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.querySelector('.thumb-slider');
+            if (slider) {
+                let isDown = false;
+                let startX, scrollLeft;
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.classList.add('dragging');
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                });
+                slider.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mouseup', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walk = (x - startX) * 1.5;
+                    slider.scrollLeft = scrollLeft - walk;
+                });
+            }
+        });
     </script>
 </body>
 </html>

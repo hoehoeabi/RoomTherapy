@@ -113,8 +113,11 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            width: 100%;
         }
         .phone-input {
+            min-width: 0;
+            width: 100%;
             height: 38px;
             border-radius: var(--input-radius);
             border: 1px solid var(--border-light);
@@ -128,7 +131,8 @@
             border-color: var(--red);
         }
         .phone-part1 {
-            flex: 0 0 65px;
+            flex: 0 0 52px;
+            width: 52px;
         }
         .phone-part2, .phone-part3 {
             flex: 1;
@@ -136,6 +140,7 @@
         .phone-dash {
             color: var(--gray);
             font-size: 12px;
+            flex-shrink: 0;
         }
         .zip-row {
             display: flex;
@@ -220,27 +225,11 @@
             수정에 실패했습니다.
         </div>
 
-        <form th:action="@{'/delivery/edit/' + ${order.id}}" th:object="${form}" method="post" id="editForm" onsubmit="syncPhoneNumber()">
+        <form th:action="@{'/delivery/edit/' + ${order.id}}" th:object="${form}" method="post" id="editForm">
             <div class="form-group">
                 <label class="form-label" for="recipientName">수령인 성함</label>
                 <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="받으실 분의 실명 입력" required>
                 <span class="field-error" th:errors="*{recipientName}"></span>
-            </div>
-
-            <!-- 연락처: 010 - XXXX - XXXX 3분할 칸 -->
-            <div class="form-group">
-                <label class="form-label">연락처 (휴대폰)</label>
-                <input type="hidden" id="phone" th:field="*{phone}">
-                <div class="phone-row">
-                    <input type="text" id="phone1" class="phone-input phone-part1" value="010" maxlength="3" required>
-                    <span class="phone-dash">-</span>
-                    <input type="text" id="phone2" class="phone-input phone-part2" maxlength="4" placeholder="0000" required 
-                           oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 4) document.getElementById('phone3').focus();">
-                    <span class="phone-dash">-</span>
-                    <input type="text" id="phone3" class="phone-input phone-part3" maxlength="4" placeholder="0000" required
-                           oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                </div>
-                <span class="field-error" th:errors="*{phone}"></span>
             </div>
 
             <!-- 기본 주소 + 우편번호 + 카카오 주소찾기 버튼 -->

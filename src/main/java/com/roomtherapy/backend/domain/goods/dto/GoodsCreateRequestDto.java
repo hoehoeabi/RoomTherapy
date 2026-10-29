@@ -54,4 +54,8 @@ public record GoodsCreateRequestDto(
         }
         return result.stream().distinct().toList();
     }
+
+    public GoodsCreateRequestDto withImageUrl(String newImageUrl) {
+        return new GoodsCreateRequestDto(name, description, price, newImageUrl, stockQuantity, authCodesInput, authCodes);
+    }
 }
