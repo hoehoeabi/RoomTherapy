@@ -414,7 +414,7 @@
             <div class="form-group">
                 <label class="form-label" for="feedback">(선택) 게임 피드백을 자유롭게 남겨주세요!</label>
                 <span class="form-label-sub">소중한 의견을 남겨주시면 랜덤 스티커 1장을 추가로 드립니다</span>
-                <input type="text" id="feedback" th:field="*{feedback}" class="input-text" placeholder="물건들이 너무 작아요">
+                <input type="text" id="feedback" th:field="*{feedback}" class="input-text" placeholder="피드백을 남겨주세요.">
             </div>
 
             <!-- 룸테라피 리워드 발송 안내 문구 -->
@@ -448,24 +448,34 @@
                 }
             }).open();
         }
+        function onGoodsSelectChange(selectElem) {
+            const slider = document.querySelector('.thumb-slider');
+            if (!slider || !selectElem) return;
+            const selectedOpt = selectElem.options[selectElem.selectedIndex];
+            const imagesStr = selectedOpt ? (selectedOpt.getAttribute('data-img') || '') : '';
+            const goodsName = selectedOpt ? selectedOpt.text.split(' (')[0] : '리워드';
 
-        document.addEventListener("DOMContentLoaded", function() {
-            var fullPhone = document.getElementById("phone").value;
-            if (fullPhone && fullPhone.includes("-")) {
-                var parts = fullPhone.split("-");
-                if (parts.length === 3) {
-                    document.getElementById("phone1").value = parts[0];
-                    document.getElementById("phone2").value = parts[1];
-                    document.getElementById("phone3").value = parts[2];
-                }
+            slider.innerHTML = '';
+            if (imagesStr && imagesStr.trim().length > 0) {
+                const urls = imagesStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                urls.forEach(url => {
+                    const box = document.createElement('div');
+                    box.className = 'thumb-box';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = goodsName;
+                    box.appendChild(img);
+                    slider.appendChild(box);
+                });
+            } else {
+                const box = document.createElement('div');
+                box.className = 'thumb-box';
+                const span = document.createElement('span');
+                span.className = 'thumb-placeholder';
+                span.textContent = '🎁';
+                box.appendChild(span);
+                slider.appendChild(box);
             }
-        });
-
-        function syncPhoneNumber() {
-            var p1 = document.getElementById("phone1").value.trim();
-            var p2 = document.getElementById("phone2").value.trim();
-            var p3 = document.getElementById("phone3").value.trim();
-            document.getElementById("phone").value = p1 + "-" + p2 + "-" + p3;
         }
 
         async function verifyAuthCode() {
@@ -515,8 +525,13 @@
             }
         }
 
-        // 썸네일 슬라이더 마우스 드래그 지원
+        // 썸네일 슬라이더 마우스 드래그 및 초기 굿즈 이미지 로드
         document.addEventListener('DOMContentLoaded', () => {
+            const goodsSelect = document.getElementById('goodsId');
+            if (goodsSelect) {
+                onGoodsSelectChange(goodsSelect);
+            }
+
             const slider = document.querySelector('.thumb-slider');
             if (slider) {
                 let isDown = false;

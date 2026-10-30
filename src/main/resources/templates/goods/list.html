@@ -192,36 +192,10 @@
             color: #C0C0C0;
             font-size: 20px;
         }
-        .slide-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            border: 1px solid #E0E0E0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 2;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--title);
-            transition: all 0.15s ease;
-        }
-        .slide-btn:hover {
-            background: #FFFFFF;
-            transform: translateY(-50%) scale(1.08);
-        }
-        .slide-btn-prev { left: -8px; }
-        .slide-btn-next { right: -8px; }
         /* 카드 하단 버튼 행 */
         .card-action-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
             padding-top: 4px;
         }
@@ -294,20 +268,21 @@
         <!-- 리워드 카드 리스트 -->
         <div class="goods-list">
             <div th:each="goods : ${goodsList}" class="goods-card">
-                <!-- 상단 재고 상태 뱃지 및 우측 남은 개수 -->
+                <!-- 상단 재고 상태 뱃지 (구매자 확인 가능 재고 수량은 임시 주석 처리) -->
                 <div class="card-top-row">
                     <span th:if="${goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
                     <span th:unless="${goods.stockQuantity > 0}" class="badge-stock-out">재고 소진</span>
+                    <!--
                     <span class="stock-count-text" th:text="${'남은 수량 ' + goods.stockQuantity + '개'}">남은 수량 50개</span>
+                    -->
                 </div>
 
                 <!-- 굿즈 제목 및 설명 -->
                 <h2 class="goods-title" th:text="${goods.name}">룸테라피 아늑한 무드등 (스테이지 1 리워드)</h2>
                 <p class="goods-desc" th:text="${goods.description}">은은하고 따뜻한 주황빛으로 지친 하루를 편안하게 밝혀주는 침실 감성 무드등입니다.</p>
 
-                <!-- 가로 이미지 슬라이더 (카드 너비 100% 활용, 터치 스와이프 + PC 마우스 드래그 & 화살표) -->
+                <!-- 가로 이미지 슬라이더 (카드 너비 100% 활용, 터치 스와이프 + PC 마우스 드래그) -->
                 <div class="slider-wrapper">
-                    <button type="button" class="slide-btn slide-btn-prev" onclick="scrollSlider(this, -1)" aria-label="이전 사진">‹</button>
                     <div class="slider-container">
                         <!-- 업로드된 사진들이 있는 경우 -->
                         <th:block th:if="${goods.imageList != null and !goods.imageList.empty}">
@@ -323,12 +298,10 @@
                             <div class="slide-thumb"><div class="slide-thumb-placeholder">⭐</div></div>
                         </th:block>
                     </div>
-                    <button type="button" class="slide-btn slide-btn-next" onclick="scrollSlider(this, 1)" aria-label="다음 사진">›</button>
                 </div>
 
                 <!-- 하단 액션 버튼 행 -->
                 <div class="card-action-row">
-                    <span class="slide-hint">← 사진을 좌우로 넘겨보세요 →</span>
                     <a th:if="${goods.stockQuantity > 0}" 
                        th:href="@{'/delivery?goodsId=' + ${goods.id}}" 
                        class="btn-reward-apply">
@@ -343,14 +316,6 @@
     </div>
 
     <script>
-        function scrollSlider(button, direction) {
-            const wrapper = button.closest('.slider-wrapper');
-            const container = wrapper ? wrapper.querySelector('.slider-container') : null;
-            if (container) {
-                container.scrollBy({ left: direction * 170, behavior: 'smooth' });
-            }
-        }
-
         // PC/맥북 마우스 드래그 슬라이드 지원
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.slider-container').forEach(slider => {

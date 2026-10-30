@@ -196,14 +196,11 @@
                     <span class="field-error" th:errors="*{description}"></span>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">굿즈 사진 다중 업로드 (여러 장 선택 가능)</label>
-                    <div class="form-label-desc">스마트폰 앨범 또는 PC에서 사진들을 여러 장 선택해 등록하세요 (슬라이드 뷰 자동 연동).</div>
-                    <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" class="input-text" style="height: auto; padding: 8px;">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="imageUrl">또는 이미지 URL 직접 입력</label>
+                <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
+                    <label class="form-label" style="margin-bottom: 2px;">굿즈 사진 등록 <span style="color: var(--red);">*</span></label>
+                    <div class="form-label-desc">스마트폰 앨범 또는 PC에서 사진들을 여러 장 선택해 등록하세요 (최소 1장 필수, 슬라이드 뷰 자동 연동).</div>
+                    <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" class="input-text" style="height: auto; padding: 8px; background: #FFFFFF; margin-bottom: 8px;">
+                    <div class="form-label-desc">또는 이미지 URL 직접 입력:</div>
                     <input type="text" id="imageUrl" th:field="*{imageUrl}" class="input-text" placeholder="https://... 또는 /images/RoomTherapy_logo.png (쉼표로 구분)">
                     <span class="field-error" th:errors="*{imageUrl}"></span>
                 </div>

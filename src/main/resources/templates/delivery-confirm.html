@@ -93,6 +93,13 @@
             scrollbar-width: none;
             margin-bottom: 20px;
             padding-bottom: 4px;
+            cursor: grab;
+            user-select: none;
+            scroll-behavior: smooth;
+        }
+        .thumb-slider.dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
         }
         .thumb-slider::-webkit-scrollbar {
             display: none;
@@ -109,11 +116,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .thumb-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
         .thumb-placeholder {
             font-size: 22px;
@@ -219,20 +228,18 @@
         <h1>배송 신청이 완료되었습니다!</h1>
         <p class="congrats-sub">룸테라피 스테이지 클리어를 축하해요!</p>
 
-        <!-- 리워드 가로 썸네일 슬라이더 -->
+        <!-- 리워드 가로 썸네일 슬라이더 (해당 굿즈의 실제 이미지들 연동) -->
         <div class="thumb-slider">
-            <div class="thumb-box">
-                <span class="thumb-placeholder">🎁</span>
-            </div>
-            <div class="thumb-box">
-                <span class="thumb-placeholder">✨</span>
-            </div>
-            <div class="thumb-box">
-                <span class="thumb-placeholder">🛋️</span>
-            </div>
-            <div class="thumb-box">
-                <span class="thumb-placeholder">⭐</span>
-            </div>
+            <th:block th:if="${order.goodsImageList != null and !order.goodsImageList.empty}">
+                <div th:each="imgUrl : ${order.goodsImageList}" class="thumb-box">
+                    <img th:src="${imgUrl}" th:alt="${order.goodsName}">
+                </div>
+            </th:block>
+            <th:block th:if="${order.goodsImageList == null or order.goodsImageList.empty}">
+                <div class="thumb-box">
+                    <span class="thumb-placeholder">🎁</span>
+                </div>
+            </th:block>
         </div>
 
         <!-- 신청 내역 상세 -->
@@ -271,5 +278,35 @@
             </a>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.querySelector('.thumb-slider');
+            if (slider) {
+                let isDown = false;
+                let startX, scrollLeft;
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.classList.add('dragging');
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                });
+                slider.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mouseup', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walk = (x - startX) * 1.5;
+                    slider.scrollLeft = scrollLeft - walk;
+                });
+            }
+        });
+    </script>
 </body>
 </html>

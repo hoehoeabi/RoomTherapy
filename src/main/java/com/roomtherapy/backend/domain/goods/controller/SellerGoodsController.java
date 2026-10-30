@@ -64,6 +64,13 @@ public class SellerGoodsController {
             bindingResult.rejectValue("authCodesInput", "required", "인증코드는 최소 1개 이상 필수로 등록해야 합니다.");
         }
 
+        // 굿즈 사진 필수 검증 (사진 파일 업로드 또는 이미지 URL 입력 필수)
+        boolean hasUploadedFiles = imageFiles != null && imageFiles.stream().anyMatch(f -> f != null && !f.isEmpty());
+        boolean hasImageUrl = form.imageUrl() != null && !form.imageUrl().trim().isBlank();
+        if (!hasUploadedFiles && !hasImageUrl) {
+            bindingResult.rejectValue("imageUrl", "required", "굿즈 사진을 최소 1장 이상 등록(파일 업로드 또는 이미지 URL)해야 합니다.");
+        }
+
         if (bindingResult.hasErrors()) {
             String firstError = bindingResult.getAllErrors().isEmpty() ? "입력값을 다시 확인해주세요."
                     : bindingResult.getAllErrors().get(0).getDefaultMessage();

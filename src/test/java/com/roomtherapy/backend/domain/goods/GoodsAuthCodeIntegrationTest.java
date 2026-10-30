@@ -115,6 +115,7 @@ class GoodsAuthCodeIntegrationTest {
                         .cookie(new Cookie("accessToken", sellerToken))
                         .param("name", "강아지 인형")
                         .param("description", "귀여운 강아지 인형")
+                        .param("imageUrl", "https://example.com/dog.png")
                         .param("price", "0")
                         .param("stockQuantity", "10")
                         .param("authCodesInput", "code_dog_a\ncode_dog_b,code_dog_c"))
