@@ -319,8 +319,12 @@
                     <span th:if="${user.authorities == null or (user.authorities.?[authority == 'ROLE_ADMIN'].size() == 0 and user.authorities.?[authority == 'ROLE_SELLER'].size() == 0)}" class="badge-roommate">룸메이트</span>
                 </div>
                 <div class="user-name" th:text="${user.nickname}">송혜정</div>
-                <div class="user-status-text" th:text="${recentOrderSummary != null ? recentOrderSummary : (user.email != null ? user.email : '연동 완료')}">
-                    2026-10-22 18:05 주문 건 현재 접수 완료
+                <a href="/mypage?tab=orders" class="user-status-text" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between;" th:if="${recentOrderSummary != null}">
+                    <span th:text="${recentOrderSummary}">2026-10-22 18:05 주문 건 현재 접수 완료</span>
+                    <span style="font-size: 10px; color: var(--gray);">&gt;</span>
+                </a>
+                <div class="user-status-text" th:unless="${recentOrderSummary != null}" th:text="${user.email != null ? user.email : '연동 완료'}">
+                    user@test.com
                 </div>
             </div>
 
@@ -333,7 +337,7 @@
 
                 <a href="/mypage" class="btn-card">
                     <span>마이페이지</span>
-                    <span class="btn-card-sub">프로필 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 신청내역</span>
+                    <span class="btn-card-sub">배송 신청내역 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 프로필</span>
                 </a>
 
                 <a href="/goods" class="btn-card">
