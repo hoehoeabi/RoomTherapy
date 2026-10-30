@@ -44,3 +44,4 @@ out/
 !.env.example
 
 .DS_Store
+uploads/

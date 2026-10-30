@@ -87,11 +87,18 @@ public class SellerGoodsController {
             GoodsCreateRequestDto targetForm = form;
             // 다중 이미지 파일이 업로드된 경우 스토리지 저장 후 URL 결합
             if (imageFiles != null && !imageFiles.isEmpty()) {
-                java.util.List<String> uploadedUrls = storageService.uploadFiles(imageFiles, "goods");
-                if (!uploadedUrls.isEmpty()) {
-                    String combinedUrls = String.join(",", uploadedUrls);
+                java.util.List<org.springframework.web.multipart.MultipartFile> validFiles = imageFiles.stream()
+                        .filter(f -> f != null && !f.isEmpty())
+                        .toList();
+                if (!validFiles.isEmpty()) {
+                    java.util.List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
+                    String combinedUrls = resolveCombinedImageUrls(form.imageUrl(), uploadedUrls);
                     targetForm = form.withImageUrl(combinedUrls);
+                } else {
+                    targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
                 }
+            } else {
+                targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
             }
 
             GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), targetForm);
@@ -174,18 +181,19 @@ public class SellerGoodsController {
 
         try {
             GoodsUpdateRequestDto targetForm = form;
-            // 새 이미지 파일들이 업로드된 경우 기존 URL 뒤에 결합
             if (imageFiles != null && !imageFiles.isEmpty()) {
-                java.util.List<String> uploadedUrls = storageService.uploadFiles(imageFiles, "goods");
-                if (!uploadedUrls.isEmpty()) {
-                    String combinedUrls;
-                    if (form.imageUrl() != null && !form.imageUrl().trim().isBlank()) {
-                        combinedUrls = form.imageUrl().trim() + "," + String.join(",", uploadedUrls);
-                    } else {
-                        combinedUrls = String.join(",", uploadedUrls);
-                    }
+                java.util.List<org.springframework.web.multipart.MultipartFile> validFiles = imageFiles.stream()
+                        .filter(f -> f != null && !f.isEmpty())
+                        .toList();
+                if (!validFiles.isEmpty()) {
+                    java.util.List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
+                    String combinedUrls = resolveCombinedImageUrls(form.imageUrl(), uploadedUrls);
                     targetForm = form.withImageUrl(combinedUrls);
+                } else {
+                    targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
                 }
+            } else {
+                targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
             }
 
             goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm);
@@ -234,5 +242,56 @@ public class SellerGoodsController {
         goodsService.deleteGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin());
         redirectAttributes.addFlashAttribute("successMessage", "굿즈가 성공적으로 삭제되었습니다.");
         return "redirect:/goods";
+    }
+
+    /**
+     * 기존 이미지 URL 및 신규 업로드된 이미지 파일 URL들을 정렬 순서 및 플레이스홀더에 맞게 결합
+     */
+    private String resolveCombinedImageUrls(String imageUrl, java.util.List<String> uploadedUrls) {
+        if (uploadedUrls == null || uploadedUrls.isEmpty()) {
+            return cleanImageUrls(imageUrl);
+        }
+
+        if (imageUrl == null || imageUrl.trim().isBlank()) {
+            return String.join(",", uploadedUrls);
+        }
+
+        String resolved = imageUrl.trim();
+        java.util.Set<Integer> replacedIndices = new java.util.HashSet<>();
+
+        for (int i = 0; i < uploadedUrls.size(); i++) {
+            String placeholder = "__NEW_FILE_" + i + "__";
+            if (resolved.contains(placeholder)) {
+                resolved = resolved.replace(placeholder, uploadedUrls.get(i));
+                replacedIndices.add(i);
+            }
+        }
+
+        java.util.List<String> unplacedUrls = new java.util.ArrayList<>();
+        for (int i = 0; i < uploadedUrls.size(); i++) {
+            if (!replacedIndices.contains(i)) {
+                unplacedUrls.add(uploadedUrls.get(i));
+            }
+        }
+
+        if (!unplacedUrls.isEmpty()) {
+            if (!resolved.isBlank()) {
+                resolved = resolved + "," + String.join(",", unplacedUrls);
+            } else {
+                resolved = String.join(",", unplacedUrls);
+            }
+        }
+
+        return cleanImageUrls(resolved);
+    }
+
+    private String cleanImageUrls(String urls) {
+        if (urls == null || urls.isBlank()) {
+            return "";
+        }
+        return java.util.Arrays.stream(urls.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && !s.startsWith("__NEW_FILE_"))
+                .collect(java.util.stream.Collectors.joining(","));
     }
 }
