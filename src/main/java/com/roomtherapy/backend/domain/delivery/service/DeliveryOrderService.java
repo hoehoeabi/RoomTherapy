@@ -80,10 +80,11 @@ public class DeliveryOrderService {
                 .goods(goods)
                 .stageCode(request.stageCode().trim())
                 .recipientName(request.recipientName().trim())
-                .phone(request.phone().trim())
+                .phone(request.phone() != null ? request.phone().trim() : "")
                 .zipcode(request.zipcode().trim())
                 .address(request.address().trim())
                 .detailAddress(request.detailAddress() != null ? request.detailAddress().trim() : "")
+                .feedback(request.feedback() != null ? request.feedback().trim() : null)
                 .status(DeliveryStatus.ORDERED)
                 .build();
 
@@ -93,7 +94,7 @@ public class DeliveryOrderService {
         if (Boolean.TRUE.equals(request.saveAsDefaultAddress()) || user.getAddress() == null) {
             user.updateDefaultDeliveryInfo(
                     request.recipientName().trim(),
-                    request.phone().trim(),
+                    request.phone() != null ? request.phone().trim() : "",
                     request.zipcode().trim(),
                     request.address().trim(),
                     request.detailAddress() != null ? request.detailAddress().trim() : ""
@@ -128,6 +129,24 @@ public class DeliveryOrderService {
                 .toList();
     }
 
+    private static final java.time.format.DateTimeFormatter SUMMARY_DATE_FORMATTER =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /**
+     * 메인 화면 노출용 최신 주문 요약 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<String> findLatestOrderSummary(Long userId) {
+        return deliveryOrderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .findFirst()
+                .map(order -> {
+                    String formattedDate = order.getCreatedAt() != null
+                            ? order.getCreatedAt().format(SUMMARY_DATE_FORMATTER)
+                            : "";
+                    return formattedDate + " 주문 건 현재 " + order.getStatus().getDescription();
+                });
+    }
+
     /**
      * 사용자의 배송지 정보 수정 처리 (ORDERED/PREPARING 상태만 가능)
      */
@@ -142,7 +161,7 @@ public class DeliveryOrderService {
 
         order.updateDeliveryInfo(
                 request.recipientName().trim(),
-                request.phone().trim(),
+                request.phone() != null ? request.phone().trim() : "",
                 request.zipcode().trim(),
                 request.address().trim(),
                 request.detailAddress() != null ? request.detailAddress().trim() : ""

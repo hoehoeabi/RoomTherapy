@@ -2,187 +2,350 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>굿즈 리워드 상품 목록 - Room Therapy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>굿즈 리워드 둘러보기 - 룸테라피</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --text-main: #0F172A;
-            --text-sub: #64748B;
-            --border: #E2E8F0;
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #EEEEEE;
         }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            padding: 32px 20px;
-        }
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-        }
-        .header {
+            background-color: #EFEFEF;
+            color: var(--text);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
-        h1 {
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .btn-home {
-            text-decoration: none;
-            color: var(--text-sub);
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: 10px;
-            background: #FFFFFF;
-        }
-        .goods-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .goods-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            padding: 24px;
+        .app-container {
+            width: 100%;
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FAFAFA;
+            padding: 24px 16px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
             display: flex;
             flex-direction: column;
+        }
+        @media (max-width: 440px) {
+            body {
+                background-color: #FAFAFA;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 20px 14px 32px;
+            }
+        }
+        .page-header {
+            display: flex;
             justify-content: space-between;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .goods-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-        }
-        .badge-seller {
-            display: inline-block;
-            background: #ECFDF5;
-            color: #059669;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 999px;
-            margin-bottom: 12px;
-        }
-        .goods-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-        .goods-desc {
-            font-size: 14px;
-            color: var(--text-sub);
-            line-height: 1.5;
+            align-items: flex-start;
             margin-bottom: 20px;
-            flex-grow: 1;
         }
-        .goods-footer {
-            border-top: 1px solid #F1F5F9;
-            padding-top: 16px;
+        .header-title-wrap h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--title);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .header-title-wrap p {
+            font-size: 11px;
+            color: var(--gray);
+            letter-spacing: -0.2px;
+        }
+        .btn-home {
+            font-size: 12px;
+            color: var(--gray);
+            text-decoration: none;
+            padding: 4px 0;
+            font-weight: 500;
+        }
+        .btn-home:hover {
+            color: var(--title);
+        }
+        .goods-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .goods-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+        }
+        .card-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 2px;
         }
-        .stock-tag {
-            font-size: 13px;
-            color: var(--text-sub);
+        .badge-stock-in {
+            display: inline-block;
+            background: #FFEBEB;
+            color: var(--red);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            width: fit-content;
         }
-        .stock-tag strong {
-            color: var(--primary);
+        .badge-stock-out {
+            display: inline-block;
+            background: #F1F3F5;
+            color: var(--gray);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            width: fit-content;
         }
-        .btn-apply {
-            text-decoration: none;
-            background: var(--primary);
+        .stock-count-text {
+            font-size: 11.5px;
+            color: var(--gray);
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+        .goods-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--title);
+            margin-top: 6px;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+        .goods-desc {
+            font-size: 11px;
+            color: var(--gray);
+            line-height: 1.45;
+            letter-spacing: -0.2px;
+            margin-bottom: 12px;
+        }
+        /* 가로 슬라이더: 카드 너비 전체 사용, 터치 스와이프 + PC 마우스 드래그 + 좌우 버튼 지원 */
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .slider-container {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+            cursor: grab;
+            user-select: none;
+            scroll-behavior: smooth;
+        }
+        .slider-container.dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
+        }
+        .slider-container::-webkit-scrollbar {
+            display: none;
+        }
+        .slide-thumb {
+            flex: 0 0 77px;
+            width: 77px;
+            height: 77px;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            background: #FAFAFA;
+            scroll-snap-align: start;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .slide-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        .slide-thumb-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #C0C0C0;
+            font-size: 20px;
+        }
+        /* 카드 하단 버튼 행 */
+        .card-action-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 4px;
+        }
+        .slide-hint {
+            font-size: 10px;
+            color: #B5B5B5;
+            letter-spacing: -0.2px;
+        }
+        .btn-reward-apply {
+            height: 32px;
+            padding: 0 16px;
+            background: var(--red);
             color: #FFFFFF;
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
-            transition: background 0.2s;
+            border-radius: 6px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s ease;
         }
-        .btn-apply:hover {
-            background: var(--primary-hover);
+        .btn-reward-apply:active {
+            opacity: 0.9;
         }
-        .btn-sold-out {
-            background: #E2E8F0;
-            color: #94A3B8;
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 14px;
+        .btn-reward-disabled {
+            height: 32px;
+            padding: 0 16px;
+            background: #E9ECEF;
+            color: #ADB5BD;
+            font-size: 12px;
             font-weight: 700;
-            cursor: not-allowed;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-register-bar {
+            margin-bottom: 14px;
+            text-align: right;
+        }
+        .admin-register-btn {
+            font-size: 11px;
+            color: var(--red);
+            font-weight: 700;
+            text-decoration: none;
+            background: #FFEBEB;
+            padding: 5px 10px;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>🎁 굿즈 리워드 둘러보기</h1>
-                <p style="color: var(--text-sub); font-size: 14px; margin-top: 4px;">
-                    스테이지 클리어 인증코드로 원하는 리워드를 신청하세요.
-                </p>
+    <div class="app-container">
+        <!-- 헤더 영역 -->
+        <div class="page-header">
+            <div class="header-title-wrap">
+                <h1>굿즈 리워드 둘러보기</h1>
+                <p>스테이지 클리어 인증코드로 원하는 리워드를 신청하세요.</p>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <a th:if="${user != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}"
-                   href="/seller/goods/new" 
-                   style="text-decoration: none; background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 10px;">
-                    + 새 굿즈 & 인증코드 등록
-                </a>
-                <a href="/" class="btn-home">홈으로</a>
-            </div>
+            <a href="/" class="btn-home">홈으로</a>
         </div>
 
-        <div th:if="${successMessage != null}" 
-             style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 20px;" 
-             th:text="${successMessage}">
+        <!-- 관리자 전용: 신규 굿즈 등록 바로가기 -->
+        <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or user.authorities.?[authority == 'ROLE_SELLER'].size() > 0)}"
+             class="admin-register-bar">
+            <a href="/seller/goods/new" class="admin-register-btn">+ 신규 굿즈 등록</a>
         </div>
 
-        <div class="goods-grid">
+        <!-- 리워드 카드 리스트 -->
+        <div class="goods-list">
             <div th:each="goods : ${goodsList}" class="goods-card">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span class="badge-seller" th:text="${goods.seller != null ? goods.seller.nickname : '공식 리워드'}">포근한 공방</span>
-                        <a th:if="${user != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}"
-                           th:href="@{'/seller/goods/' + ${goods.id} + '/codes'}"
-                           style="font-size: 11px; color: var(--primary); text-decoration: none; font-weight: 700;">
-                            🔑 코드 확인
-                        </a>
-                    </div>
-                    <h3 class="goods-title" th:text="${goods.name}">룸테라피 아늑한 무드등</h3>
-                    <p class="goods-desc" th:text="${goods.description}">은은하고 따뜻한 주황빛 감성 무드등</p>
+                <!-- 상단 재고 상태 뱃지 (구매자 확인 가능 재고 수량은 임시 주석 처리) -->
+                <div class="card-top-row">
+                    <span th:if="${goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
+                    <span th:unless="${goods.stockQuantity > 0}" class="badge-stock-out">재고 소진</span>
+                    <!--
+                    <span class="stock-count-text" th:text="${'남은 수량 ' + goods.stockQuantity + '개'}">남은 수량 50개</span>
+                    -->
                 </div>
 
-                <div class="goods-footer">
-                    <span class="stock-tag">
-                        남은 수량: <strong th:text="${goods.stockQuantity + '개'}">50개</strong>
-                    </span>
-                    <a th:if="${goods.stockQuantity > 0}" th:href="@{'/delivery?goodsId=' + ${goods.id}}" class="btn-apply">
-                        🎁 배송 신청
+                <!-- 굿즈 제목 및 설명 -->
+                <h2 class="goods-title" th:text="${goods.name}">룸테라피 아늑한 무드등 (스테이지 1 리워드)</h2>
+                <p class="goods-desc" th:text="${goods.description}">은은하고 따뜻한 주황빛으로 지친 하루를 편안하게 밝혀주는 침실 감성 무드등입니다.</p>
+
+                <!-- 가로 이미지 슬라이더 (카드 너비 100% 활용, 터치 스와이프 + PC 마우스 드래그) -->
+                <div class="slider-wrapper">
+                    <div class="slider-container">
+                        <!-- 업로드된 사진들이 있는 경우 -->
+                        <th:block th:if="${goods.imageList != null and !goods.imageList.empty}">
+                            <div th:each="imgUrl : ${goods.imageList}" class="slide-thumb">
+                                <img th:src="${imgUrl}" th:alt="${goods.name}">
+                            </div>
+                        </th:block>
+                        <!-- 업로드된 사진이 없는 경우 기본 예시 아이콘 슬라이드 -->
+                        <th:block th:if="${goods.imageList == null or goods.imageList.empty}">
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🎁</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">✨</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🛋️</div></div>
+                            <div class="slide-thumb"><div class="slide-thumb-placeholder">⭐</div></div>
+                        </th:block>
+                    </div>
+                </div>
+
+                <!-- 하단 액션 버튼 행 -->
+                <div class="card-action-row">
+                    <a th:if="${goods.stockQuantity > 0}" 
+                       th:href="@{'/delivery?goodsId=' + ${goods.id}}" 
+                       class="btn-reward-apply">
+                        배송 신청
                     </a>
-                    <span th:unless="${goods.stockQuantity > 0}" class="btn-sold-out">
+                    <span th:unless="${goods.stockQuantity > 0}" class="btn-reward-disabled">
                         품절
                     </span>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // PC/맥북 마우스 드래그 슬라이드 지원
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.slider-container').forEach(slider => {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.classList.add('dragging');
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                });
+                slider.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mouseup', () => {
+                    isDown = false;
+                    slider.classList.remove('dragging');
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walk = (x - startX) * 1.5;
+                    slider.scrollLeft = scrollLeft - walk;
+                });
+            });
+        });
+    </script>
 </body>
 </html>

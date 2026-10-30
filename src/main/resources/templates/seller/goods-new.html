@@ -2,194 +2,225 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>새 굿즈 및 인증코드 등록 - Room Therapy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>새 굿즈 및 인증코드 등록 - 룸테라피</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --text-main: #0F172A;
-            --text-sub: #64748B;
-            --border: #E2E8F0;
-            --error: #EF4444;
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #E5E7EB;
+            --input-radius: 8px;
         }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            padding: 32px 20px;
+            background-color: #EFEFEF;
+            color: var(--text);
             display: flex;
             justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
-        .container {
+        .app-container {
             width: 100%;
-            max-width: 680px;
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FAFAFA;
+            padding: 24px 16px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
         }
-        .header {
+        @media (max-width: 440px) {
+            body {
+                background-color: #FAFAFA;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 20px 14px 32px;
+            }
+        }
+        .page-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
+            align-items: flex-start;
+            margin-bottom: 16px;
         }
-        h1 {
-            font-size: 24px;
+        .header-title-wrap h1 {
+            font-size: 20px;
             font-weight: 800;
+            color: var(--title);
             letter-spacing: -0.5px;
+            margin-bottom: 4px;
         }
-        .btn-back {
+        .header-title-wrap p {
+            font-size: 11px;
+            color: var(--gray);
+            letter-spacing: -0.2px;
+        }
+        .btn-home {
+            font-size: 12px;
+            color: var(--gray);
             text-decoration: none;
-            color: var(--text-sub);
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: 10px;
-            background: #FFFFFF;
+            padding: 4px 0;
+            font-weight: 500;
+        }
+        .btn-home:hover {
+            color: var(--title);
         }
         .card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            padding: 32px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+            background: #FFFFFF;
+            border-radius: 14px;
+            padding: 18px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            margin-bottom: 14px;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
-        label {
-            display: block;
-            font-size: 14px;
+        .form-label {
+            font-size: 12px;
             font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .label-desc {
-            font-size: 12px;
-            font-weight: 400;
-            color: var(--text-sub);
-            margin-top: 2px;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
-        }
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        textarea {
-            font-family: monospace;
-            resize: vertical;
-            min-height: 120px;
-            line-height: 1.5;
-        }
-        .field-error {
-            color: var(--error);
-            font-size: 12px;
-            margin-top: 6px;
+            color: var(--title);
             display: block;
+            margin-bottom: 6px;
         }
-        .alert-error {
-            background: #FEF2F2;
-            color: var(--error);
-            border: 1px solid #FECACA;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
+        .form-label-desc {
+            font-size: 10.5px;
+            color: var(--gray);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .input-text {
+            width: 100%;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            background: #FFFFFF;
+        }
+        .input-text:focus {
+            border-color: var(--red);
+        }
+        textarea.input-text {
+            height: 80px;
+            padding: 8px 12px;
+            resize: vertical;
+        }
+        textarea.code-area {
+            height: 100px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
         }
         .btn-gen {
-            background: #EEF2FF;
-            color: var(--primary);
-            border: 1px solid #C7D2FE;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
+            background: #FFEBEB;
+            color: var(--red);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 8px;
         }
         .btn-submit {
             width: 100%;
-            background: var(--primary);
+            height: 44px;
+            background: var(--red);
             color: #FFFFFF;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
+            border-radius: var(--input-radius);
+            border: none;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            margin-top: 6px;
+            transition: opacity 0.15s ease;
         }
-        .btn-submit:hover {
-            background: var(--primary-hover);
+        .btn-submit:active {
+            opacity: 0.92;
+        }
+        .field-error {
+            color: var(--red);
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+        }
+        .alert-error {
+            background: #FFEBEB;
+            color: var(--red);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>🎁 새 굿즈 & 인증코드 등록</h1>
-                <p style="color: var(--text-sub); font-size: 13px; margin-top: 4px;">유니티 게임에서 수령 가능한 굿즈와 유효 인증코드를 등록합니다.</p>
+    <div class="app-container">
+        <!-- 헤더 영역 -->
+        <div class="page-header">
+            <div class="header-title-wrap">
+                <h1>새 굿즈 등록</h1>
+                <p>유니티 게임 클리어 리워드 및 인증코드를 등록합니다.</p>
             </div>
-            <div>
-                <a href="/seller/deliveries" class="btn-back">대시보드로 돌아가기</a>
-            </div>
+            <a href="/goods" class="btn-home">돌아가기</a>
         </div>
 
         <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
 
         <div class="card">
-            <form th:action="@{/seller/goods}" th:object="${form}" method="post">
+            <form th:action="@{/seller/goods}" th:object="${form}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="name">굿즈 명칭 <span style="color: var(--error);">*</span></label>
-                    <input type="text" id="name" th:field="*{name}" placeholder="예: 시바견 원목 피규어, 룸테라피 무드등" required>
+                    <label class="form-label" for="name">굿즈 명칭 <span style="color: var(--red);">*</span></label>
+                    <input type="text" id="name" th:field="*{name}" class="input-text" placeholder="예: 룸테라피 아늑한 무드등 (스테이지 1 리워드)" required>
                     <span class="field-error" th:errors="*{name}"></span>
                 </div>
 
                 <div class="form-group">
-                    <label for="description">굿즈 설명</label>
-                    <textarea id="description" th:field="*{description}" placeholder="굿즈에 대한 상세 설명을 입력하세요."></textarea>
+                    <label class="form-label" for="description">굿즈 설명</label>
+                    <textarea id="description" th:field="*{description}" class="input-text" placeholder="은은하고 따뜻한 주황빛으로 지친 하루를 밝혀주는 무드등"></textarea>
                     <span class="field-error" th:errors="*{description}"></span>
                 </div>
 
-                <div class="form-group">
-                    <label for="imageUrl">이미지 URL</label>
-                    <input type="text" id="imageUrl" th:field="*{imageUrl}" placeholder="https://example.com/goods.png 또는 /images/sample.png">
+                <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
+                    <label class="form-label" style="margin-bottom: 2px;">굿즈 사진 등록 <span style="color: var(--red);">*</span></label>
+                    <div class="form-label-desc">스마트폰 앨범 또는 PC에서 사진들을 여러 장 선택해 등록하세요 (최소 1장 필수, 슬라이드 뷰 자동 연동).</div>
+                    <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" class="input-text" style="height: auto; padding: 8px; background: #FFFFFF; margin-bottom: 8px;">
+                    <div class="form-label-desc">또는 이미지 URL 직접 입력:</div>
+                    <input type="text" id="imageUrl" th:field="*{imageUrl}" class="input-text" placeholder="https://... 또는 /images/RoomTherapy_logo.png (쉼표로 구분)">
                     <span class="field-error" th:errors="*{imageUrl}"></span>
                 </div>
 
                 <div class="form-group">
-                    <label for="stockQuantity">준비된 재고 수량 <span style="color: var(--error);">*</span></label>
-                    <input type="number" id="stockQuantity" th:field="*{stockQuantity}" min="1" required>
+                    <label class="form-label" for="stockQuantity">준비된 재고 수량 <span style="color: var(--red);">*</span></label>
+                    <input type="number" id="stockQuantity" th:field="*{stockQuantity}" class="input-text" min="1" placeholder="50" required>
                     <span class="field-error" th:errors="*{stockQuantity}"></span>
                 </div>
 
-                <!-- 인증코드 등록 영역 -->
-                <div class="form-group" style="background: #F8FAFC; border: 1px dashed var(--border); padding: 18px; border-radius: 14px;">
+                <!-- 인증코드 등록 영역 (필수) -->
+                <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <label for="authCodesInput" style="margin-bottom: 0;">🔑 유니티 인증코드 목록</label>
-                        <button type="button" class="btn-gen" onclick="generateRandomCodes()">🎲 UUID 5개 자동 생성</button>
+                        <label class="form-label" for="authCodesInput" style="margin-bottom: 0;">인증코드 목록 <span style="color: var(--red);">*</span></label>
+                        <button type="button" class="btn-gen" onclick="generateRandomCodes()">+ 5개 자동 생성</button>
                     </div>
-                    <div class="label-desc" style="margin-bottom: 10px;">
-                        유니티에 하드코딩될 코드 묶음(예: dog-01, dog-02 또는 a, b, c)을 줄바꿈 또는 쉼표(,)로 구분하여 입력하세요.
-                        유저는 게임 클리어 시 이 중 하나를 받아 배송 신청을 진행하게 됩니다.
+                    <div class="form-label-desc">
+                        유니티에 배포될 클리어 인증코드들을 줄바꿈(Enter)으로 구분해 입력하세요 (최소 1개 필수).
                     </div>
-                    <textarea id="authCodesInput" th:field="*{authCodesInput}" placeholder="예:&#10;DOG-STAGE1-A&#10;DOG-STAGE1-B&#10;DOG-STAGE1-C"></textarea>
+                    <textarea id="authCodesInput" th:field="*{authCodesInput}" class="input-text code-area" placeholder="RT-A8F2K9Z&#10;RT-Q7W1E5R" required></textarea>
                     <span class="field-error" th:errors="*{authCodesInput}"></span>
                 </div>
 
@@ -206,7 +237,7 @@
             let newCodes = [];
             for (let i = 0; i < 5; i++) {
                 let code = prefix;
-                for (let j = 0; j < 8; j++) {
+                for (let j = 0; j < 6; j++) {
                     code += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
                 newCodes.push(code);

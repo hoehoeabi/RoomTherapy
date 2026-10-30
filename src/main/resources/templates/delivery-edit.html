@@ -2,162 +2,222 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배송지 정보 수정 - Room Therapy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>배송지 정보 변경 - 룸테라피</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --text-main: #0F172A;
-            --text-sub: #64748B;
-            --error: #EF4444;
-            --error-bg: #FEF2F2;
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #E5E7EB;
+            --input-radius: 8px;
         }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
+            background-color: #EFEFEF;
+            color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
-            padding: 24px 16px;
         }
-        .container {
+        .app-container {
             width: 100%;
-            max-width: 520px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 36px 32px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FFFFFF;
+            padding: 28px 20px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
         }
-        .header {
-            margin-bottom: 24px;
+        @media (max-width: 440px) {
+            body {
+                background-color: #FFFFFF;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 22px 16px 36px;
+            }
         }
-        .badge {
+        .badge-stage {
             display: inline-block;
-            background: #EEF2FF;
-            color: var(--primary);
+            background: #FFEBEB;
+            color: var(--red);
+            font-size: 10.5px;
             font-weight: 700;
-            font-size: 12px;
-            padding: 4px 12px;
-            border-radius: 999px;
-            margin-bottom: 12px;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            margin-bottom: 8px;
+            width: fit-content;
         }
         h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
-            margin-bottom: 6px;
+            color: var(--title);
             letter-spacing: -0.5px;
+            margin-bottom: 4px;
         }
-        p.desc {
-            color: var(--text-sub);
-            font-size: 14px;
+        p.sub-desc {
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 18px;
+            letter-spacing: -0.2px;
         }
-        .info-box {
-            background: #F1F5F9;
+        .info-card {
+            background: var(--bg-light);
             border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 14px;
-            color: var(--text-sub);
-            margin-bottom: 24px;
+            padding: 12px 14px;
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 18px;
+            line-height: 1.5;
         }
-        .info-box strong {
-            color: var(--text-main);
-        }
-        .alert-error {
-            background: var(--error-bg);
-            color: var(--error);
-            border: 1px solid #FCA5A5;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
+        .info-card strong {
+            color: var(--title);
         }
         .form-group {
-            margin-bottom: 18px;
-            text-align: left;
+            margin-bottom: 16px;
         }
-        label {
+        .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--title);
             display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-main);
             margin-bottom: 6px;
         }
-        input {
+        .input-text {
             width: 100%;
-            padding: 13px 15px;
-            border-radius: 12px;
-            border: 1px solid #CBD5E1;
-            font-size: 15px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--text);
             outline: none;
-            transition: all 0.2s;
+            background: #FFFFFF;
         }
-        input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        .input-text:focus {
+            border-color: var(--red);
+        }
+        .phone-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+        .phone-input {
+            min-width: 0;
+            width: 100%;
+            height: 38px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            background: #FFFFFF;
+        }
+        .phone-input:focus {
+            border-color: var(--red);
+        }
+        .phone-part1 {
+            flex: 0 0 52px;
+            width: 52px;
+        }
+        .phone-part2, .phone-part3 {
+            flex: 1;
+        }
+        .phone-dash {
+            color: var(--gray);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .zip-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .zip-input {
+            flex: 1;
+        }
+        .btn-find-addr {
+            flex: 0 0 84px;
+            height: 38px;
+            background: #F1F3F5;
+            border: none;
+            border-radius: var(--input-radius);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--title);
+            cursor: pointer;
+        }
+        .btn-find-addr:active {
+            background: #E9ECEF;
+        }
+        .btn-submit {
+            width: 100%;
+            height: 44px;
+            background: var(--red);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: var(--input-radius);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            margin-top: 10px;
+            transition: opacity 0.15s ease;
+        }
+        .btn-submit:active {
+            opacity: 0.92;
+        }
+        .btn-back-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--gray);
+            text-decoration: none;
+        }
+        .btn-back-link:hover {
+            color: var(--title);
+        }
+        .alert-error {
+            background: #FFEBEB;
+            color: var(--red);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
         }
         .field-error {
-            color: var(--error);
-            font-size: 12px;
-            margin-top: 5px;
+            color: var(--red);
+            font-size: 11px;
+            margin-top: 4px;
             display: block;
         }
-        /* 전화번호 3분할 레이아웃 */
-        .phone-grid {
-            display: grid;
-            grid-template-columns: 80px 20px 1fr 20px 1fr;
-            align-items: center;
-            text-align: center;
-        }
-        .phone-separator {
-            color: var(--text-sub);
-            font-weight: 700;
-        }
-        /* 주소 & 우편번호 & 검색 버튼 그리드 레이아웃 */
-        .address-top-grid {
-            display: grid;
-            grid-template-columns: 1fr 120px;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .btn-search-addr {
-            background: #F1F5F9;
-            color: var(--text-main);
-            border: 1px solid #CBD5E1;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 0 12px;
-            transition: all 0.2s;
-        }
-        .btn-search-addr:hover {
-            background: #E2E8F0;
-        }
     </style>
-    <!-- 카카오 (Daum) 우편번호 서비스 공식 스크립트 (무료 / 키 불필요) -->
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <span class="badge">EDIT DELIVERY</span>
-            <h1>배송지 정보 수정</h1>
-            <p class="desc">주문 상태가 접수/준비 중일 때 배송지를 변경할 수 있습니다.</p>
-        </div>
+    <div class="app-container">
+        <span class="badge-stage">EDIT DELIVERY</span>
+        <h1>배송지 정보 변경</h1>
+        <p class="sub-desc">주문 상태가 접수 완료 또는 배송 준비중일 때 변경할 수 있습니다.</p>
 
-        <div class="info-box">
-            신청 상품: <strong th:text="${order.goodsName}">스테이지 리워드</strong><br>
+        <div class="info-card">
+            신청 굿즈: <strong th:text="${order.goodsName}">스테이지 리워드</strong><br>
             인증 코드: <strong th:text="${order.stageCode}">ew-1010-clear</strong>
         </div>
 
@@ -165,51 +225,34 @@
             수정에 실패했습니다.
         </div>
 
-        <form th:action="@{'/delivery/edit/' + ${order.id}}" th:object="${form}" method="post" id="editForm" onsubmit="syncPhoneNumber()">
+        <form th:action="@{'/delivery/edit/' + ${order.id}}" th:object="${form}" method="post" id="editForm">
             <div class="form-group">
-                <label for="recipientName">수령인 성함</label>
-                <input type="text" id="recipientName" th:field="*{recipientName}" placeholder="받으실 분의 실명을 입력하세요" required>
+                <label class="form-label" for="recipientName">수령인 성함</label>
+                <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="받으실 분의 실명 입력" required>
                 <span class="field-error" th:errors="*{recipientName}"></span>
-            </div>
-
-            <!-- 연락처: 010 - XXXX - XXXX 3분할 칸 -->
-            <div class="form-group">
-                <label>연락처 (휴대폰)</label>
-                <input type="hidden" id="phone" th:field="*{phone}">
-                <div class="phone-grid">
-                    <input type="text" id="phone1" value="010" maxlength="3" style="text-align: center;" required>
-                    <span class="phone-separator">-</span>
-                    <input type="text" id="phone2" maxlength="4" placeholder="0000" style="text-align: center;" required 
-                           oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 4) document.getElementById('phone3').focus();">
-                    <span class="phone-separator">-</span>
-                    <input type="text" id="phone3" maxlength="4" placeholder="0000" style="text-align: center;" required
-                           oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                </div>
-                <span class="field-error" th:errors="*{phone}"></span>
             </div>
 
             <!-- 기본 주소 + 우편번호 + 카카오 주소찾기 버튼 -->
             <div class="form-group">
-                <label>배송지 주소 및 우편번호</label>
-                <div class="address-top-grid">
-                    <input type="text" id="zipcode" th:field="*{zipcode}" placeholder="우편번호 (5자리)" maxlength="5" pattern="^\d{5}$" readonly required>
-                    <button type="button" class="btn-search-addr" onclick="openDaumPostcode()">🔍 주소 찾기</button>
+                <label class="form-label">배송지 주소 및 우편번호</label>
+                <div class="zip-row">
+                    <input type="text" id="zipcode" th:field="*{zipcode}" class="input-text zip-input" placeholder="우편번호 (5자리)" maxlength="5" readonly required>
+                    <button type="button" class="btn-find-addr" onclick="openDaumPostcode()">주소 찾기</button>
                 </div>
-                <input type="text" id="address" th:field="*{address}" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 10px;" readonly required>
-                <input type="text" id="detailAddress" th:field="*{detailAddress}" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
+                <input type="text" id="address" th:field="*{address}" class="input-text" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 6px;" readonly required>
+                <input type="text" id="detailAddress" th:field="*{detailAddress}" class="input-text" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
                 <span class="field-error" th:errors="*{address}"></span>
                 <span class="field-error" th:errors="*{zipcode}"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary">
-                💾 수정 내용 저장하기
+            <button type="submit" class="btn-submit">
+                수정 내용 저장하기
             </button>
-            <a href="/delivery/my" class="btn btn-link">내 배송 목록으로 돌아가기</a>
+            <a href="/mypage?tab=orders" class="btn-back-link">내 배송 목록으로 돌아가기</a>
         </form>
     </div>
 
     <script>
-        // 다음(카카오) 우편번호 팝업 호출 함수
         function openDaumPostcode() {
             new daum.Postcode({
                 oncomplete: function(data) {
@@ -221,7 +264,6 @@
             }).open();
         }
 
-        // 초기 로드 시 기존 phone 값이 있으면 분할 칸에 채워넣기
         document.addEventListener("DOMContentLoaded", function() {
             var fullPhone = document.getElementById("phone").value;
             if (fullPhone && fullPhone.includes("-")) {
@@ -234,7 +276,6 @@
             }
         });
 
-        // 폼 제출 전 3분할 칸의 전화번호를 '010-XXXX-XXXX' 형식으로 조합하여 hidden input에 저장
         function syncPhoneNumber() {
             var p1 = document.getElementById("phone1").value.trim();
             var p2 = document.getElementById("phone2").value.trim();

@@ -36,4 +36,14 @@ public record GoodsResponseDto(
                 goods.getCreatedAt()
         );
     }
+
+    public List<String> imageList() {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(imageUrl.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+    }
 }

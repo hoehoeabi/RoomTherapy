@@ -2,213 +2,310 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Therapy - 룸 테라피</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Room Therapy - 룸테라피</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --kakao: #FEE500;
-            --kakao-text: #191919;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --text-main: #0F172A;
-            --text-sub: #64748B;
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #EEEEEE;
+            --card-radius: 16px;
         }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
+            background-color: #EFEFEF;
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
         }
-        .container {
+        .app-container {
             width: 100%;
-            max-width: 440px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 36px 28px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FFFFFF;
+            padding: 36px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+        @media (max-width: 440px) {
+            body {
+                background-color: #FFFFFF;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 28px 18px 36px;
+            }
+        }
+        .brand-badge {
+            display: inline-block;
+            background: #FFEBEB;
+            color: var(--red);
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            margin-bottom: 14px;
+        }
+        .logo-wrap {
+            width: 202px;
+            height: auto;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .logo-wrap img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+        .main-sub {
+            color: var(--gray);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: -0.3px;
+            margin-bottom: 24px;
             text-align: center;
         }
-        .logo-badge {
-            display: inline-block;
-            background: #EEF2FF;
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 13px;
-            padding: 6px 14px;
-            border-radius: 999px;
-            margin-bottom: 16px;
-        }
-        h1 {
-            font-size: 26px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-        p.desc {
-            color: var(--text-sub);
-            font-size: 15px;
-            line-height: 1.5;
-            margin-bottom: 28px;
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-            margin-bottom: 12px;
-        }
-        .btn-kakao {
-            background-color: var(--kakao);
-            color: var(--kakao-text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-kakao:hover {
-            opacity: 0.92;
-            transform: translateY(-1px);
-        }
-        .btn-primary {
-            background-color: var(--primary);
-            color: #FFFFFF;
-        }
-        .btn-primary:hover {
-            opacity: 0.92;
-            transform: translateY(-1px);
-        }
-        .btn-outline {
-            background-color: transparent;
-            color: var(--text-sub);
-            border: 1px solid #E2E8F0;
-        }
-        .btn-outline:hover {
-            background-color: #F1F5F9;
-        }
         .user-card {
-            background: #F1F5F9;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
+            width: 100%;
+            background: var(--bg-light);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
             text-align: left;
         }
-        .user-card-title {
-            font-size: 12px;
-            color: var(--text-sub);
-            text-transform: uppercase;
-            font-weight: 700;
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 6px;
+        }
+        .user-card-label {
+            font-size: 11px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+        .badge-roommate {
+            background: #FFEBEB;
+            color: var(--red);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+        }
+        .badge-admin {
+            background: #EEF2FF;
+            color: #4F46E5;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
         }
         .user-name {
             font-size: 18px;
             font-weight: 700;
-            color: var(--text-main);
+            color: var(--title);
             margin-bottom: 4px;
+            letter-spacing: -0.4px;
         }
-        .user-email {
+        .user-status-text {
+            font-size: 11px;
+            color: var(--gray);
+            letter-spacing: -0.2px;
+        }
+        .actions-wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .btn-card {
+            width: 100%;
+            height: 42px;
+            background: #FFFFFF;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--title);
+            font-size: 13.5px;
+            font-weight: 600;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .btn-card:active {
+            background: #F8F9FA;
+        }
+        .btn-card-sub {
+            font-size: 12px;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        .btn-cta {
+            width: 100%;
+            height: 44px;
+            background: var(--red);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #FFFFFF;
             font-size: 14px;
-            color: var(--text-sub);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            transition: opacity 0.15s ease, transform 0.1s ease;
+        }
+        .btn-cta:active {
+            opacity: 0.92;
+            transform: scale(0.99);
+        }
+        .btn-cta-icon {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+        }
+        .logout-form {
+            width: 100%;
+            margin-top: 14px;
+            text-align: center;
+        }
+        .btn-logout {
+            background: none;
+            border: none;
+            color: var(--gray);
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 8px;
+        }
+        .btn-logout:hover {
+            color: var(--text);
+        }
+        .btn-kakao {
+            width: 100%;
+            height: 44px;
+            background: #FEE500;
+            color: #191919;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+        .admin-link {
+            font-size: 12px;
+            color: #4F46E5;
+            text-decoration: none;
+            margin-top: 6px;
+            font-weight: 600;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <span class="logo-badge">ROOM THERAPY</span>
-        <h1>룸 테라피</h1>
-        <p class="desc">편안한 나만의 방 꾸미기와 굿즈 리워드</p>
+    <div class="app-container">
+        <!-- 상단 룸테라피 뱃지 -->
+        <span class="brand-badge">ROOM THERAPY</span>
+
+        <!-- 중앙 대표 로고 -->
+        <div class="logo-wrap">
+            <img src="/images/RoomTherapy_logo.png" alt="Room Therapy Logo">
+        </div>
+        <p class="main-sub">정리가 선물이 되는 나만의 감성 공간 테라피</p>
 
         <!-- 비로그인 상태 -->
-        <div th:if="${user == null}">
-            <a href="/oauth2/authorization/kakao" class="btn btn-kakao">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div th:if="${user == null}" style="width: 100%;">
+            <a href="/oauth2/authorization/kakao" class="btn-kakao">
+                <svg width="17" height="17" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.05 1.365 3.848 3.447 4.887l-.74 2.766a.375.375 0 00.56.402l3.356-2.222c.287.037.58.056.877.056 4.142 0 7.5-2.634 7.5-5.889C16.5 4.134 13.142 1.5 9 1.5z" fill="#000000"/>
                 </svg>
-                카카오로 시작하기
+                <span>카카오로 시작하기</span>
             </a>
-            
-            <a href="/goods" class="btn btn-outline" style="font-weight: 700;">🛍️ 굿즈 리워드 둘러보기</a>
 
-            <!-- 로컬 테스트용 빠른 계정 로그인 (운영 환경 노출 차단) -->
-            <div th:if="${@profileUtil.isDev()}" style="margin-top: 20px; padding: 16px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px; text-align: left;">
-                <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px;">⚡ 빠른 테스트 계정 체험 (OAuth 없이 즉시 로그인)</div>
+            <a href="/goods" class="btn-card">
+                <span>굿즈 리워드 둘러보기</span>
+            </a>
+
+            <!-- 개발/테스트용 빠른 로그인 (비운영 환경) -->
+            <div th:if="${@profileUtil.isDev()}" style="margin-top: 24px; padding: 14px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; font-size: 12px;">
+                <div style="font-weight: 700; color: var(--gray); margin-bottom: 8px; text-align: center;">⚡ 빠른 테스트 계정 로그인</div>
                 <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <a href="/test/login?role=SELLER" class="btn-outline" style="display: block; text-align: center; text-decoration: none; padding: 8px; font-size: 13px; font-weight: 700; border-radius: 10px; color: #059669; background: #FFFFFF;">
-                        🏪 테스트 판매자로 로그인 (굿즈 주문 관리)
+                    <a href="/test/login?role=USER" class="btn-card" style="height: 36px; font-size: 12px;">
+                        <span>👤 룸메이트 (일반 유저)</span>
                     </a>
-                    <a href="/test/login?role=ADMIN" class="btn-outline" style="display: block; text-align: center; text-decoration: none; padding: 8px; font-size: 13px; font-weight: 700; border-radius: 10px; color: #4F46E5; background: #FFFFFF;">
-                        👑 테스트 관리자로 로그인 (전체 대시보드)
-                    </a>
-                    <a href="/test/login?role=USER" class="btn-outline" style="display: block; text-align: center; text-decoration: none; padding: 8px; font-size: 13px; font-weight: 700; border-radius: 10px; color: var(--text-main); background: #FFFFFF;">
-                        👤 테스트 일반유저로 로그인 (배송 신청 체험)
+                    <a href="/test/login?role=ADMIN" class="btn-card" style="height: 36px; font-size: 12px; color: #4F46E5;">
+                        <span>👑 관리자 (운영자)</span>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- 로그인 완료 상태 -->
-        <div th:if="${user != null}">
+        <!-- 로그인 상태 -->
+        <div th:if="${user != null}" style="width: 100%;">
+            <!-- 유저 프로필 카드 -->
             <div class="user-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <div class="user-card-title">로그인 계정</div>
-                    <span th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0}" 
-                          style="background: #EEF2FF; color: #4F46E5; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">👑 관리자 (ADMIN)</span>
-                    <span th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_SELLER'].size() > 0}" 
-                          style="background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">🏪 판매자 (SELLER)</span>
-                    <span th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_USER'].size() > 0 and user.authorities.?[authority == 'ROLE_ADMIN'].size() == 0 and user.authorities.?[authority == 'ROLE_SELLER'].size() == 0}" 
-                          style="background: #F1F5F9; color: #64748B; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">👤 일반 유저</span>
+                <div class="user-card-header">
+                    <span class="user-card-label">로그인 계정</span>
+                    <span th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0}" class="badge-admin">관리자</span>
+                    <span th:if="${user.authorities == null or user.authorities.?[authority == 'ROLE_ADMIN'].size() == 0}" class="badge-roommate">룸메이트</span>
                 </div>
-                <div class="user-name" th:text="${user.nickname}">홍길동</div>
-                <div class="user-email" th:text="${user.email != null ? user.email : '이메일 미제공'}">user@kakao.com</div>
-
-                <!-- 권한 간편 전환 스위처 (운영 환경 노출 차단) -->
-                <div th:if="${@profileUtil.isDev()}" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600;">🛠️ 빠른 권한 변경 (UI 테스트)</div>
-                    <form action="/user/role" method="post" style="display: flex; gap: 6px;">
-                        <button type="submit" name="role" value="USER" class="btn-outline" style="padding: 5px 8px; font-size: 12px; border-radius: 8px; cursor: pointer; flex: 1;">👤 일반</button>
-                        <button type="submit" name="role" value="SELLER" class="btn-outline" style="padding: 5px 8px; font-size: 12px; border-radius: 8px; cursor: pointer; flex: 1; color: #059669; font-weight: 700;">🏪 판매자</button>
-                        <button type="submit" name="role" value="ADMIN" class="btn-outline" style="padding: 5px 8px; font-size: 12px; border-radius: 8px; cursor: pointer; flex: 1; color: #4F46E5; font-weight: 700;">👑 관리자</button>
-                    </form>
+                <div class="user-name" th:text="${user.nickname}">송혜정</div>
+                <div class="user-status-text" th:text="${recentOrderSummary != null ? recentOrderSummary : (user.email != null ? user.email : '연동 완료')}">
+                    2026-10-22 18:05 주문 건 현재 접수 완료
                 </div>
             </div>
 
-            <a href="/mypage" class="btn btn-outline" style="font-weight: 700; background: #EEF2FF; color: var(--primary); border-color: #C7D2FE;">👤 마이페이지 (프로필 / 기본 배송지 / 내역)</a>
-            <a href="/goods" class="btn btn-outline" style="font-weight: 700;">🛍️ 굿즈 리워드 목록 둘러보기</a>
-            <a href="/delivery" class="btn btn-primary">🎁 굿즈 배송 신청하러 가기</a>
+            <!-- 네비게이션 액션 버튼 -->
+            <div class="actions-wrap">
+                <a href="/mypage" class="btn-card">
+                    <span>마이페이지</span>
+                    <span class="btn-card-sub">프로필 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 신청내역</span>
+                </a>
 
-            <!-- 판매자 전용 링크 -->
-            <a th:if="${user.authorities != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}" 
-               href="/seller/goods/new" class="btn btn-outline" style="color: #059669; font-weight: 700; border-color: #A7F3D0;">
-               🎁 새 굿즈 & 인증코드 등록
-            </a>
-            <a th:if="${user.authorities != null and (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 or user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0)}" 
-               href="/seller/deliveries" class="btn btn-outline" style="color: #059669; font-weight: 700; border-color: #A7F3D0;">
-               🏪 판매자 굿즈 배송 관리
-            </a>
+                <a href="/goods" class="btn-card">
+                    <span>굿즈 리워드 둘러보기</span>
+                </a>
 
-            <!-- 관리자 전용 링크 -->
-            <a th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0}" 
-               href="/admin/deliveries" class="btn btn-outline" style="color: #4F46E5; font-weight: 700; border-color: #C7D2FE;">
-               👑 관리자 전체 배송 대시보드
-            </a>
+                <a href="/delivery" class="btn-cta">
+                    <img src="/images/coin_logo.png" alt="코인" class="btn-cta-icon">
+                    <span>굿즈 배송 신청하러 가기</span>
+                </a>
 
-            <form action="/logout" method="post">
-                <button type="submit" class="btn btn-outline">로그아웃</button>
+                <!-- 관리자 전용 바로가기 -->
+                <a th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0}" 
+                   href="/admin/deliveries" class="admin-link">
+                    👑 관리자 전체 배송 내역 관리
+                </a>
+            </div>
+
+            <!-- 하단 로그아웃 링크 -->
+            <form action="/logout" method="post" class="logout-form">
+                <button type="submit" class="btn-logout">로그아웃</button>
             </form>
         </div>
     </div>
