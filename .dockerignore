@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Gradle build outputs & cache
+.gradle
+build
+out
+
+# IDE & Editor files
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Logs & temp files
+*.log
+logs/
+tmp/
+temp/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Docker & local uploads
+Dockerfile*
+docker-compose*.yml
+uploads/
+scratch/
+PR_DESCRIPTION.md
