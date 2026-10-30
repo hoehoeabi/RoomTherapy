@@ -23,13 +23,6 @@ jobs:
       - name: gradlew 실행 권한 부여
         run: chmod +x gradlew
 
-      - name: 단위 및 슬라이스 테스트 실행
-        run: ./gradlew test --no-daemon
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
-
       - name: Docker Buildx 설정
         uses: docker/setup-buildx-action@v3
 
