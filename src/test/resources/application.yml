@@ -1,0 +1,7 @@
+# ==========================================
+# 테스트 환경 전용 설정 (운영 jar 패키징 시 완전 제외됨)
+# ==========================================
+jwt:
+  secret: this-is-a-purely-dummy-test-key-for-junit-and-ci-testing-only-1234567890
+  access-token-expiration: 1800000
+  refresh-token-expiration: 604800000
