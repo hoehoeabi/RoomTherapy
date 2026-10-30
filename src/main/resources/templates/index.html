@@ -217,6 +217,27 @@
             text-decoration: none;
             margin-bottom: 10px;
         }
+        .btn-game {
+            width: 100%;
+            height: 44px;
+            background: #1E293B;
+            color: #FFFFFF;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.18);
+            transition: opacity 0.15s ease, transform 0.1s ease;
+            margin-bottom: 10px;
+        }
+        .btn-game:active {
+            opacity: 0.92;
+            transform: scale(0.99);
+        }
         .admin-link {
             font-size: 12px;
             color: #4F46E5;
@@ -240,6 +261,11 @@
 
         <!-- 비로그인 상태 -->
         <div th:if="${user == null}" style="width: 100%;">
+            <a href="https://link.inpock.co.kr/roomtheraphy" target="_blank" rel="noopener noreferrer" class="btn-game">
+                <img src="/images/coin_logo.png" alt="게임" class="btn-cta-icon">
+                <span>방정리 게임하러 가기</span>
+            </a>
+
             <a href="/oauth2/authorization/kakao" class="btn-kakao">
                 <svg width="17" height="17" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M9 1.5C4.858 1.5 1.5 4.134 1.5 7.387c0 2.05 1.365 3.848 3.447 4.887l-.74 2.766a.375.375 0 00.56.402l3.356-2.222c.287.037.58.056.877.056 4.142 0 7.5-2.634 7.5-5.889C16.5 4.134 13.142 1.5 9 1.5z" fill="#000000"/>
@@ -282,6 +308,11 @@
 
             <!-- 네비게이션 액션 버튼 -->
             <div class="actions-wrap">
+                <a href="https://link.inpock.co.kr/roomtheraphy" target="_blank" rel="noopener noreferrer" class="btn-game" style="margin-bottom: 0;">
+                    <img src="/images/coin_logo.png" alt="게임" class="btn-cta-icon">
+                    <span>방정리 게임하러 가기</span>
+                </a>
+
                 <a href="/mypage" class="btn-card">
                     <span>마이페이지</span>
                     <span class="btn-card-sub">프로필 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 신청내역</span>
