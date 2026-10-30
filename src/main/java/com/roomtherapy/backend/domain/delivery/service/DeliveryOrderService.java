@@ -148,6 +148,19 @@ public class DeliveryOrderService {
     }
 
     /**
+     * 배송 주문 본인 소유 여부 검증 (SpEL / @PreAuthorize 연동)
+     */
+    @Transactional(readOnly = true)
+    public boolean isOrderOwner(Long orderId, Long userId) {
+        if (orderId == null || userId == null) {
+            return false;
+        }
+        return deliveryOrderRepository.findById(orderId)
+                .map(order -> order.getUser() != null && order.getUser().getId().equals(userId))
+                .orElse(false);
+    }
+
+    /**
      * 사용자의 배송지 정보 수정 처리 (ORDERED/PREPARING 상태만 가능)
      */
     @Transactional

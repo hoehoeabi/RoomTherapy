@@ -38,6 +38,10 @@ public record GoodsCreateRequestDto(
         authCodes = authCodes != null ? authCodes : List.of();
     }
 
+    public GoodsCreateRequestDto(String name, String description, Integer price, String imageUrl, Integer stockQuantity, String authCodesInput) {
+        this(name, description, price, imageUrl, stockQuantity, authCodesInput, List.of());
+    }
+
     public List<String> extractAuthCodes() {
         List<String> result = new ArrayList<>();
         if (authCodes != null && !authCodes.isEmpty()) {

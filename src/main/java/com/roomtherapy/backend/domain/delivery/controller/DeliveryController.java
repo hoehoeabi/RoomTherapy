@@ -11,6 +11,7 @@ import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -102,8 +103,9 @@ public class DeliveryController {
     }
 
     /**
-     * 굿즈 배송 신청 완료 및 확인 페이지
+     * 굿즈 배송 신청 완료 및 확인 페이지 (본인 주문 또는 관리자만 조회 가능)
      */
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
     @GetMapping("/delivery/confirm/{orderId}")
     public String confirmPage(
             @PathVariable Long orderId,
@@ -124,8 +126,9 @@ public class DeliveryController {
     }
 
     /**
-     * 배송 정보 수정 폼 화면
+     * 배송 정보 수정 폼 화면 (본인 주문 또는 관리자만 접근 가능)
      */
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
     @GetMapping("/delivery/edit/{orderId}")
     public String editDeliveryForm(
             @PathVariable Long orderId,
@@ -147,8 +150,9 @@ public class DeliveryController {
     }
 
     /**
-     * 배송 정보 수정 처리
+     * 배송 정보 수정 처리 (본인 주문 또는 관리자만 수정 가능)
      */
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
     @PostMapping("/delivery/edit/{orderId}")
     public String updateDelivery(
             @PathVariable Long orderId,

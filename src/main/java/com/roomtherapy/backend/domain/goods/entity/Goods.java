@@ -73,9 +73,26 @@ public class Goods extends BaseTimeEntity {
         this.price = Math.max(0, price);
         this.imageUrl = imageUrl;
         this.stockQuantity = Math.max(0, stockQuantity);
-        if (status != null) {
+        if (this.stockQuantity == 0) {
+            this.status = GoodsStatus.SOLD_OUT;
+        } else if (status != null) {
             this.status = status;
+        } else if (this.status == GoodsStatus.SOLD_OUT && this.stockQuantity > 0) {
+            this.status = GoodsStatus.ACTIVE;
         }
+    }
+
+    public void updateStock(int newStock) {
+        this.stockQuantity = Math.max(0, newStock);
+        if (this.stockQuantity == 0) {
+            this.status = GoodsStatus.SOLD_OUT;
+        } else if (this.status == GoodsStatus.SOLD_OUT && this.stockQuantity > 0) {
+            this.status = GoodsStatus.ACTIVE;
+        }
+    }
+
+    public boolean isSoldOut() {
+        return this.stockQuantity <= 0 || this.status == GoodsStatus.SOLD_OUT;
     }
 
     public void decreaseStock(int quantity) {
@@ -91,6 +108,13 @@ public class Goods extends BaseTimeEntity {
 
     public boolean isOwnedBy(Long userId) {
         return this.seller != null && this.seller.getId().equals(userId);
+    }
+
+    public boolean isManageableBy(Long userId, boolean isAdmin) {
+        if (isAdmin) {
+            return true;
+        }
+        return userId != null && isOwnedBy(userId);
     }
 
     /**

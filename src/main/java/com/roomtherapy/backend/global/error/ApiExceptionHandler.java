@@ -71,6 +71,16 @@ public class ApiExceptionHandler {
     }
 
     /**
+     * 접근 권한 거부 예외 처리 (403 Forbidden - @PreAuthorize 등)
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ApiResponse<Void> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
+        log.warn("[REST API Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), ErrorCode.NOT_GOODS_OWNER.getCode(), "접근 권한이 없습니다.");
+    }
+
+    /**
      * 서버 내부 미처리 예외 (500 Internal Server Error)
      */
     @ExceptionHandler(Exception.class)

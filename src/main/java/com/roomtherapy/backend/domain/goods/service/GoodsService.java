@@ -2,6 +2,7 @@ package com.roomtherapy.backend.domain.goods.service;
 
 import com.roomtherapy.backend.domain.goods.dto.GoodsCreateRequestDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsResponseDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsUpdateRequestDto;
 import com.roomtherapy.backend.domain.goods.dto.UnityCodeIssueResponseDto;
 import com.roomtherapy.backend.domain.goods.dto.UnityGoodsResponseDto;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
@@ -130,10 +131,103 @@ public class GoodsService {
     @Transactional(readOnly = true)
     public GoodsResponseDto getGoodsWithCodes(Long goodsId) {
         Goods goods = goodsRepository.findById(goodsId)
-                .orElseThrow(() -> new IllegalArgumentException("굿즈를 찾을 수 없습니다: " + goodsId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.GOODS_NOT_FOUND));
         List<String> codes = goodsAuthCodeRepository.findByGoodsId(goodsId).stream()
                 .map(GoodsAuthCode::getCode)
                 .toList();
         return GoodsResponseDto.from(goods, codes);
+    }
+
+    /**
+     * 굿즈 등록자(소유자) 여부 검증 (SpEL / @PreAuthorize 연동)
+     */
+    @Transactional(readOnly = true)
+    public boolean isOwner(Long goodsId, Long userId) {
+        if (goodsId == null || userId == null) {
+            return false;
+        }
+        return goodsRepository.findById(goodsId)
+                .map(goods -> goods.isOwnedBy(userId))
+                .orElse(false);
+    }
+
+    /**
+     * 굿즈 수정 화면용 조회 (권한 검증 포함)
+     */
+    @Transactional(readOnly = true)
+    public Goods getGoodsForManagement(Long goodsId, Long currentUserId, boolean isAdmin) {
+        Goods goods = goodsRepository.findById(goodsId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.GOODS_NOT_FOUND));
+        if (!goods.isManageableBy(currentUserId, isAdmin)) {
+            throw new BusinessException(ErrorCode.NOT_GOODS_OWNER);
+        }
+        return goods;
+    }
+
+    /**
+     * 굿즈 수정 처리 (권한 검증, 추가 인증코드 등록, Redis 재고 동기화)
+     */
+    @Transactional
+    public GoodsResponseDto updateGoods(Long goodsId, Long currentUserId, boolean isAdmin, GoodsUpdateRequestDto request) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+
+        goods.update(
+                request.name().trim(),
+                request.description() != null ? request.description().trim() : "",
+                request.price(),
+                request.imageUrl() != null ? request.imageUrl().trim() : "",
+                request.stockQuantity(),
+                request.status()
+        );
+
+        // 추가 인증코드가 입력된 경우 등록
+        List<String> additionalCodes = request.extractAdditionalAuthCodes();
+        if (!additionalCodes.isEmpty()) {
+            List<GoodsAuthCode> newAuthCodes = additionalCodes.stream()
+                    .map(code -> GoodsAuthCode.builder()
+                            .goods(goods)
+                            .code(code)
+                            .build())
+                    .toList();
+            goodsAuthCodeRepository.saveAll(newAuthCodes);
+            log.info("굿즈 ID({})에 추가 인증코드 {}개 등록 완료", goods.getId(), newAuthCodes.size());
+        }
+
+        // Redis 재고 동기화
+        try {
+            redisGoodsStockService.syncStock(goods.getId(), goods.getStockQuantity());
+        } catch (Exception e) {
+            log.warn("Redis 재고 동기화 실패: {}", e.getMessage());
+        }
+
+        List<String> allCodes = goodsAuthCodeRepository.findByGoodsId(goods.getId()).stream()
+                .map(GoodsAuthCode::getCode)
+                .toList();
+        return GoodsResponseDto.from(goods, allCodes);
+    }
+
+    /**
+     * 굿즈 재고 단독 변경 처리
+     */
+    @Transactional
+    public void updateGoodsStock(Long goodsId, Long currentUserId, boolean isAdmin, int newStock) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+        goods.updateStock(newStock);
+
+        try {
+            redisGoodsStockService.syncStock(goods.getId(), goods.getStockQuantity());
+        } catch (Exception e) {
+            log.warn("Redis 재고 동기화 실패: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 굿즈 삭제 처리 (권한 검증 포함)
+     */
+    @Transactional
+    public void deleteGoods(Long goodsId, Long currentUserId, boolean isAdmin) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+        goodsRepository.delete(goods);
+        log.info("굿즈 ID({}) 및 연동 인증코드 삭제 완료 - 처리자: {}", goodsId, currentUserId);
     }
 }

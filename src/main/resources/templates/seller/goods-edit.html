@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>굿즈 수정 - 룸테라피</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #EFEFEF;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FAFAFA;
+            padding: 24px 16px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 440px) {
+            body {
+                background-color: #FAFAFA;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 20px 14px 32px;
+            }
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .header-title-wrap h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--title);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .header-title-wrap p {
+            font-size: 11px;
+            color: var(--gray);
+            letter-spacing: -0.2px;
+        }
+        .btn-home {
+            font-size: 12px;
+            color: var(--gray);
+            text-decoration: none;
+            padding: 4px 0;
+            font-weight: 500;
+        }
+        .btn-home:hover {
+            color: var(--title);
+        }
+        .card {
+            background: #FFFFFF;
+            border-radius: var(--card-radius);
+            padding: 18px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            margin-bottom: 14px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--title);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .form-label-desc {
+            font-size: 10.5px;
+            color: var(--gray);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .input-text {
+            width: 100%;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            background: #FFFFFF;
+        }
+        .input-text:focus {
+            border-color: var(--red);
+        }
+        select.input-text {
+            cursor: pointer;
+        }
+        textarea.input-text {
+            height: 80px;
+            padding: 8px 12px;
+            resize: vertical;
+        }
+        textarea.code-area {
+            height: 90px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .btn-gen {
+            background: #FFEBEB;
+            color: var(--red);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-submit {
+            width: 100%;
+            height: 44px;
+            background: var(--red);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: var(--input-radius);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            margin-top: 6px;
+            transition: opacity 0.15s ease;
+        }
+        .btn-submit:active {
+            opacity: 0.92;
+        }
+        .btn-delete {
+            width: 100%;
+            height: 40px;
+            background: #F8F9FA;
+            color: #DC3545;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: var(--input-radius);
+            border: 1px solid #F1F3F5;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.15s ease;
+        }
+        .btn-delete:hover {
+            background: #FFEAEA;
+        }
+        .field-error {
+            color: var(--red);
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+        }
+        .alert-error {
+            background: #FFEBEB;
+            color: var(--red);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .current-images {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+        .current-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border-light);
+            flex-shrink: 0;
+        }
+        .auth-code-summary {
+            font-size: 11.5px;
+            color: var(--text);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .auth-code-summary a {
+            color: var(--red);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 헤더 영역 -->
+        <div class="page-header">
+            <div class="header-title-wrap">
+                <h1>굿즈 정보 수정</h1>
+                <p>굿즈 정보, 재고 수량 및 인증코드를 관리합니다.</p>
+            </div>
+            <a href="/goods" class="btn-home">목록으로</a>
+        </div>
+
+        <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
+
+        <div class="card">
+            <form th:action="@{'/seller/goods/' + ${goods.id} + '/edit'}" th:object="${form}" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label" for="name">굿즈 명칭 <span style="color: var(--red);">*</span></label>
+                    <input type="text" id="name" th:field="*{name}" class="input-text" placeholder="예: 룸테라피 아늑한 무드등" required>
+                    <span class="field-error" th:errors="*{name}"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">굿즈 설명</label>
+                    <textarea id="description" th:field="*{description}" class="input-text" placeholder="굿즈에 대한 상세 설명을 입력하세요."></textarea>
+                    <span class="field-error" th:errors="*{description}"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="stockQuantity">재고 수량 <span style="color: var(--red);">*</span></label>
+                    <div class="form-label-desc">재고가 0개 이하가 되면 자동으로 [품절] 상태로 전환됩니다.</div>
+                    <input type="number" id="stockQuantity" th:field="*{stockQuantity}" class="input-text" min="0" placeholder="0" required>
+                    <span class="field-error" th:errors="*{stockQuantity}"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="status">판매 상태</label>
+                    <select id="status" th:field="*{status}" class="input-text">
+                        <option th:value="${T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE}">ACTIVE (판매중)</option>
+                        <option th:value="${T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT}">SOLD_OUT (품절)</option>
+                        <option th:value="${T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE}">INACTIVE (비활성화/판매중지)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
+                    <label class="form-label" style="margin-bottom: 2px;">굿즈 사진 관리</label>
+                    
+                    <!-- 기존 등록된 사진 미리보기 -->
+                    <div th:if="${goods.imageList != null and !goods.imageList.empty}" style="margin-bottom: 8px;">
+                        <div class="form-label-desc">현재 등록된 사진:</div>
+                        <div class="current-images">
+                            <img th:each="img : ${goods.imageList}" th:src="${img}" class="current-thumb" alt="굿즈 이미지">
+                        </div>
+                    </div>
+
+                    <div class="form-label-desc">추가 사진 파일 업로드:</div>
+                    <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" class="input-text" style="height: auto; padding: 8px; background: #FFFFFF; margin-bottom: 8px;">
+
+                    <div class="form-label-desc">이미지 URL 직접 수정 (쉼표로 구분):</div>
+                    <input type="text" id="imageUrl" th:field="*{imageUrl}" class="input-text" placeholder="https://... 또는 /images/RoomTherapy_logo.png">
+                    <span class="field-error" th:errors="*{imageUrl}"></span>
+                </div>
+
+                <!-- 인증코드 확인 및 추가 등록 영역 -->
+                <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
+                    <div class="auth-code-summary">
+                        <span>현재 인증코드 현황</span>
+                        <a th:href="@{'/seller/goods/' + ${goods.id} + '/codes'}" target="_blank">코드 목록 전체 보기 &gt;</a>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <label class="form-label" for="additionalAuthCodesInput" style="margin-bottom: 0;">추가할 인증코드</label>
+                        <button type="button" class="btn-gen" onclick="generateRandomCodes()">+ 5개 자동 생성</button>
+                    </div>
+                    <div class="form-label-desc">
+                        추가로 발급할 인증코드가 있을 경우 줄바꿈(Enter)으로 구분해 입력하세요.
+                    </div>
+                    <textarea id="additionalAuthCodesInput" th:field="*{additionalAuthCodesInput}" class="input-text code-area" placeholder="RT-A8F2K9Z&#10;RT-Q7W1E5R"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">굿즈 수정 완료</button>
+            </form>
+
+            <!-- 굿즈 삭제 버튼 폼 -->
+            <form th:action="@{'/seller/goods/' + ${goods.id} + '/delete'}" method="post" onsubmit="return confirm('정말로 이 굿즈를 삭제하시겠습니까? 관련 데이터가 모두 삭제됩니다.');">
+                <button type="submit" class="btn-delete">굿즈 삭제</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function generateRandomCodes() {
+            const textarea = document.getElementById('additionalAuthCodesInput');
+            const prefix = 'RT-';
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let newCodes = [];
+            for (let i = 0; i < 5; i++) {
+                let code = prefix;
+                for (let j = 0; j < 6; j++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                newCodes.push(code);
+            }
+            if (textarea.value.trim().length > 0) {
+                textarea.value = textarea.value.trim() + '\n' + newCodes.join('\n');
+            } else {
+                textarea.value = newCodes.join('\n');
+            }
+        }
+    </script>
+</body>
+</html>
