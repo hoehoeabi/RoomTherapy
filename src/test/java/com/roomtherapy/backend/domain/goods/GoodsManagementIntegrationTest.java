@@ -32,8 +32,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.mock.web.MockMultipartFile;
 
 @ActiveProfiles("local")
 @SpringBootTest
@@ -288,5 +290,64 @@ class GoodsManagementIntegrationTest {
                     List<Goods> list = (List<Goods>) result.getModelAndView().getModel().get("goodsList");
                     assertThat(list).hasSize(3);
                 });
+    }
+
+    @Test
+    @DisplayName("MVC: 굿즈 수정 시 이미지 URL의 순서를 변경하거나 특정 이미지를 삭제하면 그대로 DB에 반영된다")
+    void update_goods_image_order_and_delete_test() throws Exception {
+        // 기존 3장 등록: img1, img2, img3
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("사진순서 굿즈", "설명", 0, "https://s3/img1.jpg,https://s3/img2.jpg,https://s3/img3.jpg", 10, "CODE-IMG-1"));
+
+        // img2 삭제 및 img3를 1번째(대표 사진)로 순서 변경: https://s3/img3.jpg,https://s3/img1.jpg
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/edit")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "사진순서 수정됨")
+                        .param("description", "설명 수정")
+                        .param("stockQuantity", "10")
+                        .param("status", "ACTIVE")
+                        .param("imageUrl", "https://s3/img3.jpg,https://s3/img1.jpg"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        Goods updated = goodsRepository.findById(created.id()).orElseThrow();
+        assertThat(updated.getImageList()).hasSize(2);
+        assertThat(updated.getImageList().get(0)).isEqualTo("https://s3/img3.jpg"); // 대표 사진으로 변경됨
+        assertThat(updated.getImageList().get(1)).isEqualTo("https://s3/img1.jpg");
+        assertThat(updated.getImageList()).doesNotContain("https://s3/img2.jpg"); // 삭제됨
+    }
+
+    @Test
+    @DisplayName("MVC: 신규 사진 파일 업로드 시 플레이스홀더를 사용해 기존 이미지보다 앞에 배치하여 대표 사진으로 지정할 수 있다")
+    void update_goods_with_new_file_reordered_as_first_test() throws Exception {
+        // 기존 1장 등록: https://s3/old.jpg
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("단일사진 굿즈", "설명", 0, "https://s3/old.jpg", 10, "CODE-IMG-2"));
+
+        MockMultipartFile newFile = new MockMultipartFile(
+                "imageFiles",
+                "new_main.png",
+                "image/png",
+                "dummy image content".getBytes()
+        );
+
+        // 신규 파일을 앞에 배치하는 플레이스홀더 전송: __NEW_FILE_0__,https://s3/old.jpg
+        mockMvc.perform(multipart("/seller/goods/" + created.id() + "/edit")
+                        .file(newFile)
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "단일사진 굿즈")
+                        .param("description", "설명")
+                        .param("stockQuantity", "10")
+                        .param("status", "ACTIVE")
+                        .param("imageUrl", "__NEW_FILE_0__,https://s3/old.jpg"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        Goods updated = goodsRepository.findById(created.id()).orElseThrow();
+        assertThat(updated.getImageList()).hasSize(2);
+        // 0번째가 업로드된 새 파일 URL이고, 1번째가 기존 old.jpg
+        assertThat(updated.getImageList().get(0)).startsWith("/uploads/goods/");
+        assertThat(updated.getImageList().get(0)).endsWith(".png");
+        assertThat(updated.getImageList().get(1)).isEqualTo("https://s3/old.jpg");
     }
 }
