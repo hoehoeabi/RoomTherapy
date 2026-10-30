@@ -26,3 +26,16 @@ spring:
     properties:
       hibernate:
         format_sql: false
+
+# ==========================================
+# AWS S3 스토리지 연동 설정
+# ==========================================
+cloud:
+  aws:
+    s3:
+      bucket: ${AWS_S3_BUCKET:roomtherapy-bucket}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
