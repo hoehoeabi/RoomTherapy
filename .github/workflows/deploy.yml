@@ -25,6 +25,8 @@ jobs:
 
       - name: 단위 및 슬라이스 테스트 실행
         run: ./gradlew test --no-daemon
+        env:
+          JWT_SECRET: this-is-a-purely-dummy-test-key-for-junit-and-ci-testing-only-1234567890
 
       - name: Docker Buildx 설정
         uses: docker/setup-buildx-action@v3
