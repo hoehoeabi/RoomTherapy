@@ -6,6 +6,7 @@ import com.roomtherapy.backend.domain.delivery.service.DeliveryOrderService;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +22,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/seller")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
 public class SellerDeliveryController {
 
     private final DeliveryOrderService deliveryOrderService;

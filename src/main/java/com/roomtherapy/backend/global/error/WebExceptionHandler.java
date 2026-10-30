@@ -67,6 +67,15 @@ public class WebExceptionHandler {
     }
 
     /**
+     * 접근 권한 거부 예외 처리 (403 Forbidden - @PreAuthorize 등)
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ModelAndView handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
+        log.warn("[Web Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
+        return createErrorView(response, HttpStatus.FORBIDDEN, ErrorCode.NOT_GOODS_OWNER.getCode(), "접근 권한이 없습니다. 본인이 등록한 굿즈만 관리할 수 있습니다.");
+    }
+
+    /**
      * 일반 표준 런타임 예외 처리 (IllegalArgumentException, IllegalStateException)
      */
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})

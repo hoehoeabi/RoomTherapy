@@ -2,11 +2,14 @@ package com.roomtherapy.backend.domain.goods.controller;
 
 import com.roomtherapy.backend.domain.goods.dto.GoodsCreateRequestDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsResponseDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsUpdateRequestDto;
+import com.roomtherapy.backend.domain.goods.entity.Goods;
 import com.roomtherapy.backend.domain.goods.service.GoodsService;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,6 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/seller/goods")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
 public class SellerGoodsController {
 
     private final GoodsService goodsService;
@@ -107,6 +111,7 @@ public class SellerGoodsController {
     /**
      * 특정 굿즈의 등록된 인증코드 목록 확인
      */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
     @GetMapping("/{goodsId}/codes")
     public String viewAuthCodes(
             @PathVariable Long goodsId,
@@ -116,5 +121,118 @@ public class SellerGoodsController {
         model.addAttribute("goods", goods);
         model.addAttribute("user", userDetails);
         return "seller/goods-codes";
+    }
+
+    /**
+     * 굿즈 수정 폼 화면 (판매자 본인 또는 관리자 접근 가능)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @GetMapping("/{goodsId}/edit")
+    public String editGoodsForm(
+            @PathVariable Long goodsId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Model model) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", GoodsUpdateRequestDto.from(goods));
+        }
+        model.addAttribute("goods", goods);
+        model.addAttribute("user", userDetails);
+        return "seller/goods-edit";
+    }
+
+    /**
+     * 굿즈 수정 제출 처리 (다중 이미지 추가 업로드 지원)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PostMapping("/{goodsId}/edit")
+    public String updateGoods(
+            @PathVariable Long goodsId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @ModelAttribute("form") GoodsUpdateRequestDto form,
+            BindingResult bindingResult,
+            @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        if (bindingResult.hasErrors()) {
+            String firstError = bindingResult.getAllErrors().isEmpty() ? "입력값을 다시 확인해주세요."
+                    : bindingResult.getAllErrors().get(0).getDefaultMessage();
+            model.addAttribute("errorMessage", firstError);
+            Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+            model.addAttribute("goods", goods);
+            model.addAttribute("user", userDetails);
+            return "seller/goods-edit";
+        }
+
+        try {
+            GoodsUpdateRequestDto targetForm = form;
+            // 새 이미지 파일들이 업로드된 경우 기존 URL 뒤에 결합
+            if (imageFiles != null && !imageFiles.isEmpty()) {
+                java.util.List<String> uploadedUrls = storageService.uploadFiles(imageFiles, "goods");
+                if (!uploadedUrls.isEmpty()) {
+                    String combinedUrls;
+                    if (form.imageUrl() != null && !form.imageUrl().trim().isBlank()) {
+                        combinedUrls = form.imageUrl().trim() + "," + String.join(",", uploadedUrls);
+                    } else {
+                        combinedUrls = String.join(",", uploadedUrls);
+                    }
+                    targetForm = form.withImageUrl(combinedUrls);
+                }
+            }
+
+            goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm);
+            redirectAttributes.addFlashAttribute("successMessage", "굿즈 정보가 성공적으로 수정되었습니다.");
+            return "redirect:/goods";
+        } catch (Exception e) {
+            log.error("굿즈 수정 실패", e);
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "굿즈 수정 중 오류가 발생했습니다.");
+            Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+            model.addAttribute("goods", goods);
+            model.addAttribute("user", userDetails);
+            return "seller/goods-edit";
+        }
+    }
+
+    /**
+     * 굿즈 단독 재고 수량 변경 처리 (목록 등에서 간편 변경)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PostMapping("/{goodsId}/stock")
+    public String updateStock(
+            @PathVariable Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam("stockQuantity") int stockQuantity,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        goodsService.updateGoodsStock(goodsId, userDetails.getUserId(), userDetails.isAdmin(), stockQuantity);
+        redirectAttributes.addFlashAttribute("successMessage", "재고 수량이 " + stockQuantity + "개로 변경되었습니다.");
+        return "redirect:/goods";
+    }
+
+    /**
+     * 굿즈 삭제 처리 (판매자 본인 또는 관리자 접근 가능)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PostMapping("/{goodsId}/delete")
+    public String deleteGoods(
+            @PathVariable Long goodsId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        goodsService.deleteGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+        redirectAttributes.addFlashAttribute("successMessage", "굿즈가 성공적으로 삭제되었습니다.");
+        return "redirect:/goods";
     }
 }

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>굿즈 배송 신청 - 룸테라피</title>
+    <link rel="stylesheet" href="/css/variables.css">
     <style>
         :root {
             --red: #FF4B4E;
@@ -352,8 +353,9 @@
                     <option value="">스테이지 기본 리워드 (선택 안 함)</option>
                     <option th:each="goods : ${goodsList}" 
                             th:value="${goods.id}" 
-                            th:text="${goods.name + ' (남은 재고: ' + goods.stockQuantity + '개)'}"
+                            th:text="${(goods.stockQuantity <= 0 ? '[품절] ' : '') + goods.name + (goods.stockQuantity <= 0 ? ' (품절)' : ' (남은 재고: ' + goods.stockQuantity + '개)')}"
                             th:attr="data-img=${goods.imageUrl}"
+                            th:disabled="${goods.stockQuantity <= 0}"
                             th:selected="${form.goodsId != null and form.goodsId == goods.id}">
                     </option>
                 </select>

@@ -22,6 +22,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDeliveryController {
 
     private final DeliveryOrderService deliveryOrderService;

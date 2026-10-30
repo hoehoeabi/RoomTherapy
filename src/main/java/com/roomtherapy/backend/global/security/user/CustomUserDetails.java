@@ -33,6 +33,20 @@ public class CustomUserDetails implements UserDetails {
         return authorities;
     }
 
+    public boolean isAdmin() {
+        return authorities != null && authorities.stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    public boolean isSeller() {
+        return authorities != null && authorities.stream()
+                .anyMatch(a -> "ROLE_SELLER".equals(a.getAuthority()));
+    }
+
+    public boolean isSellerOrAdmin() {
+        return isAdmin() || isSeller();
+    }
+
     @Override
     public String getPassword() {
         return null; // OAuth2 기반이므로 패스워드 미사용

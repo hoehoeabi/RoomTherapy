@@ -1,0 +1,21 @@
+/**
+ * RoomTherapy Design System - Global Color & Style Variables
+ */
+:root {
+    /* 룸테라피 4대 핵심 컬러 */
+    --red: #FF4B4E;         /* 대표 포인트 레드 */
+    --title: #020202;       /* 타이틀/헤드라인 블랙 */
+    --text: #3C3C3C;        /* 본문 텍스트 */
+    --gray: #838383;        /* 보조/설명 그레이 */
+
+    /* UI 시스템 공통 컬러 */
+    --bg-light: #F7F8FA;    /* 카드/인풋 배경 라이트 그레이 */
+    --border-light: #EEEEEE;/* 연한 경계선 */
+    --card-radius: 16px;    /* 모바일 카드 라운딩 */
+
+    /* 상태 뱃지 컬러 */
+    --sold-out: #DC2626;    /* 품절 경고 레드 */
+    --sold-out-bg: #FEF2F2; /* 품절 배경 */
+    --badge-admin-bg: #EEF2FF;
+    --badge-admin-text: #4F46E5;
+}

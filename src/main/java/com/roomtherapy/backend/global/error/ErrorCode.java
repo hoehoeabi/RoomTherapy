@@ -25,6 +25,7 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "403", "해당 페이지에 접근할 권한이 없습니다."),
     NOT_ORDER_OWNER(HttpStatus.FORBIDDEN, "ORDER_403_01", "본인의 배송 신청 건만 조회하거나 수정할 수 있습니다."),
     NOT_SELLER_OWNER(HttpStatus.FORBIDDEN, "ORDER_403_02", "본인이 등록한 굿즈의 배송 주문만 상태를 변경할 수 있습니다."),
+    NOT_GOODS_OWNER(HttpStatus.FORBIDDEN, "GOODS_403_01", "본인이 등록한 굿즈만 수정하거나 삭제할 수 있습니다."),
 
     // 404 Not Found
     NOT_FOUND(HttpStatus.NOT_FOUND, "404", "요청하신 페이지 또는 리소스를 찾을 수 없습니다."),
