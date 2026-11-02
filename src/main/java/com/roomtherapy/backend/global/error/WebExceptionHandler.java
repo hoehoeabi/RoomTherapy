@@ -76,6 +76,15 @@ public class WebExceptionHandler {
     }
 
     /**
+     * 파일 업로드 허용 용량 초과 예외 처리 (413 Payload Too Large)
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ModelAndView handleMaxUploadSizeExceededException(org.springframework.web.multipart.MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
+        log.warn("[Web File Upload Size Exceeded] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
+        return createErrorView(response, ErrorCode.FILE_SIZE_EXCEEDED.getStatus(), ErrorCode.FILE_SIZE_EXCEEDED.getCode(), ErrorCode.FILE_SIZE_EXCEEDED.getMessage());
+    }
+
+    /**
      * 일반 표준 런타임 예외 처리 (IllegalArgumentException, IllegalStateException)
      */
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
