@@ -281,6 +281,149 @@
             padding: 5px 10px;
             border-radius: 6px;
         }
+        .toolbar-actions {
+            display: inline-flex;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-bulk-template {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            background: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.15s ease;
+        }
+        .btn-bulk-template:hover {
+            background: #E2E8F0;
+        }
+        .btn-bulk-import {
+            font-size: 11px;
+            font-weight: 700;
+            color: #047857;
+            background: #D1FAE5;
+            border: 1px solid #A7F3D0;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.15s ease;
+        }
+        .btn-bulk-import:hover {
+            background: #A7F3D0;
+        }
+        /* 일괄 등록 결과 카드 */
+        .import-result-card {
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .import-result-card.all-success {
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #065F46;
+        }
+        .import-result-card.has-errors {
+            background: #FFFBEB;
+            border: 1px solid #FDE68A;
+            color: #92400E;
+        }
+        .import-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .import-error-list {
+            margin-top: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+            background: #FFFFFF;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            color: #DC2626;
+            border: 1px solid #FEE2E2;
+        }
+        .import-error-item {
+            padding: 2px 0;
+            border-bottom: 1px dashed #FEE2E2;
+        }
+        .import-error-item:last-child {
+            border-bottom: none;
+        }
+        /* 드롭존 및 가이드 박스 */
+        .upload-dropzone {
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 20px 14px;
+            text-align: center;
+            background: #F8FAFC;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+        .upload-dropzone:hover, .upload-dropzone.drag-active {
+            border-color: #059669;
+            background: #F0FDF4;
+        }
+        .upload-dropzone-icon {
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+        .upload-dropzone-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        .upload-dropzone-sub {
+            font-size: 11px;
+            color: #64748B;
+        }
+        .import-guide-box {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 11.5px;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .import-guide-title {
+            font-weight: 700;
+            color: #1E293B;
+            margin-bottom: 4px;
+        }
+        .import-guide-list {
+            padding-left: 16px;
+            margin-bottom: 6px;
+        }
+        .import-guide-list li {
+            margin-bottom: 3px;
+        }
+        .import-template-link {
+            border-top: 1px solid #E2E8F0;
+            padding-top: 6px;
+            font-size: 11.5px;
+        }
+        .import-template-link a {
+            color: #059669;
+            font-weight: 700;
+            text-decoration: underline;
+        }
         .empty-goods {
             background: #FFFFFF;
             border-radius: 16px;
@@ -464,15 +607,37 @@
         <!-- 성공 안내 메시지 -->
         <div th:if="${successMessage != null}" class="alert-success" th:text="${successMessage}"></div>
 
-        <!-- 관리자/판매자 전용 상단 툴바 (필터 탭 및 신규 굿즈 등록 버튼) -->
+        <!-- 에러 안내 메시지 -->
+        <div th:if="${errorMessage != null}" class="alert-error" style="background: #FFEAEA; color: #DC2626; border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 600; margin-bottom: 14px;" th:text="${errorMessage}"></div>
+
+        <!-- 엑셀/ZIP 일괄 등록 결과 카드 -->
+        <div th:if="${importResult != null}" class="import-result-card"
+             th:classappend="${importResult.hasErrors() ? 'has-errors' : 'all-success'}">
+            <div class="import-result-header">
+                <span th:if="${!importResult.hasErrors()}">✅ 굿즈 일괄 등록 완료</span>
+                <span th:if="${importResult.hasErrors()}">⚠️ 굿즈 일괄 등록 결과 (오류 발생)</span>
+                <span style="font-weight: 600; font-size: 11px;"
+                      th:text="${'총 ' + importResult.totalRows() + '건 중 ' + importResult.successCount() + '건 성공, ' + importResult.failureCount() + '건 실패'}">
+                </span>
+            </div>
+            <div th:if="${importResult.hasErrors()}" class="import-error-list">
+                <div th:each="err : ${importResult.errorMessages()}" class="import-error-item" th:text="${err}"></div>
+            </div>
+        </div>
+
+        <!-- 관리자/판매자 전용 상단 툴바 (필터 탭 및 신규 굿즈 등록 / 양식 다운로드 / 일괄 등록 버튼) -->
         <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or user.authorities.?[authority == 'ROLE_SELLER'].size() > 0)}"
              class="admin-toolbar">
             <div class="filter-tabs">
-                <a href="/goods?filter=all" class="filter-tab" th:classappend="${currentFilter == null or currentFilter == 'all' ? ' active' : ''}">전체 굿즈</a>
-                <a href="/goods?filter=my" class="filter-tab" th:classappend="${currentFilter == 'my' ? ' active' : ''}">내가 올린 굿즈</a>
-                <a href="/goods?filter=inactive" class="filter-tab" th:classappend="${currentFilter == 'inactive' ? ' active' : ''}">🔒 숨김 굿즈</a>
+                <a href="/goods?filter=all" class="filter-tab" th:classappend="${currentFilter == null or currentFilter == 'all' ? ' active' : ''}">전체</a>
+                <a href="/goods?filter=my" class="filter-tab" th:classappend="${currentFilter == 'my' ? ' active' : ''}">내 굿즈</a>
+                <a href="/goods?filter=inactive" class="filter-tab" th:classappend="${currentFilter == 'inactive' ? ' active' : ''}">🔒 숨김</a>
             </div>
-            <a href="/seller/goods/new" class="admin-register-btn">+ 신규 굿즈 등록</a>
+            <div class="toolbar-actions">
+                <a th:href="@{/seller/goods/template/excel}" class="btn-bulk-template" title="엑셀 표준 양식 다운로드">📥 양식</a>
+                <button type="button" class="btn-bulk-import" onclick="openGoodsImportModal()" title="엑셀/ZIP 일괄 등록">📤 일괄등록</button>
+                <a href="/seller/goods/new" class="admin-register-btn">+ 굿즈 등록</a>
+            </div>
         </div>
 
         <!-- 굿즈 목록이 비어있는 경우 안내 -->
@@ -637,6 +802,109 @@
                 closeGoodsDeleteModal();
             }
         }
+
+        // 굿즈 엑셀/ZIP 일괄 등록 모달 제어
+        function openGoodsImportModal() {
+            document.getElementById('goodsImportModal').classList.add('active');
+        }
+
+        function closeGoodsImportModal() {
+            document.getElementById('goodsImportModal').classList.remove('active');
+            resetGoodsImportForm();
+        }
+
+        function handleGoodsImportBackdrop(event) {
+            if (event.target.id === 'goodsImportModal') {
+                closeGoodsImportModal();
+            }
+        }
+
+        function resetGoodsImportForm() {
+            const input = document.getElementById('goodsImportFileInput');
+            if (input) input.value = '';
+            const dropText = document.getElementById('goodsImportDropText');
+            if (dropText) dropText.textContent = '+ 클릭하거나 엑셀(.xlsx) 또는 ZIP(.zip) 파일을 여기로 드래그';
+            const submitBtn = document.getElementById('btnGoodsImportSubmit');
+            if (submitBtn) submitBtn.disabled = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const goodsDropzone = document.getElementById('goodsImportDropzone');
+            const goodsFileInput = document.getElementById('goodsImportFileInput');
+            const goodsSubmitBtn = document.getElementById('btnGoodsImportSubmit');
+            const goodsDropText = document.getElementById('goodsImportDropText');
+
+            if (goodsDropzone && goodsFileInput) {
+                goodsDropzone.addEventListener('click', () => goodsFileInput.click());
+
+                goodsFileInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        goodsDropText.textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                        goodsSubmitBtn.disabled = false;
+                    } else {
+                        resetGoodsImportForm();
+                    }
+                });
+
+                goodsDropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    goodsDropzone.classList.add('drag-active');
+                });
+
+                goodsDropzone.addEventListener('dragleave', () => {
+                    goodsDropzone.classList.remove('drag-active');
+                });
+
+                goodsDropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    goodsDropzone.classList.remove('drag-active');
+                    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        const file = e.dataTransfer.files[0];
+                        goodsFileInput.files = e.dataTransfer.files;
+                        goodsDropText.textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                        goodsSubmitBtn.disabled = false;
+                    }
+                });
+            }
+        });
     </script>
+
+    <!-- 굿즈 엑셀 / ZIP 일괄 등록 모달 (화면 중앙 커스텀 다이얼로그) -->
+    <div id="goodsImportModal" class="confirm-modal-overlay" onclick="handleGoodsImportBackdrop(event)">
+        <div class="confirm-modal-box" style="max-width: 360px;">
+            <div class="confirm-modal-icon">📤</div>
+            <h3 class="confirm-modal-title">굿즈 일괄 등록</h3>
+            <p class="confirm-modal-desc" style="margin-bottom: 12px;">
+                <strong>.xlsx</strong> 엑셀 또는 <strong>.zip</strong> 압축 파일(엑셀 + 사진)을 선택하여 한 번에 여러 굿즈를 등록할 수 있습니다.
+            </p>
+
+            <form id="goodsImportForm" th:action="@{/seller/goods/import/excel}" method="post" enctype="multipart/form-data">
+                <div class="upload-dropzone" id="goodsImportDropzone">
+                    <div class="upload-dropzone-icon">📁</div>
+                    <div class="upload-dropzone-text" id="goodsImportDropText">+ 클릭하거나 엑셀(.xlsx) 또는 ZIP(.zip) 파일을 여기로 드래그</div>
+                    <div class="upload-dropzone-sub">.xlsx, .zip 파일 지원</div>
+                </div>
+                <input type="file" id="goodsImportFileInput" name="file" accept=".xlsx, .xls, .zip" style="display: none;" required>
+
+                <div class="import-guide-box">
+                    <div class="import-guide-title">📌 등록 안내 가이드</div>
+                    <ul class="import-guide-list">
+                        <li><strong>굿즈 명칭*, 재고 수량*</strong>은 필수 항목입니다.</li>
+                        <li><strong>단일 엑셀(.xlsx)</strong>: 사진 컬럼에 웹 URL을 적거나, 빈칸 시 <code>사진등록 예정</code>으로 등록됩니다.</li>
+                        <li><strong>압축 파일(.zip)</strong>: 엑셀과 실제 사진들을 묶어 올리면 자동 스토리지 업로드 매핑됩니다.</li>
+                    </ul>
+                    <div class="import-template-link">
+                        👉 <a th:href="@{/seller/goods/template/excel}">엑셀 표준 양식 다운로드 (.xlsx)</a>
+                    </div>
+                </div>
+
+                <div class="confirm-modal-actions" style="margin-top: 14px;">
+                    <button type="submit" class="btn-confirm-yes" id="btnGoodsImportSubmit" style="background: #059669;" disabled>일괄 등록 실행</button>
+                    <button type="button" class="btn-confirm-no" onclick="closeGoodsImportModal()">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
