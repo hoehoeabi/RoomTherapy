@@ -48,7 +48,7 @@ public class GoodsExcelService {
 
             String[] headers = {
                     "굿즈 명칭*", "설명", "가격", "재고 수량*",
-                    "사진 (URL 또는 ZIP 내 파일명)", "인증코드 목록"
+                    "사진 (URL 또는 ZIP 내 파일명) [다중 가능]", "인증코드 목록 [쉼표(,) 다중 가능]"
             };
 
             String[] hints = {
@@ -56,8 +56,8 @@ public class GoodsExcelService {
                     "굿즈 상세 설명 (선택)",
                     "0 이상의 숫자 (기본값: 0)",
                     "필수 입력 / 0 이상의 정수 (0 입력 시 품절)",
-                    "외부 웹 URL 또는 ZIP 동봉 파일명 (쉼표로 여러 장 가능 / 빈칸 시 '사진등록 예정')",
-                    "줄바꿈(Enter) 또는 쉼표(,)로 구분 (선택)"
+                    "💡 쉼표(,)로 구분하여 여러 장 등록 가능 (첫 번째가 대표 썸네일 / ZIP 업로드 시 동봉 파일명 입력 / 빈칸 시 '사진등록 예정')",
+                    "💡 쉼표(,) 또는 줄바꿈(Alt+Enter)으로 여러 개 일괄 등록 가능 (예: RT-A1, RT-B2, RT-C3)"
             };
 
             String[][] sampleData = {
@@ -67,7 +67,7 @@ public class GoodsExcelService {
                             "25000",
                             "50",
                             "mood_01.png, mood_02.png",
-                            "RT-MOOD01\nRT-MOOD02"
+                            "RT-MOOD01, RT-MOOD02, RT-MOOD03"
                     },
                     {
                             "룸테라피 소프트 쿠션",
@@ -87,6 +87,25 @@ public class GoodsExcelService {
                 cell.setCellValue(headers[i]);
                 cell.setCellStyle(headerStyle);
             }
+
+            // 헤더 셀에 상세 가이드 메모(Comment 말풍선 툴팁) 부착
+            Drawing<?> drawing = sheet.createDrawingPatriarch();
+            CreationHelper factory = workbook.getCreationHelper();
+
+            addCellComment(factory, drawing, headerRow.getCell(4),
+                    "💡 [다중 사진 등록 안내]",
+                    "• 쉼표(,)로 구분하여 여러 사진을 한 번에 등록할 수 있습니다.\n" +
+                    "• 첫 번째 사진이 대표 썸네일로 지정됩니다.\n" +
+                    "• ZIP 파일 업로드 시 동봉된 이미지 파일명을 적어주세요. (예: mood1.png, mood2.png)\n" +
+                    "• 외부 웹 URL도 지원합니다. (예: https://.../img1.png, https://.../img2.png)\n" +
+                    "• 비워둘 경우 자동으로 '사진등록 예정'으로 등록됩니다.");
+
+            addCellComment(factory, drawing, headerRow.getCell(5),
+                    "💡 [인증코드 일괄 등록 안내]",
+                    "• 쉼표(,) 또는 줄바꿈(Alt+Enter)으로 여러 개의 인증코드를 한 셀에 입력할 수 있습니다.\n" +
+                    "• 예시: RT-A1B2C3, RT-D4E5F6, RT-G7H8J9\n" +
+                    "• 입력된 개수만큼 해당 굿즈에 클리어 인증코드가 즉시 연동 발급됩니다.\n" +
+                    "• 비워둘 경우 인증코드 없이 등록됩니다.");
 
             // 2행: 안내 힌트
             Row hintRow = sheet.createRow(1);
@@ -478,6 +497,18 @@ public class GoodsExcelService {
             }
             default -> "";
         };
+    }
+
+    private void addCellComment(CreationHelper factory, Drawing<?> drawing, Cell cell, String title, String body) {
+        ClientAnchor anchor = factory.createClientAnchor();
+        anchor.setCol1(cell.getColumnIndex());
+        anchor.setCol2(cell.getColumnIndex() + 4);
+        anchor.setRow1(cell.getRowIndex());
+        anchor.setRow2(cell.getRowIndex() + 5);
+
+        Comment comment = drawing.createCellComment(anchor);
+        comment.setString(factory.createRichTextString(title + "\n" + body));
+        cell.setCellComment(comment);
     }
 
     /**
