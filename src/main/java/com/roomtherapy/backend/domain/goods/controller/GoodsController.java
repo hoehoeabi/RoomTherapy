@@ -34,7 +34,17 @@ public class GoodsController {
         Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
 
         List<Goods> goodsList;
-        if ("my".equals(filter) && userDetails != null) {
+        if ("inactive".equals(filter) && userDetails != null && (isAdmin || userDetails.isSeller())) {
+            if (isAdmin) {
+                goodsList = goodsRepository.findAll().stream()
+                        .filter(g -> g.getStatus() == GoodsStatus.INACTIVE)
+                        .toList();
+            } else {
+                goodsList = goodsRepository.findAllBySellerId(userDetails.getUserId()).stream()
+                        .filter(g -> g.getStatus() == GoodsStatus.INACTIVE)
+                        .toList();
+            }
+        } else if ("my".equals(filter) && userDetails != null) {
             goodsList = goodsRepository.findAllBySellerId(userDetails.getUserId());
         } else {
             goodsList = goodsRepository.findAll().stream()

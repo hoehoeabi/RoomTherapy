@@ -506,7 +506,7 @@
         <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
 
         <div class="card">
-            <form th:action="@{'/seller/goods/' + ${goods.id} + '/edit'}" th:object="${form}" method="post" enctype="multipart/form-data">
+            <form id="goodsEditForm" th:action="@{'/seller/goods/' + ${goods.id} + '/edit'}" th:object="${form}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label" for="name">굿즈 명칭 <span style="color: var(--red);">*</span></label>
                     <input type="text" id="name" th:field="*{name}" class="input-text" placeholder="예: 룸테라피 아늑한 무드등" required>
@@ -893,6 +893,23 @@
 
         // 초기 렌더링 실행
         renderImageGrid();
+
+        // 굿즈 수정 제출 시 사진 최소 1장 등록 여부 검증
+        const editForm = document.getElementById('goodsEditForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                syncFormData();
+                if (imageItems.length === 0) {
+                    e.preventDefault();
+                    alert('굿즈 사진은 최소 1장 이상 등록되어야 합니다.');
+                    const dropzoneEl = document.getElementById('uploadDropzone');
+                    if (dropzoneEl) {
+                        dropzoneEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return false;
+                }
+            });
+        }
 
         // 굿즈 삭제 중앙 커스텀 모달 제어
         function openGoodsDeleteModal() {

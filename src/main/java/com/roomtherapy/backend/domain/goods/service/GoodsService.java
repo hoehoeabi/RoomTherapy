@@ -37,6 +37,7 @@ public class GoodsService {
     private final GoodsRepository goodsRepository;
     private final GoodsAuthCodeRepository goodsAuthCodeRepository;
     private final UserRepository userRepository;
+    private final com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository deliveryOrderRepository;
     private final RedisGoodsStockService redisGoodsStockService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final SecureRandom random = new SecureRandom();
@@ -177,6 +178,10 @@ public class GoodsService {
      */
     @Transactional
     public GoodsResponseDto updateGoods(Long goodsId, Long currentUserId, boolean isAdmin, GoodsUpdateRequestDto request) {
+        if (request.imageUrl() == null || request.imageUrl().trim().isEmpty()) {
+            throw new IllegalArgumentException("굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
+        }
+
         Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
 
         goods.update(
@@ -240,12 +245,19 @@ public class GoodsService {
     }
 
     /**
-     * 굿즈 삭제 처리 (권한 검증 포함)
+     * 굿즈 삭제 처리 (권한 검증 및 배송 주문 외래키 해제 포함)
      */
     @Transactional
     public void deleteGoods(Long goodsId, Long currentUserId, boolean isAdmin) {
         Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+
+        // 연동된 배송 주문 외래키(FK) 해제 및 주문 이력(굿즈명/판매자) 보존
+        List<com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder> relatedOrders = deliveryOrderRepository.findByGoodsId(goodsId);
+        for (com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder order : relatedOrders) {
+            order.unlinkGoods();
+        }
+
         goodsRepository.delete(goods);
-        log.info("굿즈 ID({}) 및 연동 인증코드 삭제 완료 - 처리자: {}", goodsId, currentUserId);
+        log.info("굿즈 ID({}) 및 연동 인증코드 삭제 완료 (연동 배송주문 {}건 FK 해제) - 처리자: {}", goodsId, relatedOrders.size(), currentUserId);
     }
 }

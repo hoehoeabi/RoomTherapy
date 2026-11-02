@@ -31,11 +31,13 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
     List<DeliveryOrder> findAllModifiedWithUserAndGoods();
 
     // 판매자용 본인 굿즈 배송 신청 목록 조회
-    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user JOIN FETCH d.goods g WHERE g.seller.id = :sellerId ORDER BY d.createdAt DESC")
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
+           "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) ORDER BY d.createdAt DESC")
     List<DeliveryOrder> findAllBySellerId(@org.springframework.data.repository.query.Param("sellerId") Long sellerId);
 
     // 판매자용 수정된 본인 굿즈 배송 신청 목록 조회
-    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user JOIN FETCH d.goods g WHERE g.seller.id = :sellerId AND d.isModified = true ORDER BY d.updatedAt DESC")
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
+           "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) AND d.isModified = true ORDER BY d.updatedAt DESC")
     List<DeliveryOrder> findModifiedBySellerId(@org.springframework.data.repository.query.Param("sellerId") Long sellerId);
 
     // 관리자용 배송 신청 목록 페이징 및 날짜/수정여부 필터 조회
@@ -56,14 +58,14 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
     );
 
     // 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정여부 필터 조회
-    @Query(value = "SELECT d FROM DeliveryOrder d JOIN FETCH d.user JOIN FETCH d.goods g " +
-            "WHERE g.seller.id = :sellerId " +
+    @Query(value = "SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
+            "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
             "AND (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
             "AND (:isModified IS NULL OR d.isModified = :isModified) " +
             "ORDER BY d.createdAt DESC",
-            countQuery = "SELECT count(d) FROM DeliveryOrder d JOIN d.goods g " +
-            "WHERE g.seller.id = :sellerId " +
+            countQuery = "SELECT count(d) FROM DeliveryOrder d LEFT JOIN d.goods g " +
+            "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
             "AND (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
             "AND (:isModified IS NULL OR d.isModified = :isModified)")
@@ -74,6 +76,9 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
             @org.springframework.data.repository.query.Param("isModified") Boolean isModified,
             org.springframework.data.domain.Pageable pageable
     );
+
+    // 특정 굿즈와 연계된 배송 주문 목록 조회
+    List<DeliveryOrder> findByGoodsId(Long goodsId);
 
     // 사용자 마이페이지용 내 배송 신청 목록 페이징 조회
     @Query(value = "SELECT d FROM DeliveryOrder d LEFT JOIN FETCH d.goods " +

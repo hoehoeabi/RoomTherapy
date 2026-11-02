@@ -196,6 +196,14 @@ public class SellerGoodsController {
                 targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
             }
 
+            if (targetForm.imageUrl() == null || targetForm.imageUrl().trim().isEmpty()) {
+                model.addAttribute("errorMessage", "굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
+                Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+                model.addAttribute("goods", goods);
+                model.addAttribute("user", userDetails);
+                return "seller/goods-edit";
+            }
+
             goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm);
             redirectAttributes.addFlashAttribute("successMessage", "굿즈 정보가 성공적으로 수정되었습니다.");
             return "redirect:/goods";

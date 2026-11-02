@@ -46,6 +46,15 @@ public class DeliveryOrder extends BaseTimeEntity {
     @JoinColumn(name = "goods_id")
     private Goods goods;
 
+    // 해당 굿즈의 판매자 (굿즈 삭제 후에도 판매자 배송 이력 및 통계 보존용)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id")
+    private User seller;
+
+    // 굿즈 명칭 스냅샷 (굿즈가 삭제되더라도 배송 조회 시 기존 굿즈명 유지)
+    @Column(length = 100)
+    private String snapshotGoodsName;
+
     // 유니티 게임에서 획득한 인증코드
     @Column(nullable = false, length = 100)
     private String stageCode;
@@ -84,11 +93,14 @@ public class DeliveryOrder extends BaseTimeEntity {
     private boolean isModified = false;
 
     @Builder
-    public DeliveryOrder(User user, Goods goods, String stageCode, String recipientName,
+    public DeliveryOrder(User user, Goods goods, User seller, String snapshotGoodsName,
+                         String stageCode, String recipientName,
                          String phone, String zipcode, String address, String detailAddress,
                          String feedback, DeliveryStatus status) {
         this.user = user;
         this.goods = goods;
+        this.seller = seller != null ? seller : (goods != null ? goods.getSeller() : null);
+        this.snapshotGoodsName = snapshotGoodsName != null ? snapshotGoodsName : (goods != null ? goods.getName() : "스테이지 기본 리워드");
         this.stageCode = stageCode;
         this.recipientName = recipientName;
         this.phone = phone;
@@ -98,6 +110,38 @@ public class DeliveryOrder extends BaseTimeEntity {
         this.feedback = feedback;
         this.status = status != null ? status : DeliveryStatus.ORDERED;
         this.isModified = false;
+    }
+
+    /**
+     * 굿즈 삭제 시 외래키 제약조건 위반을 방지하고 배송 주문 이력을 안전하게 보존하기 위한 연결 해제
+     */
+    public void unlinkGoods() {
+        if (this.goods != null) {
+            if (this.snapshotGoodsName == null || this.snapshotGoodsName.isBlank()) {
+                this.snapshotGoodsName = this.goods.getName();
+            }
+            if (this.seller == null) {
+                this.seller = this.goods.getSeller();
+            }
+            this.goods = null;
+        }
+    }
+
+    public boolean isGoodsDeleted() {
+        return this.goods == null;
+    }
+
+    public boolean isGoodsInactive() {
+        return this.goods != null && this.goods.getStatus() == com.roomtherapy.backend.domain.goods.entity.GoodsStatus.INACTIVE;
+    }
+
+    public String getEffectiveGoodsName() {
+        if (this.goods != null) {
+            return this.goods.getName();
+        }
+        return (this.snapshotGoodsName != null && !this.snapshotGoodsName.isBlank())
+                ? this.snapshotGoodsName
+                : "스테이지 기본 리워드";
     }
 
     public void updateStatus(DeliveryStatus status) {

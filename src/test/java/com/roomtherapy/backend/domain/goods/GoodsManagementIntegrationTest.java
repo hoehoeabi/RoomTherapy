@@ -389,6 +389,20 @@ class GoodsManagementIntegrationTest {
                         .cookie(new Cookie("accessToken", seller2Token)))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
+
+        // 5. 판매자 본인의 filter=inactive 탭 조회 시 숨김 굿즈가 정상 노출됨
+        mockMvc.perform(get("/goods")
+                        .param("filter", "inactive")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.hasSize(1)));
+
+        // 6. 타 판매자의 filter=inactive 탭 조회 시 본인의 숨김 굿즈가 없으므로 빈 목록
+        mockMvc.perform(get("/goods")
+                        .param("filter", "inactive")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
     }
 
     @Test
@@ -425,5 +439,89 @@ class GoodsManagementIntegrationTest {
                 .andExpect(redirectedUrl("/goods"));
 
         assertThat(goodsRepository.existsById(created.id())).isFalse();
+    }
+
+    @Test
+    @DisplayName("배송 주문이 연계된 굿즈를 삭제해도 외래키 제약조건 오류 없이 안전하게 연결 해제(unlink)되고 굿즈가 삭제된다")
+    void deleteGoods_withExistingDeliveryOrders_unlinksSafelyWithoutError() throws Exception {
+        Goods goods = goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("주문연동 삭제테스트 굿즈")
+                .description("설명")
+                .price(0)
+                .stockQuantity(10)
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        // 해당 굿즈로 배송 주문 1건 생성
+        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder order = deliveryOrderRepository.save(
+                com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder.builder()
+                        .user(seller1)
+                        .goods(goods)
+                        .stageCode("ew-unlink-test")
+                        .recipientName("수령인")
+                        .phone("010-1234-5678")
+                        .zipcode("12345")
+                        .address("주소")
+                        .build()
+        );
+
+        // 판매자가 굿즈 삭제 호출 (외래키 제약조건 위반 없이 302 리다이렉트 성공)
+        mockMvc.perform(post("/seller/goods/" + goods.getId() + "/delete")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        // 굿즈는 정상 삭제됨
+        assertThat(goodsRepository.existsById(goods.getId())).isFalse();
+
+        // 배송 주문은 보존되며, goods_id는 null로 해제되고 기존 굿즈명은 유지됨
+        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder updatedOrder =
+                deliveryOrderRepository.findById(order.getId()).orElseThrow();
+        assertThat(updatedOrder.getGoods()).isNull();
+        assertThat(updatedOrder.isGoodsDeleted()).isTrue();
+        assertThat(updatedOrder.getEffectiveGoodsName()).isEqualTo("주문연동 삭제테스트 굿즈");
+
+        // 관리자 및 판매자 배송 목록 조회 시에도 해당 주문이 조회됨
+        mockMvc.perform(get("/admin/deliveries")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("deliveries"));
+
+        mockMvc.perform(get("/seller/deliveries")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("deliveries"));
+    }
+
+    @Test
+    @DisplayName("굿즈 수정 시 사진이 0개면 유효성 검증 실패로 수정이 차단된다 (서비스 예외 및 MVC 에러 반환)")
+    void updateGoods_withZeroImages_failsValidation() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("사진검증 굿즈", "설명", 0, "https://s3/test.jpg", 10, "CODE-IMG-FAIL"));
+
+        // 1. 서비스 레이어 직접 호출 검증
+        GoodsUpdateRequestDto emptyImageDto = new GoodsUpdateRequestDto(
+                "수정 시도", "설명", 0, "", 10, GoodsStatus.ACTIVE, null
+        );
+        assertThatThrownBy(() -> goodsService.updateGoods(created.id(), seller1.getId(), false, emptyImageDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
+
+        // 2. MVC 컨트롤러 요청 검증 (빈 문자열 전송 시 seller/goods-edit 뷰 반환 및 errorMessage 표시)
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/edit")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "수정 시도")
+                        .param("description", "설명")
+                        .param("stockQuantity", "10")
+                        .param("status", "ACTIVE")
+                        .param("imageUrl", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("seller/goods-edit"))
+                .andExpect(model().attribute("errorMessage", "굿즈 사진은 최소 1장 이상 등록되어야 합니다."));
+
+        // DB 상의 원본 이미지는 유지됨
+        Goods origin = goodsRepository.findById(created.id()).orElseThrow();
+        assertThat(origin.getImageUrl()).isEqualTo("https://s3/test.jpg");
     }
 }
