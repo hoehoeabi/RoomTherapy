@@ -207,6 +207,26 @@
             color: #D97706;
             margin-top: 2px;
         }
+        .badge-goods-deleted {
+            display: inline-block;
+            background: #FEE2E2;
+            color: #DC2626;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-top: 3px;
+        }
+        .badge-goods-inactive {
+            display: inline-block;
+            background: #F1F5F9;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-top: 3px;
+        }
         .pagination {
             display: flex;
             justify-content: center;
@@ -631,9 +651,11 @@
                             <span th:if="${delivery.isModified and delivery.updatedAt != null}" class="modified-time" 
                                   th:text="${'수정: ' + #temporals.format(delivery.updatedAt, 'MM-dd HH:mm')}">수정: 10-21 21:00</span>
                         </td>
-                        <td><strong th:text="${delivery.applicantNickname}">홍길동</strong></td>
-                        <td th:text="${delivery.goodsName}">스테이지 리워드</td>
-                        <td><span class="code-tag" th:text="${delivery.stageCode}">ew-1010-clear</span></td>
+                        <td>
+                            <div th:text="${delivery.goodsName}">스테이지 리워드</div>
+                            <span th:if="${delivery.isGoodsDeleted}" class="badge-goods-deleted">🗑️ 삭제된 굿즈</span>
+                            <span th:if="${delivery.isGoodsInactive}" class="badge-goods-inactive">🔒 숨김 굿즈</span>
+                        </td>
                         <td th:text="${delivery.recipientName}">홍길동</td>
                         <td th:text="${delivery.phone}">010-1234-5678</td>
                         <td th:text="${delivery.zipcode}">12345</td>

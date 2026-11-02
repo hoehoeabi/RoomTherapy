@@ -426,4 +426,57 @@ class GoodsManagementIntegrationTest {
 
         assertThat(goodsRepository.existsById(created.id())).isFalse();
     }
+
+    @Test
+    @DisplayName("배송 주문이 연계된 굿즈를 삭제해도 외래키 제약조건 오류 없이 안전하게 연결 해제(unlink)되고 굿즈가 삭제된다")
+    void deleteGoods_withExistingDeliveryOrders_unlinksSafelyWithoutError() throws Exception {
+        Goods goods = goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("주문연동 삭제테스트 굿즈")
+                .description("설명")
+                .price(0)
+                .stockQuantity(10)
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        // 해당 굿즈로 배송 주문 1건 생성
+        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder order = deliveryOrderRepository.save(
+                com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder.builder()
+                        .user(seller1)
+                        .goods(goods)
+                        .stageCode("ew-unlink-test")
+                        .recipientName("수령인")
+                        .phone("010-1234-5678")
+                        .zipcode("12345")
+                        .address("주소")
+                        .build()
+        );
+
+        // 판매자가 굿즈 삭제 호출 (외래키 제약조건 위반 없이 302 리다이렉트 성공)
+        mockMvc.perform(post("/seller/goods/" + goods.getId() + "/delete")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        // 굿즈는 정상 삭제됨
+        assertThat(goodsRepository.existsById(goods.getId())).isFalse();
+
+        // 배송 주문은 보존되며, goods_id는 null로 해제되고 기존 굿즈명은 유지됨
+        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder updatedOrder =
+                deliveryOrderRepository.findById(order.getId()).orElseThrow();
+        assertThat(updatedOrder.getGoods()).isNull();
+        assertThat(updatedOrder.isGoodsDeleted()).isTrue();
+        assertThat(updatedOrder.getEffectiveGoodsName()).isEqualTo("주문연동 삭제테스트 굿즈");
+
+        // 관리자 및 판매자 배송 목록 조회 시에도 해당 주문이 조회됨
+        mockMvc.perform(get("/admin/deliveries")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("deliveries"));
+
+        mockMvc.perform(get("/seller/deliveries")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("deliveries"));
+    }
 }

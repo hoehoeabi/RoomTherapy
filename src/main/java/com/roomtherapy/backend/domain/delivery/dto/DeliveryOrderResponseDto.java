@@ -20,6 +20,9 @@ public record DeliveryOrderResponseDto(
         DeliveryStatus status,
         String statusDescription,
         boolean isModified,
+        boolean isGoodsDeleted,
+        boolean isGoodsInactive,
+        String goodsStatusBadge,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -38,11 +41,20 @@ public record DeliveryOrderResponseDto(
     }
 
     public static DeliveryOrderResponseDto from(DeliveryOrder order) {
+        boolean isDeleted = order.isGoodsDeleted();
+        boolean isInactive = order.isGoodsInactive();
+        String goodsBadge = null;
+        if (isDeleted) {
+            goodsBadge = "삭제된 굿즈";
+        } else if (isInactive) {
+            goodsBadge = "숨김 굿즈";
+        }
+
         return new DeliveryOrderResponseDto(
                 order.getId(),
                 order.getUser() != null ? order.getUser().getNickname() : "알 수 없음",
                 order.getStageCode(),
-                order.getGoods() != null ? order.getGoods().getName() : "스테이지 기본 리워드",
+                order.getEffectiveGoodsName(),
                 order.getGoods() != null ? order.getGoods().getImageUrl() : "",
                 order.getRecipientName(),
                 order.getPhone(),
@@ -53,6 +65,9 @@ public record DeliveryOrderResponseDto(
                 order.getStatus(),
                 order.getStatus().getDescription(),
                 order.isModified(),
+                isDeleted,
+                isInactive,
+                goodsBadge,
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
