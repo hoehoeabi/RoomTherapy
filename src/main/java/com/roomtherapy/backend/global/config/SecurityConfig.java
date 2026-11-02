@@ -15,6 +15,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.roomtherapy.backend.global.security.handler.CustomAccessDeniedHandler;
+import com.roomtherapy.backend.global.security.handler.CustomAuthenticationEntryPoint;
+
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -24,6 +27,8 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -37,6 +42,11 @@ public class SecurityConfig {
                 // H2 콘솔 iframe 허용
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                )
+                // 예외 처리 핸들러 등록 (401 미인증 및 403 인가 실패 친절한 한국어 안내 연동)
+                .exceptionHandling(exceptions -> exceptions
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 // 접근 권한 설정
                 .authorizeHttpRequests(authorize -> authorize

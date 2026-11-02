@@ -121,13 +121,27 @@
         .btn-primary:hover {
             background: var(--primary-hover);
         }
+        .btn-kakao {
+            background: #FEE500;
+            color: #000000;
+            border: 1px solid #FEE500;
+        }
+        .btn-kakao:hover {
+            background: #FADA0A;
+            border-color: #FADA0A;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="icon-circle">
-        🛋️
+        <span th:if="${status == 401}">🔒</span>
+        <span th:if="${status == 403}">🚫</span>
+        <span th:if="${status == 404}">🔍</span>
+        <span th:if="${status == 413}">📦</span>
+        <span th:if="${status == 500}">⚠️</span>
+        <span th:if="${status != 401 and status != 403 and status != 404 and status != 413 and status != 500}">🛋️</span>
     </div>
 
     <div class="badge" th:if="${status != null}" th:text="'HTTP ' + ${status}">HTTP 400</div>
@@ -143,8 +157,18 @@
         </div>
     </div>
 
-    <!-- 이전으로 돌아가기 & 홈으로 이동 버튼 -->
-    <div class="btn-group">
+    <!-- 401 미인증인 경우 카카오 소셜 로그인 바로가기 버튼 제공 -->
+    <div class="btn-group" th:if="${status == 401}">
+        <a href="/oauth2/authorization/kakao" class="btn btn-kakao">
+            💬 카카오 로그인
+        </a>
+        <a href="/" class="btn btn-outline">
+            🏠 홈으로
+        </a>
+    </div>
+
+    <!-- 일반 에러인 경우 이전으로 돌아가기 & 홈으로 이동 버튼 -->
+    <div class="btn-group" th:if="${status != 401}">
         <button type="button" onclick="history.back()" class="btn btn-outline">
             🔙 이전으로
         </button>

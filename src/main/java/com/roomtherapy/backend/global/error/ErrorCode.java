@@ -17,12 +17,12 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "405", "지원하지 않는 요청 방식(HTTP 메서드)입니다."),
 
     // 401 Unauthorized
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "401", "로그인이 필요하거나 인증 세션이 만료되었습니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_401", "로그인이 필요한 서비스입니다. 카카오 소셜 로그인 후 다시 이용해 주세요."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_401_01", "유효하지 않거나 만료된 Refresh Token입니다."),
     TOKEN_THEFT_DETECTED(HttpStatus.UNAUTHORIZED, "AUTH_401_02", "토큰 탈취 위험이 감지되어 강제 로그아웃되었습니다."),
 
     // 403 Forbidden
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "403", "해당 페이지에 접근할 권한이 없습니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_403_01", "접근 권한이 없습니다. 해당 기능은 판매자 또는 관리자 전용입니다."),
     NOT_ORDER_OWNER(HttpStatus.FORBIDDEN, "ORDER_403_01", "본인의 배송 신청 건만 조회하거나 수정할 수 있습니다."),
     NOT_SELLER_OWNER(HttpStatus.FORBIDDEN, "ORDER_403_02", "본인이 등록한 굿즈의 배송 주문만 상태를 변경할 수 있습니다."),
     NOT_GOODS_OWNER(HttpStatus.FORBIDDEN, "GOODS_403_01", "본인이 등록한 굿즈만 수정하거나 삭제할 수 있습니다."),
