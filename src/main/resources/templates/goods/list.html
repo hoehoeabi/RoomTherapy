@@ -296,6 +296,45 @@
         .btn-goods-edit:hover {
             background: #E9ECEF;
         }
+        .btn-goods-delete {
+            font-size: 11px;
+            font-weight: 700;
+            color: #DC3545;
+            background: #FFEAEA;
+            border: 1px solid #FFD8D8;
+            padding: 2px 7px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-goods-delete:hover {
+            background: #FFD2D2;
+        }
+        .goods-status-select {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
+            background: #FAFAFA;
+            color: var(--title);
+            cursor: pointer;
+            outline: none;
+        }
+        .badge-status-inactive {
+            display: inline-block;
+            background: #343A40;
+            color: #F8F9FA;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            width: fit-content;
+        }
+        .goods-card.is-inactive {
+            opacity: 0.85;
+            border: 1px dashed #ADB5BD;
+        }
         .is-sold-out .slide-thumb img {
             filter: grayscale(60%);
             opacity: 0.8;
@@ -308,6 +347,98 @@
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 14px;
+        }
+
+        /* 화면 중앙 커스텀 다이얼로그 모달 */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .confirm-modal-overlay.active {
+            display: flex;
+        }
+        .confirm-modal-box {
+            background: #FFFFFF;
+            border-radius: 20px;
+            max-width: 380px;
+            width: 100%;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalPop 0.2s ease-out;
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .confirm-modal-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        .confirm-modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+            line-height: 1.4;
+        }
+        .confirm-modal-sub {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--red);
+            margin-bottom: 8px;
+        }
+        .confirm-modal-desc {
+            font-size: 12.5px;
+            color: #64748B;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .confirm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn-confirm-yes {
+            flex: 1;
+            padding: 12px 18px;
+            background: var(--red);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+        .btn-confirm-yes:hover {
+            opacity: 0.9;
+        }
+        .btn-confirm-no {
+            flex: 1;
+            padding: 12px 18px;
+            background: #F1F5F9;
+            color: #475569;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-confirm-no:hover {
+            background: #E2E8F0;
         }
     </style>
 </head>
@@ -349,17 +480,38 @@
 
         <!-- 리워드 카드 리스트 -->
         <div class="goods-list" th:if="${goodsList != null and !goodsList.empty}">
-            <div th:each="goods : ${goodsList}" class="goods-card" th:classappend="${goods.stockQuantity <= 0 ? ' is-sold-out' : ''}">
-                <!-- 상단 재고 상태 뱃지 및 관리자/판매자 전용 재고 수량/수정 버튼 -->
+            <div th:each="goods : ${goodsList}" class="goods-card" 
+                 th:classappend="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE ? ' is-inactive' : (goods.stockQuantity <= 0 or goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT ? ' is-sold-out' : '')}">
+                <!-- 상단 재고 상태 뱃지 및 관리자/판매자 전용 재고 수량/상태/삭제/수정 버튼 -->
                 <div class="card-top-row">
-                    <span th:if="${goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
-                    <span th:unless="${goods.stockQuantity > 0}" class="badge-stock-out">재고 소진</span>
+                    <!-- 상태 뱃지: 숨김(INACTIVE) / 신청 가능(ACTIVE) / 품절(SOLD_OUT) -->
+                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE}" class="badge-status-inactive">🔒 숨김</span>
+                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
+                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT or (goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity <= 0)}" class="badge-stock-out">재고 소진 (품절)</span>
 
-                    <!-- 관리자이거나 해당 굿즈의 판매자인 경우 재고 수량 및 수정 버튼 노출 -->
+                    <!-- 관리자이거나 해당 굿즈의 판매자인 경우 관리 툴바 노출 -->
                     <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or (goods.seller != null and goods.seller.id == user.userId))}"
-                         style="display: flex; align-items: center; gap: 8px;">
+                         style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <span class="stock-count-text" th:text="${'재고 ' + goods.stockQuantity + '개'}">재고 10개</span>
-                        <a th:href="@{'/seller/goods/' + ${goods.id} + '/edit'}" class="btn-goods-edit">관리/수정</a>
+
+                        <!-- 간편 상태 변경 셀렉트 (판매중 / 품절 / 숨김) -->
+                        <form th:action="@{'/seller/goods/' + ${goods.id} + '/status'}" method="post" style="display: inline-flex; align-items: center; margin: 0;">
+                            <input type="hidden" name="redirect" value="/goods">
+                            <select name="status" class="goods-status-select" onchange="this.form.submit()" title="굿즈 공개/품절 상태 변경">
+                                <option value="ACTIVE" th:selected="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE}">판매중</option>
+                                <option value="SOLD_OUT" th:selected="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT}">품절</option>
+                                <option value="INACTIVE" th:selected="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE}">숨김</option>
+                            </select>
+                        </form>
+
+                        <a th:href="@{'/seller/goods/' + ${goods.id} + '/edit'}" class="btn-goods-edit">수정</a>
+                        <!-- 굿즈 삭제 버튼 -->
+                        <button type="button" class="btn-goods-delete"
+                                th:data-goods-id="${goods.id}"
+                                th:data-goods-name="${goods.name}"
+                                onclick="openGoodsDeleteModal(this.dataset.goodsId, this.dataset.goodsName)">
+                            삭제
+                        </button>
                     </div>
                 </div>
 
@@ -388,16 +540,37 @@
 
                 <!-- 하단 액션 버튼 행 -->
                 <div class="card-action-row">
-                    <a th:if="${goods.stockQuantity > 0}" 
+                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE}" class="btn-reward-disabled">
+                        숨김 상품
+                    </span>
+                    <a th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity > 0}" 
                        th:href="@{'/delivery?goodsId=' + ${goods.id}}" 
                        class="btn-reward-apply">
                         배송 신청
                     </a>
-                    <span th:unless="${goods.stockQuantity > 0}" class="btn-reward-disabled">
+                    <span th:if="${goods.status != T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE and (goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT or goods.stockQuantity <= 0)}" 
+                          class="btn-reward-disabled">
                         품절
                     </span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 굿즈 삭제 확인 모달 (화면 중앙 커스텀 다이얼로그) -->
+    <div id="goodsDeleteModal" class="confirm-modal-overlay" onclick="handleGoodsDeleteBackdrop(event)">
+        <div class="confirm-modal-box">
+            <div class="confirm-modal-icon">⚠️</div>
+            <h3 class="confirm-modal-title">굿즈를 삭제하시겠습니까?</h3>
+            <p class="confirm-modal-sub" id="goodsDeleteModalName">굿즈명</p>
+            <p class="confirm-modal-desc">삭제 시 해당 굿즈의 인증코드 및 상세 정보가 영구적으로 삭제됩니다.</p>
+            <form id="goodsDeleteForm" method="post" action="">
+                <input type="hidden" name="redirect" value="/goods">
+                <div class="confirm-modal-actions">
+                    <button type="submit" class="btn-confirm-yes">그래</button>
+                    <button type="button" class="btn-confirm-no" onclick="closeGoodsDeleteModal()">아니</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -432,6 +605,24 @@
                 });
             });
         });
+
+        // 굿즈 삭제 중앙 커스텀 모달 제어
+        function openGoodsDeleteModal(goodsId, goodsName) {
+            const form = document.getElementById('goodsDeleteForm');
+            form.action = '/seller/goods/' + goodsId + '/delete';
+            document.getElementById('goodsDeleteModalName').textContent = goodsName || '선택한 굿즈';
+            document.getElementById('goodsDeleteModal').classList.add('active');
+        }
+
+        function closeGoodsDeleteModal() {
+            document.getElementById('goodsDeleteModal').classList.remove('active');
+        }
+
+        function handleGoodsDeleteBackdrop(event) {
+            if (event.target.id === 'goodsDeleteModal') {
+                closeGoodsDeleteModal();
+            }
+        }
     </script>
 </body>
 </html>

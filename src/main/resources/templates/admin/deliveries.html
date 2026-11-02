@@ -6,8 +6,8 @@
     <title>관리자 - 배송 신청 목록 관리</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
+            --primary: #FF4B4E;
+            --primary-hover: #E03E41;
             --bg: #F8FAFC;
             --card-bg: #FFFFFF;
             --text-main: #0F172A;
@@ -39,7 +39,7 @@
         }
         .admin-badge {
             display: inline-block;
-            background: #EEF2FF;
+            background: #FFF1F2;
             color: var(--primary);
             font-size: 13px;
             font-weight: 700;
@@ -260,12 +260,12 @@
             border: 1px solid var(--border);
         }
         .btn-excel {
-            background: #EEF2FF;
+            background: #FFF1F2;
             color: var(--primary);
-            border-color: #C7D2FE;
+            border-color: #FECDD3;
         }
         .btn-excel:hover {
-            background: #E0E7FF;
+            background: #FFE4E6;
         }
         .btn-template {
             background: #F8FAFC;
@@ -281,6 +281,115 @@
         }
         .btn-import:hover {
             background: #D1FAE5;
+        }
+        .btn-delete-order {
+            padding: 5px 8px;
+            background: #FFF1F2;
+            color: #E11D48;
+            border: 1px solid #FECDD3;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 4px;
+            margin-left: 4px;
+            display: inline-block;
+            transition: all 0.15s ease;
+        }
+        .btn-delete-order:hover {
+            background: #FFE4E6;
+        }
+
+        /* 화면 중앙 커스텀 다이얼로그 모달 */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .confirm-modal-overlay.active {
+            display: flex;
+        }
+        .confirm-modal-box {
+            background: #FFFFFF;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 100%;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalPop 0.2s ease-out;
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .confirm-modal-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        .confirm-modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+            line-height: 1.4;
+        }
+        .confirm-modal-sub {
+            font-size: 16px;
+            font-weight: 700;
+            color: #DC2626;
+            margin-bottom: 10px;
+        }
+        .confirm-modal-desc {
+            font-size: 13px;
+            color: #64748B;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .confirm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn-confirm-yes {
+            flex: 1;
+            padding: 12px 18px;
+            background: #FF4B4E;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-confirm-yes:hover {
+            background: #E03E41;
+        }
+        .btn-confirm-no {
+            flex: 1;
+            padding: 12px 18px;
+            background: #F1F5F9;
+            color: #475569;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-confirm-no:hover {
+            background: #E2E8F0;
         }
 
         /* 모달 스타일 */
@@ -453,6 +562,9 @@
         </div>
     </div>
 
+    <!-- 성공 알림 배너 -->
+    <div th:if="${successMessage != null}" class="alert-banner alert-success" th:text="${successMessage}"></div>
+
     <!-- 엑셀 일괄 등록 결과 알림 -->
     <div th:if="${importResult != null}" class="alert-banner alert-success">
         <strong>✅ 엑셀 일괄 등록 완료</strong><br>
@@ -505,7 +617,7 @@
                         <th>연락처</th>
                         <th>우편번호</th>
                         <th>배송지 주소</th>
-                        <th>배송 상태 / 원클릭 완료</th>
+                        <th>배송 상태 / 삭제 관리</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -539,12 +651,22 @@
                                 </select>
                                 <button type="submit" class="btn-update">변경</button>
                             </form>
-                            <!-- 실제 배송 완료 원클릭 토글 버튼 -->
-                            <form th:if="${delivery.status != T(com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus).DELIVERED}" 
-                                  th:action="@{'/admin/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: inline;">
-                                <input type="hidden" name="status" value="DELIVERED">
-                                <button type="submit" class="btn-quick-deliver">✅ 배송완료 원클릭</button>
-                            </form>
+                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                <!-- 실제 배송 완료 원클릭 토글 버튼 -->
+                                <form th:if="${delivery.status != T(com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus).DELIVERED}" 
+                                      th:action="@{'/admin/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: inline;">
+                                    <input type="hidden" name="status" value="DELIVERED">
+                                    <button type="submit" class="btn-quick-deliver">✅ 배송완료</button>
+                                </form>
+                                <!-- 배송 주문 삭제 버튼 -->
+                                <button type="button" class="btn-delete-order"
+                                        th:data-order-id="${delivery.id}"
+                                        th:data-status="${delivery.status}"
+                                        th:data-goods-name="${delivery.goodsName}"
+                                        onclick="confirmOrderDelete(this.dataset.orderId, this.dataset.status, this.dataset.goodsName)">
+                                    🗑️ 삭제
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(deliveries)}">
@@ -691,6 +813,22 @@
         </div>
     </div>
 
+    <!-- 3. 배송 주문 삭제 확인 모달 (화면 중앙 커스텀 다이얼로그) -->
+    <div id="deleteConfirmModal" class="confirm-modal-overlay" onclick="handleDeleteModalBackdrop(event)">
+        <div class="confirm-modal-box">
+            <div class="confirm-modal-icon" id="deleteModalIcon">⚠️</div>
+            <h3 class="confirm-modal-title" id="deleteModalTitle">아직 배송완료되지 않았습니다</h3>
+            <p class="confirm-modal-sub" id="deleteModalSub">삭제하시겠습니까?</p>
+            <p class="confirm-modal-desc" id="deleteModalDesc"></p>
+            <form id="deleteOrderForm" method="post" action="">
+                <div class="confirm-modal-actions">
+                    <button type="submit" class="btn-confirm-yes">그래</button>
+                    <button type="button" class="btn-confirm-no" onclick="closeDeleteConfirmModal()">아니</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function openExportModal() {
             document.getElementById('exportModal').classList.add('active');
@@ -712,6 +850,41 @@
         function toggleAllColumns(master) {
             const checks = document.querySelectorAll('.col-check');
             checks.forEach(c => c.checked = master.checked);
+        }
+
+        function confirmOrderDelete(orderId, status, goodsName) {
+            const form = document.getElementById('deleteOrderForm');
+            form.action = '/admin/deliveries/' + orderId + '/delete';
+
+            const iconEl = document.getElementById('deleteModalIcon');
+            const titleEl = document.getElementById('deleteModalTitle');
+            const subEl = document.getElementById('deleteModalSub');
+            const descEl = document.getElementById('deleteModalDesc');
+
+            if (status !== 'DELIVERED') {
+                iconEl.textContent = '⚠️';
+                titleEl.textContent = '아직 배송완료되지 않았습니다';
+                subEl.textContent = '삭제하시겠습니까?';
+                subEl.style.display = 'block';
+                descEl.innerHTML = '주문번호 <strong>#' + orderId + '</strong> (' + (goodsName || '굿즈') + ')<br>현재 상태: <strong>' + status + '</strong>';
+            } else {
+                iconEl.textContent = '🗑️';
+                titleEl.textContent = '배송 주문을 삭제하시겠습니까?';
+                subEl.style.display = 'none';
+                descEl.innerHTML = '주문번호 <strong>#' + orderId + '</strong> (' + (goodsName || '굿즈') + ')<br>삭제된 주문 정보는 복구할 수 없습니다.';
+            }
+
+            document.getElementById('deleteConfirmModal').classList.add('active');
+        }
+
+        function closeDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+        }
+
+        function handleDeleteModalBackdrop(event) {
+            if (event.target.id === 'deleteConfirmModal') {
+                closeDeleteConfirmModal();
+            }
         }
     </script>
 </body>

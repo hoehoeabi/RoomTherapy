@@ -91,6 +91,12 @@ public class Goods extends BaseTimeEntity {
         }
     }
 
+    public void updateStatus(GoodsStatus status) {
+        if (status != null) {
+            this.status = status;
+        }
+    }
+
     public boolean isSoldOut() {
         return this.stockQuantity <= 0 || this.status == GoodsStatus.SOLD_OUT;
     }

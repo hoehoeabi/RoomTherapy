@@ -478,4 +478,81 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(model().attribute("startDate", java.time.LocalDate.of(2026, 1, 1)))
                 .andExpect(model().attribute("endDate", java.time.LocalDate.of(2026, 12, 31)));
     }
+
+    @Test
+    @DisplayName("관리자는 배송 주문을 삭제할 수 있다")
+    void admin_delete_order_test() throws Exception {
+        DeliveryOrder order = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .stageCode("ew-del-admin")
+                .recipientName("수령인")
+                .phone("010-1111-2222")
+                .zipcode("11111")
+                .address("서울")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+
+        mockMvc.perform(post("/admin/deliveries/" + order.getId() + "/delete")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/deliveries"));
+
+        assertThat(deliveryOrderRepository.existsById(order.getId())).isFalse();
+    }
+
+    @Test
+    @DisplayName("판매자는 본인 굿즈의 배송 주문을 삭제할 수 있고, 타 판매자의 주문은 삭제할 수 없다")
+    void seller_delete_order_isolation_test() throws Exception {
+        User sellerA = userRepository.save(User.builder()
+                .kakaoId("seller_A")
+                .nickname("판매자A")
+                .email("sellerA@test.com")
+                .role(Role.SELLER)
+                .build());
+
+        User sellerB = userRepository.save(User.builder()
+                .kakaoId("seller_B")
+                .nickname("판매자B")
+                .email("sellerB@test.com")
+                .role(Role.SELLER)
+                .build());
+
+        String sellerAToken = jwtProvider.createAccessToken(sellerA.getId(), sellerA.getEmail(), sellerA.getRole().name());
+        String sellerBToken = jwtProvider.createAccessToken(sellerB.getId(), sellerB.getEmail(), sellerB.getRole().name());
+
+        Goods goodsA = goodsRepository.save(Goods.builder()
+                .seller(sellerA)
+                .name("판매자A 굿즈")
+                .description("설명")
+                .price(0)
+                .stockQuantity(10)
+                .status(com.roomtherapy.backend.domain.goods.entity.GoodsStatus.ACTIVE)
+                .build());
+
+        DeliveryOrder orderA = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(normalUser)
+                .goods(goodsA)
+                .stageCode("ew-del-seller")
+                .recipientName("수령인A")
+                .phone("010-1111-2222")
+                .zipcode("11111")
+                .address("서울")
+                .status(DeliveryStatus.SHIPPED)
+                .build());
+
+        // 타 판매자(sellerB)가 삭제 시도 시 예외 및 실패
+        mockMvc.perform(post("/seller/deliveries/" + orderA.getId() + "/delete")
+                        .cookie(new Cookie("accessToken", sellerBToken)))
+                .andExpect(status().is4xxClientError());
+
+        assertThat(deliveryOrderRepository.existsById(orderA.getId())).isTrue();
+
+        // 본인 판매자(sellerA)가 삭제 시 성공
+        mockMvc.perform(post("/seller/deliveries/" + orderA.getId() + "/delete")
+                        .cookie(new Cookie("accessToken", sellerAToken)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seller/deliveries"));
+
+        assertThat(deliveryOrderRepository.existsById(orderA.getId())).isFalse();
+    }
 }

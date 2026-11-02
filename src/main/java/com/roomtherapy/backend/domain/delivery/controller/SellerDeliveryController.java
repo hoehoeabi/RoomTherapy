@@ -81,6 +81,21 @@ public class SellerDeliveryController {
     }
 
     /**
+     * 판매자용 배송 주문 삭제 처리
+     */
+    @PostMapping("/deliveries/{orderId}/delete")
+    public String deleteOrder(
+            @PathVariable Long orderId,
+            @RequestParam(name = "redirect", required = false) String redirect,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        log.info("판매자 배송 주문 삭제 요청: sellerId={}, orderId={}", userDetails.getUserId(), orderId);
+        deliveryOrderService.deleteOrderBySeller(userDetails.getUserId(), orderId);
+        redirectAttributes.addFlashAttribute("successMessage", "배송 주문 #" + orderId + "이(가) 정상적으로 삭제되었습니다.");
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/seller/deliveries";
+    }
+
+    /**
      * 판매자용 본인 굿즈 배송 목록 엑셀 다운로드
      */
     @GetMapping("/deliveries/export/excel")

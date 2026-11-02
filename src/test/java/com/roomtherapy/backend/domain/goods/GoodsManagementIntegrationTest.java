@@ -350,4 +350,80 @@ class GoodsManagementIntegrationTest {
         assertThat(updated.getImageList().get(0)).endsWith(".png");
         assertThat(updated.getImageList().get(1)).isEqualTo("https://s3/old.jpg");
     }
+
+    @Test
+    @DisplayName("굿즈 상태를 INACTIVE로 변경 시 일반 사용자에겐 숨겨지고, 관리자 및 판매자 본인에게만 노출된다")
+    void goods_inactive_visibility_test() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("숨김 테스트 굿즈", "설명", 0, "https://s3/img.jpg", 10, "CODE-INACTIVE-1"));
+
+        // 판매자가 INACTIVE로 상태 변경
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/status")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("status", "INACTIVE"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        Goods goods = goodsRepository.findById(created.id()).orElseThrow();
+        assertThat(goods.getStatus()).isEqualTo(GoodsStatus.INACTIVE);
+
+        // 1. 일반 사용자 조회 시 목록에서 숨겨짐
+        mockMvc.perform(get("/goods"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
+
+        // 2. 관리자 조회 시 목록에 노출됨
+        mockMvc.perform(get("/goods")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.hasSize(1)));
+
+        // 3. 해당 굿즈의 판매자 본인 조회 시 목록에 노출됨
+        mockMvc.perform(get("/goods")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.hasSize(1)));
+
+        // 4. 타 판매자 조회 시 목록에서 숨겨짐
+        mockMvc.perform(get("/goods")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
+    }
+
+    @Test
+    @DisplayName("판매자 본인은 굿즈를 삭제할 수 있고, 타 판매자는 삭제할 수 없다 (403 에러)")
+    void goods_delete_authorization_test() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("삭제 테스트 굿즈", "설명", 0, "https://s3/img.jpg", 5, "CODE-DEL-1"));
+
+        // 타 판매자(seller2)가 삭제 시도 시 403 Forbidden
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/delete")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isForbidden());
+
+        assertThat(goodsRepository.existsById(created.id())).isTrue();
+
+        // 판매자 본인(seller1)이 삭제 시 성공
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/delete")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        assertThat(goodsRepository.existsById(created.id())).isFalse();
+    }
+
+    @Test
+    @DisplayName("관리자는 타인의 굿즈도 삭제할 수 있다")
+    void admin_can_delete_any_goods_test() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("관리자 삭제 굿즈", "설명", 0, "https://s3/img.jpg", 5, "CODE-ADMIN-DEL-1"));
+
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/delete")
+                        .cookie(new Cookie("accessToken", adminToken)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        assertThat(goodsRepository.existsById(created.id())).isFalse();
+    }
 }
