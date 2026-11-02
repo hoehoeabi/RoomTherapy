@@ -62,8 +62,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     entity.update(attributes.getNickname(), attributes.getEmail());
                     if (isAdmin) {
                         entity.updateRole(Role.ADMIN);
-                    } else if (isSeller && entity.getRole() != Role.ADMIN) {
+                    } else if (isSeller) {
                         entity.updateRole(Role.SELLER);
+                    } else {
+                        entity.updateRole(Role.USER);
                     }
                     return entity;
                 })
@@ -73,6 +75,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                         newUser.updateRole(Role.ADMIN);
                     } else if (isSeller) {
                         newUser.updateRole(Role.SELLER);
+                    } else {
+                        newUser.updateRole(Role.USER);
                     }
                     return newUser;
                 });
