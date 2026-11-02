@@ -72,7 +72,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ModelAndView handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[Web Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
-        return createErrorView(response, HttpStatus.FORBIDDEN, ErrorCode.NOT_GOODS_OWNER.getCode(), "접근 권한이 없습니다. 본인이 등록한 굿즈만 관리할 수 있습니다.");
+        return createErrorView(response, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED.getCode(), ErrorCode.ACCESS_DENIED.getMessage());
     }
 
     /**

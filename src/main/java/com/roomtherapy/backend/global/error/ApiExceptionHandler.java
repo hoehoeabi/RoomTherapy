@@ -87,7 +87,7 @@ public class ApiExceptionHandler {
     public ApiResponse<Void> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[REST API Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
         response.setStatus(HttpStatus.FORBIDDEN.value());
-        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), ErrorCode.NOT_GOODS_OWNER.getCode(), "접근 권한이 없습니다.");
+        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), ErrorCode.ACCESS_DENIED.getCode(), ErrorCode.ACCESS_DENIED.getMessage());
     }
 
     /**

@@ -90,4 +90,104 @@ class ExceptionHandlerTest {
         org.assertj.core.api.Assertions.assertThat(apiResponse.getCode()).isEqualTo("FILE_413_01");
         org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(413);
     }
+
+    @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = "USER")
+    @DisplayName("일반 사용자가 관리자/판매자 페이지 접근 시(403) 시큐리티 필터에서 에러 속성과 함께 /error 포워딩")
+    void securityFilter_accessDenied_forwardsToErrorPage() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/admin/deliveries"))
+                .andExpect(status().isForbidden())
+                .andExpect(forwardedUrl("/error"))
+                .andExpect(request().attribute("code", "AUTH_403_01"))
+                .andExpect(request().attribute("message", containsString("접근 권한이 없습니다")));
+    }
+
+    @Test
+    @DisplayName("CustomErrorController에 403 에러 전달 시 error.html 뷰 및 친절한 안내 메시지 렌더링")
+    void customErrorController_403_rendersFriendlyPage() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/error")
+                        .requestAttr(jakarta.servlet.RequestDispatcher.ERROR_STATUS_CODE, 403)
+                        .requestAttr("code", "AUTH_403_01")
+                        .requestAttr("message", "접근 권한이 없습니다. 해당 기능은 판매자 또는 관리자 전용입니다."))
+                .andExpect(status().isForbidden())
+                .andExpect(view().name("error"))
+                .andExpect(model().attribute("status", 403))
+                .andExpect(model().attribute("code", "AUTH_403_01"))
+                .andExpect(content().string(containsString("접근 권한이 없습니다")))
+                .andExpect(content().string(containsString("판매자 또는 관리자 전용")));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자가 웹 보호 페이지 접근 시 카카오 로그인 페이지로 302 리다이렉트")
+    void securityFilter_unauthenticated_redirectsToKakaoOAuth() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/mypage"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", containsString("/oauth2/authorization/kakao")));
+    }
+
+    @Test
+    @DisplayName("CustomErrorController에 401 에러 전달 시 친절한 안내 메시지와 카카오 로그인 버튼 노출")
+    void customErrorController_401_rendersFriendlyPageWithKakaoButton() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/error")
+                        .requestAttr(jakarta.servlet.RequestDispatcher.ERROR_STATUS_CODE, 401))
+                .andExpect(status().isUnauthorized())
+                .andExpect(view().name("error"))
+                .andExpect(model().attribute("status", 401))
+                .andExpect(model().attribute("code", "AUTH_401"))
+                .andExpect(content().string(containsString("로그인이 필요한 서비스입니다")))
+                .andExpect(content().string(containsString("카카오 로그인")));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자가 API 요청 시 일관된 401 JSON ApiResponse 반환")
+    void securityFilter_unauthenticatedApi_returnsJson() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/mypage")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("AUTH_401"))
+                .andExpect(jsonPath("$.message").value(containsString("로그인이 필요한 서비스입니다")));
+    }
+
+    @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = "USER")
+    @DisplayName("일반 사용자가 API 권한 부족 요청 시(403) 일관된 JSON ApiResponse 반환")
+    void securityFilter_apiAccessDenied_returnsJson() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
+        mockMvc.perform(get("/seller/goods")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("AUTH_403_01"))
+                .andExpect(jsonPath("$.message").value(containsString("접근 권한이 없습니다")));
+    }
 }
