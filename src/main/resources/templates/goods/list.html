@@ -190,8 +190,16 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #C0C0C0;
-            font-size: 20px;
+            color: #8E9BAE;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-align: center;
+            background: #F8FAFC;
+            border: 1px dashed #CBD5E1;
+            border-radius: 8px;
+            user-select: none;
+            letter-spacing: -0.3px;
         }
         /* 카드 하단 버튼 행 */
         .card-action-row {
@@ -532,12 +540,14 @@
                                 <img th:src="${imgUrl}" th:alt="${goods.name}">
                             </div>
                         </th:block>
-                        <!-- 업로드된 사진이 없는 경우 기본 예시 아이콘 슬라이드 -->
+                        <!-- 업로드된 사진이 없는 경우 "사진등록 예정" 네모난 칸 -->
                         <th:block th:if="${goods.imageList == null or goods.imageList.empty}">
-                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🎁</div></div>
-                            <div class="slide-thumb"><div class="slide-thumb-placeholder">✨</div></div>
-                            <div class="slide-thumb"><div class="slide-thumb-placeholder">🛋️</div></div>
-                            <div class="slide-thumb"><div class="slide-thumb-placeholder">⭐</div></div>
+                            <div class="slide-thumb">
+                                <div class="slide-thumb-placeholder">
+                                    <span>사진등록</span>
+                                    <span>예정</span>
+                                </div>
+                            </div>
                         </th:block>
                     </div>
                 </div>
