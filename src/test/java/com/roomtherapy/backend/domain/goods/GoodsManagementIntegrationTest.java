@@ -524,4 +524,70 @@ class GoodsManagementIntegrationTest {
         Goods origin = goodsRepository.findById(created.id()).orElseThrow();
         assertThat(origin.getImageUrl()).isEqualTo("https://s3/test.jpg");
     }
+
+    @Test
+    @DisplayName("굿즈 목록 조회(/goods) 시 재고가 소진(품절)된 상품은 리스트의 맨 아래로 정렬된다")
+    void listGoods_soldOutItemsSortedToBottom() throws Exception {
+        // Given: 판매중 상품과 품절/재고소진 상품 생성
+        goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("판매중 상품 1")
+                .description("설명")
+                .stockQuantity(10)
+                .imageUrl("https://s3/test1.jpg")
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("재고소진 상품")
+                .description("설명")
+                .stockQuantity(0)
+                .imageUrl("https://s3/test2.jpg")
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("품절상태 상품")
+                .description("설명")
+                .stockQuantity(5)
+                .imageUrl("https://s3/test3.jpg")
+                .status(GoodsStatus.SOLD_OUT)
+                .build());
+
+        goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("판매중 상품 2")
+                .description("설명")
+                .stockQuantity(3)
+                .imageUrl("https://s3/test4.jpg")
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        // When & Then
+        mockMvc.perform(get("/goods"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("goods/list"))
+                .andExpect(model().attributeExists("goodsList"))
+                .andDo(result -> {
+                    @SuppressWarnings("unchecked")
+                    List<Goods> list = (List<Goods>) result.getModelAndView().getModel().get("goodsList");
+                    int lastActiveIdx = -1;
+                    int firstSoldOutIdx = Integer.MAX_VALUE;
+
+                    for (int i = 0; i < list.size(); i++) {
+                        Goods g = list.get(i);
+                        if (g.getStatus() == GoodsStatus.ACTIVE && g.getStockQuantity() > 0) {
+                            lastActiveIdx = Math.max(lastActiveIdx, i);
+                        } else if (g.getStatus() == GoodsStatus.SOLD_OUT || g.getStockQuantity() <= 0) {
+                            firstSoldOutIdx = Math.min(firstSoldOutIdx, i);
+                        }
+                    }
+
+                    if (lastActiveIdx != -1 && firstSoldOutIdx != Integer.MAX_VALUE) {
+                        assertThat(lastActiveIdx).isLessThan(firstSoldOutIdx);
+                    }
+                });
+    }
 }
