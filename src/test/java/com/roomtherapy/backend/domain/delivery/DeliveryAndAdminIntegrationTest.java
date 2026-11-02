@@ -5,6 +5,7 @@ import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
 import com.roomtherapy.backend.domain.goods.entity.GoodsAuthCode;
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
@@ -554,5 +555,119 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(redirectedUrl("/seller/deliveries"));
 
         assertThat(deliveryOrderRepository.existsById(orderA.getId())).isFalse();
+    }
+
+    @Test
+    @DisplayName("배송 신청 페이지(/delivery) 진입 시 품절(SOLD_OUT, 재고 0) 및 숨김(INACTIVE) 상품은 선택 목록에서 제외된다")
+    void deliveryForm_excludesSoldOutAndInactiveGoods() throws Exception {
+        // Given
+        // 1. 정상 판매중 & 재고 있음 (선택 목록 포함 대상)
+        Goods activeGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("선택가능 굿즈")
+                .description("설명")
+                .stockQuantity(10)
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        // 2. 관리자가 품절 상태로 변경한 굿즈 (재고 남아있어도 제외 대상)
+        Goods soldOutStatusGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("상태 품절 굿즈")
+                .description("설명")
+                .stockQuantity(5)
+                .status(GoodsStatus.SOLD_OUT)
+                .build());
+
+        // 3. 재고 0개인 굿즈 (제외 대상)
+        Goods zeroStockGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("재고 소진 굿즈")
+                .description("설명")
+                .stockQuantity(0)
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        // 4. 숨김 상품 (제외 대상)
+        Goods inactiveGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("숨김 굿즈")
+                .description("설명")
+                .stockQuantity(10)
+                .status(GoodsStatus.INACTIVE)
+                .build());
+
+        // When & Then
+        mockMvc.perform(get("/delivery")
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("delivery"))
+                .andExpect(model().attributeExists("goodsList"))
+                .andDo(result -> {
+                    @SuppressWarnings("unchecked")
+                    java.util.List<Goods> list = (java.util.List<Goods>) result.getModelAndView().getModel().get("goodsList");
+                    java.util.List<Long> ids = list.stream().map(Goods::getId).toList();
+
+                    assertThat(ids).contains(activeGoods.getId());
+                    assertThat(ids).doesNotContain(soldOutStatusGoods.getId());
+                    assertThat(ids).doesNotContain(zeroStockGoods.getId());
+                    assertThat(ids).doesNotContain(inactiveGoods.getId());
+                });
+    }
+
+    @Test
+    @DisplayName("배송 신청 페이지(/delivery)에 품절된 goodsId 파라미터로 접근 시 기본 리워드로 초기화된다")
+    void deliveryForm_withSoldOutGoodsIdParam_resetsToDefaultReward() throws Exception {
+        // Given
+        Goods soldOutGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("품절 굿즈")
+                .description("설명")
+                .stockQuantity(0)
+                .status(GoodsStatus.SOLD_OUT)
+                .build());
+
+        // When & Then: ?goodsId={soldOutGoods.id}로 요청해도 선택되지 않고 null로 초기화됨
+        mockMvc.perform(get("/delivery")
+                        .param("goodsId", String.valueOf(soldOutGoods.getId()))
+                        .cookie(new Cookie("accessToken", userToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("delivery"))
+                .andExpect(model().attributeDoesNotExist("selectedGoods"))
+                .andDo(result -> {
+                    DeliveryOrderRequestDto form = (DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
+                    assertThat(form.goodsId()).isNull();
+                });
+    }
+
+    @Test
+    @DisplayName("품절된 굿즈 ID로 배송 신청 제출 시도시 GOODS_OUT_OF_STOCK 예외로 차단된다")
+    void submitDelivery_withSoldOutGoods_rejected() throws Exception {
+        // Given
+        Goods soldOutGoods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("품절 상품")
+                .description("설명")
+                .stockQuantity(0)
+                .status(GoodsStatus.SOLD_OUT)
+                .build());
+
+        // When & Then: 폼 에러 메시지와 함께 delivery 뷰 반환
+        mockMvc.perform(post("/delivery")
+                        .cookie(new Cookie("accessToken", userToken))
+                        .param("stageCode", "rt-soldout-code")
+                        .param("recipientName", "홍길동")
+                        .param("phone", "010-1234-5678")
+                        .param("zipcode", "06000")
+                        .param("address", "서울시 강남구")
+                        .param("detailAddress", "101호")
+                        .param("goodsId", String.valueOf(soldOutGoods.getId())))
+                .andExpect(status().isOk())
+                .andExpect(view().name("delivery"))
+                .andExpect(model().attributeExists("errorMessage"))
+                .andDo(result -> {
+                    String errorMsg = (String) result.getModelAndView().getModel().get("errorMessage");
+                    assertThat(errorMsg).isEqualTo(com.roomtherapy.backend.global.error.ErrorCode.GOODS_OUT_OF_STOCK.getMessage());
+                });
     }
 }

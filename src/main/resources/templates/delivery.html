@@ -362,9 +362,8 @@
                     <option value="">스테이지 기본 리워드 (선택 안 함)</option>
                     <option th:each="goods : ${goodsList}" 
                             th:value="${goods.id}" 
-                            th:text="${(goods.stockQuantity <= 0 ? '[품절] ' : '') + goods.name + (goods.stockQuantity <= 0 ? ' (품절)' : ' (남은 재고: ' + goods.stockQuantity + '개)')}"
+                            th:text="${goods.name + ' (남은 재고: ' + goods.stockQuantity + '개)'}"
                             th:attr="data-img=${goods.imageUrl}"
-                            th:disabled="${goods.stockQuantity <= 0}"
                             th:selected="${form.goodsId != null and form.goodsId == goods.id}">
                     </option>
                 </select>
