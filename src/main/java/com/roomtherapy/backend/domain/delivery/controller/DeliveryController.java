@@ -23,6 +23,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
+
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -36,12 +41,28 @@ public class DeliveryController {
 
     /**
      * 굿즈 배송 신청 폼 화면 (마이페이지 기본 배송지 자동 완성 연동)
+     * 품절(SOLD_OUT, 재고 0) 및 숨김(INACTIVE) 상품은 목록에서 제외됩니다.
      */
     @GetMapping("/delivery")
     public String deliveryForm(
             @RequestParam(name = "goodsId", required = false) Long goodsId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
+        List<Goods> goodsList = getAvailableGoodsList();
+        model.addAttribute("goodsList", goodsList);
+
+        // 유효한(판매중 & 재고 있음) 굿즈인 경우에만 기본 선택 처리
+        Long effectiveGoodsId = null;
+        if (goodsId != null) {
+            Optional<Goods> goodsOpt = goodsList.stream()
+                    .filter(g -> g.getId().equals(goodsId))
+                    .findFirst();
+            if (goodsOpt.isPresent()) {
+                effectiveGoodsId = goodsId;
+                model.addAttribute("selectedGoods", goodsOpt.get());
+            }
+        }
+
         if (!model.containsAttribute("form")) {
             // 유저의 기본 배송지 정보가 있으면 폼에 자동 입력
             var userOpt = userDetails != null ? userRepository.findById(userDetails.getUserId()) : Optional.<User>empty();
@@ -52,15 +73,8 @@ public class DeliveryController {
             String defaultDetailAddress = userOpt.map(User::getDetailAddress).orElse("");
 
             model.addAttribute("form", new DeliveryOrderRequestDto(
-                    "", defaultRecipient, defaultPhone, defaultZipcode, defaultAddress, defaultDetailAddress, goodsId, false
+                    "", defaultRecipient, defaultPhone, defaultZipcode, defaultAddress, defaultDetailAddress, effectiveGoodsId, false
             ));
-        }
-
-        var goodsList = goodsRepository.findAll();
-        model.addAttribute("goodsList", goodsList);
-
-        if (goodsId != null) {
-            goodsRepository.findById(goodsId).ifPresent(g -> model.addAttribute("selectedGoods", g));
         }
 
         model.addAttribute("user", userDetails);
@@ -80,9 +94,13 @@ public class DeliveryController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("user", userDetails);
-            model.addAttribute("goodsList", goodsRepository.findAll());
+            List<Goods> goodsList = getAvailableGoodsList();
+            model.addAttribute("goodsList", goodsList);
             if (form.goodsId() != null) {
-                goodsRepository.findById(form.goodsId()).ifPresent(g -> model.addAttribute("selectedGoods", g));
+                goodsList.stream()
+                        .filter(g -> g.getId().equals(form.goodsId()))
+                        .findFirst()
+                        .ifPresent(g -> model.addAttribute("selectedGoods", g));
             }
             return "delivery";
         }
@@ -93,13 +111,27 @@ public class DeliveryController {
         } catch (Exception e) {
             log.warn("배송 신청 실패: {}", e.getMessage());
             model.addAttribute("user", userDetails);
-            model.addAttribute("goodsList", goodsRepository.findAll());
+            List<Goods> goodsList = getAvailableGoodsList();
+            model.addAttribute("goodsList", goodsList);
             if (form.goodsId() != null) {
-                goodsRepository.findById(form.goodsId()).ifPresent(g -> model.addAttribute("selectedGoods", g));
+                goodsList.stream()
+                        .filter(g -> g.getId().equals(form.goodsId()))
+                        .findFirst()
+                        .ifPresent(g -> model.addAttribute("selectedGoods", g));
             }
             model.addAttribute("errorMessage", e.getMessage());
             return "delivery";
         }
+    }
+
+    /**
+     * 배송 신청 가능한 굿즈 목록 (판매중(ACTIVE)이며 재고가 1개 이상인 상품만 최신순 정렬)
+     */
+    private List<Goods> getAvailableGoodsList() {
+        return goodsRepository.findAll().stream()
+                .filter(g -> g.getStatus() == GoodsStatus.ACTIVE && g.getStockQuantity() > 0)
+                .sorted(Comparator.comparing(Goods::getId, Comparator.reverseOrder()))
+                .toList();
     }
 
     /**

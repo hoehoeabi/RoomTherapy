@@ -7,6 +7,7 @@ import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.domain.goods.service.GoodsAuthCodeManager;
 import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
@@ -52,6 +53,11 @@ public class DeliveryOrderService {
         if (request.goodsId() != null) {
             goods = goodsRepository.findById(request.goodsId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.GOODS_NOT_FOUND));
+
+            // 판매중(ACTIVE) 상태가 아니거나 재고가 소진된 상품은 배송 신청 불가
+            if (goods.getStatus() != GoodsStatus.ACTIVE || goods.getStockQuantity() <= 0) {
+                throw new BusinessException(ErrorCode.GOODS_OUT_OF_STOCK);
+            }
 
             // 1인 1회 신청 제한 (동일 굿즈 중복 수령 방지)
             if (deliveryOrderRepository.existsByUserIdAndGoodsId(userId, goods.getId())) {
