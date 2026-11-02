@@ -30,6 +30,7 @@ public class SellerGoodsController {
 
     private final GoodsService goodsService;
     private final com.roomtherapy.backend.global.storage.StorageService storageService;
+    private final com.roomtherapy.backend.domain.goods.service.GoodsExcelService goodsExcelService;
 
     /**
      * 판매자 굿즈 및 인증코드 등록 폼 화면
@@ -322,5 +323,51 @@ public class SellerGoodsController {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.startsWith("__NEW_FILE_"))
                 .collect(java.util.stream.Collectors.joining(","));
+    }
+
+    /**
+     * 굿즈 일괄 등록용 엑셀 표준 템플릿 다운로드
+     */
+    @GetMapping("/template/excel")
+    public org.springframework.http.ResponseEntity<byte[]> downloadTemplate() {
+        log.info("굿즈 일괄 등록 엑셀 양식 다운로드 요청");
+        byte[] templateBytes = goodsExcelService.generateTemplateWorkbook();
+
+        String filename = java.net.URLEncoder.encode("굿즈_일괄등록_양식.xlsx", java.nio.charset.StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename)
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(templateBytes);
+    }
+
+    /**
+     * 굿즈 일괄 등록 처리 (.xlsx 또는 .zip 업로드)
+     */
+    @PostMapping("/import/excel")
+    public String importGoodsExcel(
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        log.info("굿즈 엑셀/ZIP 일괄 등록 시작: userId={}, isAdmin={}, fileName={}",
+                userDetails.getUserId(), userDetails.isAdmin(), file != null ? file.getOriginalFilename() : "null");
+
+        try {
+            com.roomtherapy.backend.domain.goods.dto.GoodsExcelImportResult result =
+                    goodsExcelService.importGoods(file, userDetails.getUserId(), userDetails.isAdmin());
+            redirectAttributes.addFlashAttribute("importResult", result);
+            if (!result.hasErrors() && result.successCount() > 0) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        String.format("총 %d개의 굿즈가 성공적으로 일괄 등록되었습니다.", result.successCount()));
+            }
+        } catch (Exception e) {
+            log.error("굿즈 일괄 등록 처리 중 예외 발생", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "굿즈 일괄 등록 도중 오류가 발생했습니다: " + e.getMessage());
+        }
+
+        return "redirect:/goods";
     }
 }

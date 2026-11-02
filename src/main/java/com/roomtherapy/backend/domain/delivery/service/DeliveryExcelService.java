@@ -163,6 +163,22 @@ public class DeliveryExcelService {
                 cell.setCellStyle(headerStyle);
             }
 
+            // 헤더 셀 안내 메모(Comment 말풍선 툴팁) 부착
+            Drawing<?> drawing = sheet.createDrawingPatriarch();
+            CreationHelper factory = workbook.getCreationHelper();
+
+            addCellComment(factory, drawing, headerRow.getCell(0),
+                    "💡 [신청 상품 안내]",
+                    "• 등록된 굿즈 상품명 또는 굿즈 고유 번호(ID)를 입력하세요.");
+
+            addCellComment(factory, drawing, headerRow.getCell(2),
+                    "💡 [연락처 입력 안내]",
+                    "• 휴대폰 번호를 입력하세요. 하이픈(-) 포함 및 미포함 모두 가능합니다.");
+
+            addCellComment(factory, drawing, headerRow.getCell(6),
+                    "💡 [인증코드 안내]",
+                    "• 배송 주문 1건에 매칭되는 클리어 인증코드를 입력하세요.\n• 비워둘 경우 시스템에서 'EXCEL-고유코드'로 자동 발급됩니다.");
+
             // 2행: 입력 안내 힌트
             Row hintRow = sheet.createRow(1);
             hintRow.setHeightInPoints(20);
@@ -477,5 +493,17 @@ public class DeliveryExcelService {
             }
             default -> "";
         };
+    }
+
+    private void addCellComment(CreationHelper factory, Drawing<?> drawing, Cell cell, String title, String body) {
+        ClientAnchor anchor = factory.createClientAnchor();
+        anchor.setCol1(cell.getColumnIndex());
+        anchor.setCol2(cell.getColumnIndex() + 4);
+        anchor.setRow1(cell.getRowIndex());
+        anchor.setRow2(cell.getRowIndex() + 5);
+
+        Comment comment = drawing.createCellComment(anchor);
+        comment.setString(factory.createRichTextString(title + "\n" + body));
+        cell.setCellComment(comment);
     }
 }
