@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +24,13 @@ class ExceptionHandlerTest {
     private WebApplicationContext context;
 
     @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = "ADMIN")
     @DisplayName("HTML 요청 중 BusinessException 발생 시 error.html 뷰 및 메시지/상태코드 정상 반환")
     void htmlRequest_businessException_rendersErrorPage() throws Exception {
-        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        MockMvc mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
 
         // 존재하지 않는 주문 조회 시도 -> ORDER_NOT_FOUND (404)
         mockMvc.perform(get("/delivery/confirm/999999"))

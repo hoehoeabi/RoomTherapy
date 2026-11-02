@@ -244,6 +244,199 @@
             text-align: center;
             color: var(--text-sub);
         }
+
+        /* 엑셀 관리 액션 버튼 */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .btn-excel {
+            background: #EEF2FF;
+            color: var(--primary);
+            border-color: #C7D2FE;
+        }
+        .btn-excel:hover {
+            background: #E0E7FF;
+        }
+        .btn-template {
+            background: #F8FAFC;
+            color: var(--text-main);
+        }
+        .btn-template:hover {
+            background: #F1F5F9;
+        }
+        .btn-import {
+            background: #ECFDF5;
+            color: #059669;
+            border-color: #A7F3D0;
+        }
+        .btn-import:hover {
+            background: #D1FAE5;
+        }
+
+        /* 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-container {
+            background: #FFFFFF;
+            border-radius: 20px;
+            max-width: 620px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            padding: 24px 28px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--text-sub);
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+        .form-select, .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            outline: none;
+        }
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+            background: #F8FAFC;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .days-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .day-check-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+        .day-check-btn input[type="checkbox"] {
+            accent-color: var(--primary);
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-modal-cancel {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-modal-submit {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* 알림 배너 */
+        .alert-banner {
+            max-width: 1300px;
+            margin: 0 auto 16px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .alert-success {
+            background: #ECFDF5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        .alert-danger {
+            background: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
     </style>
 </head>
 <body>
@@ -252,9 +445,26 @@
             <span class="admin-badge">ADMIN DASHBOARD</span>
             <h1>📦 굿즈 배송 신청 관리</h1>
         </div>
-        <div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn-action btn-excel" onclick="openExportModal()">📊 엑셀 다운로드</button>
+            <a th:href="@{/admin/deliveries/template/excel}" class="btn-action btn-template">📥 양식 받기</a>
+            <button type="button" class="btn-action btn-import" onclick="openImportModal()">📤 엑셀 일괄 등록</button>
             <a href="/" class="btn-home">홈으로 가기</a>
         </div>
+    </div>
+
+    <!-- 엑셀 일괄 등록 결과 알림 -->
+    <div th:if="${importResult != null}" class="alert-banner alert-success">
+        <strong>✅ 엑셀 일괄 등록 완료</strong><br>
+        전체 <span th:text="${importResult.totalRows}">0</span>행 중 
+        <strong th:text="${importResult.successCount}">0</strong>건 등록 성공, 
+        <span th:text="${importResult.failureCount}">0</span>건 실패
+        <div th:if="${!#lists.isEmpty(importResult.errorMessages)}" style="margin-top: 8px; color: #DC2626; font-size: 12px;">
+            <div th:each="errMsg : ${importResult.errorMessages}" th:text="${'• ' + errMsg}"></div>
+        </div>
+    </div>
+    <div th:if="${importError != null}" class="alert-banner alert-danger">
+        <strong>❌ 오류 발생:</strong> <span th:text="${importError}"></span>
     </div>
 
     <!-- 필터 바: 탭 + 기간 검색 -->
@@ -362,5 +572,147 @@
                class="page-link">다음 ›</a>
         </div>
     </div>
+
+    <!-- 1. 엑셀 다운로드 커스텀 모달 -->
+    <div id="exportModal" class="modal-overlay" onclick="handleBackdropClick(event, 'exportModal')">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 배송 신청 내역 엑셀 다운로드</h2>
+                <button type="button" class="modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <form th:action="@{/admin/deliveries/export/excel}" method="get">
+                <div class="form-group">
+                    <label class="form-label">신청 상품(굿즈)</label>
+                    <select name="goodsId" class="form-select">
+                        <option value="">전체 상품</option>
+                        <option th:each="goods : ${goodsList}" th:value="${goods.id}" th:text="${goods.name} + ' (#' + ${goods.id} + ')'"></option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">신청 일자 범위</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="date" name="startDate" class="form-input">
+                        <span>~</span>
+                        <input type="date" name="endDate" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">특정 요일 필터 (선택 안할 시 전체 요일)</label>
+                    <div class="days-group">
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="MONDAY"> 월</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="TUESDAY"> 화</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="WEDNESDAY"> 수</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="THURSDAY"> 목</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="FRIDAY"> 금</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="SATURDAY"> 토</label>
+                        <label class="day-check-btn"><input type="checkbox" name="daysOfWeek" value="SUNDAY"> 일</label>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">배송 상태</label>
+                        <select name="status" class="form-select">
+                            <option value="">전체 상태</option>
+                            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.description}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">수정 여부</label>
+                        <select name="filter" class="form-select">
+                            <option value="all">전체</option>
+                            <option value="modified">사용자 수정건만</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label class="form-label" style="margin-bottom: 0;">추출할 항목(컬럼) 선택</label>
+                        <label style="font-size: 12px; font-weight: 600; cursor: pointer; color: var(--primary);">
+                            <input type="checkbox" id="checkAllCols" checked onchange="toggleAllColumns(this)"> 전체 선택/해제
+                        </label>
+                    </div>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="id" checked class="col-check"> 주문 ID</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="createdAt" checked class="col-check"> 신청일시</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="updatedAt" checked class="col-check"> 수정일시</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="userNickname" checked class="col-check"> 신청 계정</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="goodsName" checked class="col-check"> 신청 상품</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="stageCode" checked class="col-check"> 인증코드</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="recipientName" checked class="col-check"> 수령인</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="phone" checked class="col-check"> 연락처</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="zipcode" checked class="col-check"> 우편번호</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="address" checked class="col-check"> 배송지 주소</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="status" checked class="col-check"> 배송 상태</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="feedback" checked class="col-check"> 요청/피드백</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-modal-cancel" onclick="closeExportModal()">취소</button>
+                    <button type="submit" class="btn-modal-submit">엑셀 다운로드</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. 엑셀 일괄 등록 모달 -->
+    <div id="importModal" class="modal-overlay" onclick="handleBackdropClick(event, 'importModal')">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 class="modal-title">📤 배송 신청 내역 엑셀 일괄 등록</h2>
+                <button type="button" class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <form th:action="@{/admin/deliveries/import/excel}" method="post" enctype="multipart/form-data">
+                <div class="form-group" style="background: #F8FAFC; border: 1px dashed var(--border); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: var(--text-sub); line-height: 1.6;">
+                        📌 <strong>안내사항</strong><br>
+                        • 반드시 <strong>표준 엑셀 양식</strong>을 다운로드 받아 작성 후 업로드해주세요.<br>
+                        • <strong>신청 상품명(또는 상품ID), 수령인, 연락처, 우편번호, 기본주소</strong>는 필수 입력 항목입니다.<br>
+                        • 인증코드를 비워둘 경우 시스템 고유 인증코드가 자동 부여됩니다.<br>
+                        • 작성된 주문의 신청 계정은 현재 로그인된 관리자 계정으로 연동됩니다.<br>
+                        👉 <a th:href="@{/admin/deliveries/template/excel}" style="color: var(--primary); font-weight: 700; text-decoration: underline;">엑셀 표준 양식 다운로드(.xlsx)</a>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">엑셀 파일 선택 (.xlsx)</label>
+                    <input type="file" name="file" accept=".xlsx, .xls" class="form-input" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-modal-cancel" onclick="closeImportModal()">취소</button>
+                    <button type="submit" class="btn-modal-submit">일괄 등록 시작</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+        function handleBackdropClick(event, modalId) {
+            if (event.target.id === modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+        }
+        function toggleAllColumns(master) {
+            const checks = document.querySelectorAll('.col-check');
+            checks.forEach(c => c.checked = master.checked);
+        }
+    </script>
 </body>
 </html>

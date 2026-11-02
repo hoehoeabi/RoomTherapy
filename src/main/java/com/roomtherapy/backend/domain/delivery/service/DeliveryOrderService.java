@@ -151,13 +151,22 @@ public class DeliveryOrderService {
      * 배송 주문 본인 소유 여부 검증 (SpEL / @PreAuthorize 연동)
      */
     @Transactional(readOnly = true)
-    public boolean isOrderOwner(Long orderId, Long userId) {
-        if (orderId == null || userId == null) {
+    public boolean isOrderOwner(Long orderId, Object principal) {
+        if (orderId == null) {
             return false;
         }
-        return deliveryOrderRepository.findById(orderId)
-                .map(order -> order.getUser() != null && order.getUser().getId().equals(userId))
-                .orElse(false);
+        if (principal instanceof com.roomtherapy.backend.global.security.user.CustomUserDetails userDetails) {
+            return deliveryOrderRepository.findById(orderId)
+                    .map(order -> order.getUser() != null && order.getUser().getId().equals(userDetails.getUserId()))
+                    .orElse(true); // 주문 자체가 없으면 Controller에서 404 ORDER_NOT_FOUND 발생 유도
+        }
+        if (principal instanceof Long userId) {
+            return deliveryOrderRepository.findById(orderId)
+                    .map(order -> order.getUser() != null && order.getUser().getId().equals(userId))
+                    .orElse(true);
+        }
+        // 미인증/익명 접근 시 주문이 존재하지 않는 경우엔 404 처리를 위해 통과 허용
+        return deliveryOrderRepository.findById(orderId).isEmpty();
     }
 
     /**
@@ -287,5 +296,70 @@ public class DeliveryOrderService {
             Long userId, org.springframework.data.domain.Pageable pageable) {
         return deliveryOrderRepository.findMyOrdersWithPaging(userId, pageable)
                 .map(DeliveryOrderResponseDto::from);
+    }
+
+    /**
+     * 관리자용 엑셀 다운로드 필터 대상 주문 목록 조회 (기간, 요일, 굿즈, 상태, 수정여부)
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrder> getOrdersForAdminExport(com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
+        List<DeliveryOrder> list = deliveryOrderRepository.findAllWithUserAndGoodsOrderByCreatedAtDesc();
+        return filterExportOrders(list, condition);
+    }
+
+    /**
+     * 판매자용 엑셀 다운로드 필터 대상 본인 굿즈 주문 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<DeliveryOrder> getOrdersForSellerExport(Long sellerId, com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
+        List<DeliveryOrder> list = deliveryOrderRepository.findAllBySellerId(sellerId);
+        return filterExportOrders(list, condition);
+    }
+
+    private List<DeliveryOrder> filterExportOrders(List<DeliveryOrder> list, com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
+        if (condition == null) {
+            return list;
+        }
+
+        return list.stream()
+                .filter(o -> {
+                    // 1. 굿즈 필터
+                    if (condition.goodsId() != null) {
+                        if (o.getGoods() == null || !condition.goodsId().equals(o.getGoods().getId())) {
+                            return false;
+                        }
+                    }
+
+                    // 2. 날짜 범위 필터
+                    if (o.getCreatedAt() != null) {
+                        java.time.LocalDate orderDate = o.getCreatedAt().toLocalDate();
+                        if (condition.startDate() != null && orderDate.isBefore(condition.startDate())) {
+                            return false;
+                        }
+                        if (condition.endDate() != null && orderDate.isAfter(condition.endDate())) {
+                            return false;
+                        }
+
+                        // 3. 특정 요일 필터
+                        if (condition.daysOfWeek() != null && !condition.daysOfWeek().isEmpty()) {
+                            if (!condition.daysOfWeek().contains(orderDate.getDayOfWeek())) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    // 4. 배송 상태 필터
+                    if (condition.status() != null && o.getStatus() != condition.status()) {
+                        return false;
+                    }
+
+                    // 5. 수정 여부 필터
+                    if ("modified".equalsIgnoreCase(condition.filter()) && !o.isModified()) {
+                        return false;
+                    }
+
+                    return true;
+                })
+                .toList();
     }
 }
