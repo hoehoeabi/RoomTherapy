@@ -31,10 +31,11 @@ public class GoodsController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         boolean isAdmin = userDetails != null && userDetails.isAdmin();
+        boolean isSeller = userDetails != null && userDetails.isSeller();
         Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
 
         List<Goods> goodsList;
-        if ("inactive".equals(filter) && userDetails != null && (isAdmin || userDetails.isSeller())) {
+        if ("inactive".equals(filter) && userDetails != null && (isAdmin || isSeller)) {
             if (isAdmin) {
                 goodsList = goodsRepository.findAll().stream()
                         .filter(g -> g.getStatus() == GoodsStatus.INACTIVE)
@@ -44,11 +45,11 @@ public class GoodsController {
                         .filter(g -> g.getStatus() == GoodsStatus.INACTIVE)
                         .toList();
             }
-        } else if ("my".equals(filter) && userDetails != null) {
+        } else if ("my".equals(filter) && userDetails != null && (isAdmin || isSeller)) {
             goodsList = goodsRepository.findAllBySellerId(userDetails.getUserId());
         } else {
             goodsList = goodsRepository.findAll().stream()
-                    .filter(g -> g.getStatus() != GoodsStatus.INACTIVE || isAdmin || (currentUserId != null && g.isOwnedBy(currentUserId)))
+                    .filter(g -> g.getStatus() != GoodsStatus.INACTIVE || isAdmin || (isSeller && currentUserId != null && g.isOwnedBy(currentUserId)))
                     .toList();
         }
 

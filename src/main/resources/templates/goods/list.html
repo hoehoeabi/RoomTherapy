@@ -666,8 +666,8 @@
                     <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
                     <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT or (goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity <= 0)}" class="badge-stock-out">재고 소진</span>
 
-                    <!-- 관리자이거나 해당 굿즈의 판매자인 경우 관리 툴바 노출 -->
-                    <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or (goods.seller != null and goods.seller.id == user.userId))}"
+                    <!-- 관리자이거나 해당 굿즈의 판매자(현재 ROLE_SELLER 권한 보유)인 경우 관리 툴바 노출 -->
+                    <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or (user.authorities.?[authority == 'ROLE_SELLER'].size() > 0 and goods.seller != null and goods.seller.id == user.userId))}"
                          style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <span class="stock-count-text" th:text="${'재고 ' + goods.stockQuantity + '개'}">재고 10개</span>
 
