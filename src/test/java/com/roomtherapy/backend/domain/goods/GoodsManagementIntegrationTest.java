@@ -389,6 +389,20 @@ class GoodsManagementIntegrationTest {
                         .cookie(new Cookie("accessToken", seller2Token)))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
+
+        // 5. 판매자 본인의 filter=inactive 탭 조회 시 숨김 굿즈가 정상 노출됨
+        mockMvc.perform(get("/goods")
+                        .param("filter", "inactive")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.hasSize(1)));
+
+        // 6. 타 판매자의 filter=inactive 탭 조회 시 본인의 숨김 굿즈가 없으므로 빈 목록
+        mockMvc.perform(get("/goods")
+                        .param("filter", "inactive")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("goodsList", org.hamcrest.Matchers.empty()));
     }
 
     @Test

@@ -462,18 +462,22 @@
             <div class="filter-tabs">
                 <a href="/goods?filter=all" class="filter-tab" th:classappend="${currentFilter == null or currentFilter == 'all' ? ' active' : ''}">전체 굿즈</a>
                 <a href="/goods?filter=my" class="filter-tab" th:classappend="${currentFilter == 'my' ? ' active' : ''}">내가 올린 굿즈</a>
+                <a href="/goods?filter=inactive" class="filter-tab" th:classappend="${currentFilter == 'inactive' ? ' active' : ''}">🔒 숨김 굿즈</a>
             </div>
             <a href="/seller/goods/new" class="admin-register-btn">+ 신규 굿즈 등록</a>
         </div>
 
         <!-- 굿즈 목록이 비어있는 경우 안내 -->
         <div th:if="${goodsList == null or goodsList.empty}" class="empty-goods">
+            <p th:if="${currentFilter == 'inactive'}">
+                숨김 처리된 굿즈가 없습니다.
+            </p>
             <p th:if="${currentFilter == 'my'}">
                 내가 등록한 굿즈가 아직 없습니다.<br>
                 새로운 굿즈와 클리어 리워드 인증코드를 등록해보세요!<br><br>
                 <a href="/seller/goods/new" class="admin-register-btn" style="display: inline-block;">+ 첫 굿즈 등록하기</a>
             </p>
-            <p th:unless="${currentFilter == 'my'}">
+            <p th:if="${currentFilter != 'my' and currentFilter != 'inactive'}">
                 등록된 굿즈 리워드가 없습니다.
             </p>
         </div>
