@@ -178,6 +178,10 @@ public class GoodsService {
      */
     @Transactional
     public GoodsResponseDto updateGoods(Long goodsId, Long currentUserId, boolean isAdmin, GoodsUpdateRequestDto request) {
+        if (request.imageUrl() == null || request.imageUrl().trim().isEmpty()) {
+            throw new IllegalArgumentException("굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
+        }
+
         Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
 
         goods.update(

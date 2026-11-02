@@ -493,4 +493,35 @@ class GoodsManagementIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("deliveries"));
     }
+
+    @Test
+    @DisplayName("굿즈 수정 시 사진이 0개면 유효성 검증 실패로 수정이 차단된다 (서비스 예외 및 MVC 에러 반환)")
+    void updateGoods_withZeroImages_failsValidation() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("사진검증 굿즈", "설명", 0, "https://s3/test.jpg", 10, "CODE-IMG-FAIL"));
+
+        // 1. 서비스 레이어 직접 호출 검증
+        GoodsUpdateRequestDto emptyImageDto = new GoodsUpdateRequestDto(
+                "수정 시도", "설명", 0, "", 10, GoodsStatus.ACTIVE, null
+        );
+        assertThatThrownBy(() -> goodsService.updateGoods(created.id(), seller1.getId(), false, emptyImageDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
+
+        // 2. MVC 컨트롤러 요청 검증 (빈 문자열 전송 시 seller/goods-edit 뷰 반환 및 errorMessage 표시)
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/edit")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "수정 시도")
+                        .param("description", "설명")
+                        .param("stockQuantity", "10")
+                        .param("status", "ACTIVE")
+                        .param("imageUrl", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("seller/goods-edit"))
+                .andExpect(model().attribute("errorMessage", "굿즈 사진은 최소 1장 이상 등록되어야 합니다."));
+
+        // DB 상의 원본 이미지는 유지됨
+        Goods origin = goodsRepository.findById(created.id()).orElseThrow();
+        assertThat(origin.getImageUrl()).isEqualTo("https://s3/test.jpg");
+    }
 }
