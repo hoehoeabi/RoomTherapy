@@ -15,6 +15,11 @@ spring:
   profiles:
     active: local
 
+  servlet:
+    multipart:
+      max-file-size: 70MB
+      max-request-size: 150MB
+
   config:
     import:
       - optional:file:.env[.properties]

@@ -57,4 +57,37 @@ class ExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("GOODS_404_01"))
                 .andExpect(jsonPath("$.message").value(ErrorCode.GOODS_NOT_FOUND.getMessage()));
     }
+
+    @Test
+    @DisplayName("파일 업로드 한도 초과 시 WebExceptionHandler에서 413 상태코드와 error.html 뷰 반환")
+    void handleMaxUploadSizeExceededException_web() {
+        WebExceptionHandler handler = new WebExceptionHandler();
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        request.setRequestURI("/seller/goods");
+        org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
+        org.springframework.web.multipart.MaxUploadSizeExceededException exception = new org.springframework.web.multipart.MaxUploadSizeExceededException(70 * 1024 * 1024);
+
+        org.springframework.web.servlet.ModelAndView mav = handler.handleMaxUploadSizeExceededException(exception, request, response);
+
+        org.assertj.core.api.Assertions.assertThat(mav.getViewName()).isEqualTo("error");
+        org.assertj.core.api.Assertions.assertThat(mav.getModel().get("status")).isEqualTo(413);
+        org.assertj.core.api.Assertions.assertThat(mav.getModel().get("code")).isEqualTo("FILE_413_01");
+        org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(413);
+    }
+
+    @Test
+    @DisplayName("파일 업로드 한도 초과 시 ApiExceptionHandler에서 413 상태코드와 ApiResponse JSON 반환")
+    void handleMaxUploadSizeExceededException_api() {
+        ApiExceptionHandler handler = new ApiExceptionHandler();
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        request.setRequestURI("/api/goods/import");
+        org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
+        org.springframework.web.multipart.MaxUploadSizeExceededException exception = new org.springframework.web.multipart.MaxUploadSizeExceededException(70 * 1024 * 1024);
+
+        com.roomtherapy.backend.global.common.ApiResponse<Void> apiResponse = handler.handleMaxUploadSizeExceededException(exception, request, response);
+
+        org.assertj.core.api.Assertions.assertThat(apiResponse.getStatus()).isEqualTo(413);
+        org.assertj.core.api.Assertions.assertThat(apiResponse.getCode()).isEqualTo("FILE_413_01");
+        org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(413);
+    }
 }

@@ -558,7 +558,7 @@
                         <div id="uploadDropzone" class="upload-dropzone">
                             <div class="upload-dropzone-icon">📷</div>
                             <div class="upload-dropzone-text">+ 클릭하거나 사진 파일을 여기로 드래그하여 추가</div>
-                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP)</div>
+                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 장당 최대 70MB)</div>
                         </div>
                         <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" style="display: none;">
 
@@ -809,12 +809,18 @@
             renderImageGrid();
         }
 
+        const MAX_FILE_SIZE = 70 * 1024 * 1024; // 70MB
+
         // 파일 추가 처리
         function addFiles(fileList) {
             if (!fileList || fileList.length === 0) return;
             for (let i = 0; i < fileList.length; i++) {
                 const file = fileList[i];
                 if (!file.type.startsWith('image/')) continue;
+                if (file.size > MAX_FILE_SIZE) {
+                    alert(`사진 '${file.name}'의 용량이 70MB를 초과하여 등록할 수 없습니다.\n(현재 용량: ${(file.size / (1024 * 1024)).toFixed(1)}MB / 최대 허용: 70MB)\n70MB 이하의 사진을 선택해주세요.`);
+                    continue;
+                }
                 imageItems.push({
                     type: 'new',
                     file: file,

@@ -34,7 +34,7 @@
             max-width: 390px;
             min-height: 100vh;
             background: #FAFAFA;
-            padding: 24px 16px 40px;
+            padding: max(48px, calc(env(safe-area-inset-top) + 20px)) 16px 40px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
             display: flex;
             flex-direction: column;
@@ -46,7 +46,7 @@
             .app-container {
                 box-shadow: none;
                 min-height: 100dvh;
-                padding: 20px 14px 32px;
+                padding: max(48px, calc(env(safe-area-inset-top) + 16px)) 14px 32px;
             }
         }
         .page-header {
@@ -664,7 +664,7 @@
                     <!-- 상태 뱃지: 숨김(INACTIVE) / 신청 가능(ACTIVE) / 품절(SOLD_OUT) -->
                     <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).INACTIVE}" class="badge-status-inactive">🔒 숨김</span>
                     <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity > 0}" class="badge-stock-in">신청 가능</span>
-                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT or (goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity <= 0)}" class="badge-stock-out">재고 소진 (품절)</span>
+                    <span th:if="${goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).SOLD_OUT or (goods.status == T(com.roomtherapy.backend.domain.goods.entity.GoodsStatus).ACTIVE and goods.stockQuantity <= 0)}" class="badge-stock-out">재고 소진</span>
 
                     <!-- 관리자이거나 해당 굿즈의 판매자인 경우 관리 툴바 노출 -->
                     <div th:if="${user != null and (user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0 or (goods.seller != null and goods.seller.id == user.userId))}"
@@ -834,12 +834,19 @@
             const goodsSubmitBtn = document.getElementById('btnGoodsImportSubmit');
             const goodsDropText = document.getElementById('goodsImportDropText');
 
+            const MAX_IMPORT_SIZE = 70 * 1024 * 1024; // 70MB
+
             if (goodsDropzone && goodsFileInput) {
                 goodsDropzone.addEventListener('click', () => goodsFileInput.click());
 
                 goodsFileInput.addEventListener('change', (e) => {
                     if (e.target.files && e.target.files.length > 0) {
                         const file = e.target.files[0];
+                        if (file.size > MAX_IMPORT_SIZE) {
+                            alert(`선택한 파일('${file.name}')의 용량이 70MB를 초과하여 등록할 수 없습니다.\n(현재 용량: ${(file.size / (1024 * 1024)).toFixed(1)}MB / 최대 허용: 70MB)\n70MB 이하의 파일을 선택해주세요.`);
+                            resetGoodsImportForm();
+                            return;
+                        }
                         goodsDropText.textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
                         goodsSubmitBtn.disabled = false;
                     } else {
@@ -861,6 +868,11 @@
                     goodsDropzone.classList.remove('drag-active');
                     if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                         const file = e.dataTransfer.files[0];
+                        if (file.size > MAX_IMPORT_SIZE) {
+                            alert(`선택한 파일('${file.name}')의 용량이 70MB를 초과하여 등록할 수 없습니다.\n(현재 용량: ${(file.size / (1024 * 1024)).toFixed(1)}MB / 최대 허용: 70MB)\n70MB 이하의 파일을 선택해주세요.`);
+                            resetGoodsImportForm();
+                            return;
+                        }
                         goodsFileInput.files = e.dataTransfer.files;
                         goodsDropText.textContent = '📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
                         goodsSubmitBtn.disabled = false;

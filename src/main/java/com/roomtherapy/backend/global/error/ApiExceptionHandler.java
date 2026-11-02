@@ -61,6 +61,16 @@ public class ApiExceptionHandler {
     }
 
     /**
+     * 파일 업로드 허용 용량 초과 예외 처리 (413 Payload Too Large)
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ApiResponse<Void> handleMaxUploadSizeExceededException(org.springframework.web.multipart.MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
+        log.warn("[REST API File Upload Size Exceeded] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
+        response.setStatus(ErrorCode.FILE_SIZE_EXCEEDED.getStatus().value());
+        return ApiResponse.error(ErrorCode.FILE_SIZE_EXCEEDED);
+    }
+
+    /**
      * 일반 표준 런타임 예외 처리 (IllegalArgumentException, IllegalStateException)
      */
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})

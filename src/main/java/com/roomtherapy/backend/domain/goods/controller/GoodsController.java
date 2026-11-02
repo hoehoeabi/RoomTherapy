@@ -51,6 +51,19 @@ public class GoodsController {
                     .filter(g -> g.getStatus() != GoodsStatus.INACTIVE || isAdmin || (currentUserId != null && g.isOwnedBy(currentUserId)))
                     .toList();
         }
+
+        java.util.Comparator<Goods> goodsComparator = java.util.Comparator
+                .comparing((Goods g) -> {
+                    if (g.getStatus() == GoodsStatus.INACTIVE) return 2;
+                    if (g.getStatus() == GoodsStatus.SOLD_OUT || g.getStockQuantity() <= 0) return 1;
+                    return 0;
+                })
+                .thenComparing(Goods::getId, java.util.Comparator.reverseOrder());
+
+        goodsList = goodsList.stream()
+                .sorted(goodsComparator)
+                .toList();
+
         model.addAttribute("goodsList", goodsList);
         model.addAttribute("currentFilter", filter);
         model.addAttribute("user", userDetails);

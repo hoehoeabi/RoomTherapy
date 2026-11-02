@@ -35,7 +35,7 @@
             max-width: 390px;
             min-height: 100vh;
             background: #FFFFFF;
-            padding: 36px 20px 40px;
+            padding: max(56px, calc(env(safe-area-inset-top) + 24px)) 20px 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -49,7 +49,7 @@
             .app-container {
                 box-shadow: none;
                 min-height: 100dvh;
-                padding: 28px 18px 36px;
+                padding: max(52px, calc(env(safe-area-inset-top) + 20px)) 18px 36px;
             }
         }
         .brand-badge {
