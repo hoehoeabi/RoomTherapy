@@ -398,6 +398,98 @@
             font-weight: 600;
             font-size: 11px;
         }
+
+        /* 화면 중앙 커스텀 다이얼로그 모달 */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .confirm-modal-overlay.active {
+            display: flex;
+        }
+        .confirm-modal-box {
+            background: #FFFFFF;
+            border-radius: 20px;
+            max-width: 360px;
+            width: 100%;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalPop 0.2s ease-out;
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .confirm-modal-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        .confirm-modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+            line-height: 1.4;
+        }
+        .confirm-modal-sub {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--red);
+            margin-bottom: 8px;
+        }
+        .confirm-modal-desc {
+            font-size: 12.5px;
+            color: #64748B;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .confirm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn-confirm-yes {
+            flex: 1;
+            padding: 12px 18px;
+            background: var(--red);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+        .btn-confirm-yes:hover {
+            opacity: 0.9;
+        }
+        .btn-confirm-no {
+            flex: 1;
+            padding: 12px 18px;
+            background: #F1F5F9;
+            color: #475569;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-confirm-no:hover {
+            background: #E2E8F0;
+        }
     </style>
 </head>
 <body>
@@ -504,9 +596,24 @@
                 <button type="submit" class="btn-submit">굿즈 수정 완료</button>
             </form>
 
-            <!-- 굿즈 삭제 버튼 폼 -->
-            <form th:action="@{'/seller/goods/' + ${goods.id} + '/delete'}" method="post" onsubmit="return confirm('정말로 이 굿즈를 삭제하시겠습니까? 관련 데이터가 모두 삭제됩니다.');">
-                <button type="submit" class="btn-delete">굿즈 삭제</button>
+            <!-- 굿즈 삭제 버튼 -->
+            <button type="button" class="btn-delete" onclick="openGoodsDeleteModal()">굿즈 삭제</button>
+        </div>
+    </div>
+
+    <!-- 굿즈 삭제 확인 모달 (화면 중앙 커스텀 다이얼로그) -->
+    <div id="goodsDeleteModal" class="confirm-modal-overlay" onclick="handleGoodsDeleteBackdrop(event)">
+        <div class="confirm-modal-box">
+            <div class="confirm-modal-icon">⚠️</div>
+            <h3 class="confirm-modal-title">굿즈를 삭제하시겠습니까?</h3>
+            <p class="confirm-modal-sub" th:text="${goods.name}">굿즈명</p>
+            <p class="confirm-modal-desc">삭제 시 해당 굿즈의 인증코드 및 상세 정보가 영구적으로 삭제됩니다.</p>
+            <form id="goodsDeleteForm" th:action="@{'/seller/goods/' + ${goods.id} + '/delete'}" method="post">
+                <input type="hidden" name="redirect" value="/goods">
+                <div class="confirm-modal-actions">
+                    <button type="submit" class="btn-confirm-yes">그래</button>
+                    <button type="button" class="btn-confirm-no" onclick="closeGoodsDeleteModal()">아니</button>
+                </div>
             </form>
         </div>
     </div>
@@ -786,6 +893,21 @@
 
         // 초기 렌더링 실행
         renderImageGrid();
+
+        // 굿즈 삭제 중앙 커스텀 모달 제어
+        function openGoodsDeleteModal() {
+            document.getElementById('goodsDeleteModal').classList.add('active');
+        }
+
+        function closeGoodsDeleteModal() {
+            document.getElementById('goodsDeleteModal').classList.remove('active');
+        }
+
+        function handleGoodsDeleteBackdrop(event) {
+            if (event.target.id === 'goodsDeleteModal') {
+                closeGoodsDeleteModal();
+            }
+        }
     </script>
 </body>
 </html>

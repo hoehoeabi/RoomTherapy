@@ -79,6 +79,20 @@ public class AdminDeliveryController {
     }
 
     /**
+     * 관리자용 배송 주문 삭제 처리
+     */
+    @PostMapping("/deliveries/{orderId}/delete")
+    public String deleteOrder(
+            @PathVariable Long orderId,
+            @RequestParam(name = "redirect", required = false) String redirect,
+            RedirectAttributes redirectAttributes) {
+        log.info("관리자 배송 주문 삭제 요청: orderId={}", orderId);
+        deliveryOrderService.deleteOrder(orderId);
+        redirectAttributes.addFlashAttribute("successMessage", "배송 주문 #" + orderId + "이(가) 정상적으로 삭제되었습니다.");
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/admin/deliveries";
+    }
+
+    /**
      * 관리자용 배송 목록 엑셀 다운로드
      */
     @GetMapping("/deliveries/export/excel")

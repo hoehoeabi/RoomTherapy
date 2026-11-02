@@ -118,7 +118,7 @@ public class SellerGoodsController {
     /**
      * 특정 굿즈의 등록된 인증코드 목록 확인
      */
-    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @GetMapping("/{goodsId}/codes")
     public String viewAuthCodes(
             @PathVariable Long goodsId,
@@ -133,7 +133,7 @@ public class SellerGoodsController {
     /**
      * 굿즈 수정 폼 화면 (판매자 본인 또는 관리자 접근 가능)
      */
-    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @GetMapping("/{goodsId}/edit")
     public String editGoodsForm(
             @PathVariable Long goodsId,
@@ -154,7 +154,7 @@ public class SellerGoodsController {
     /**
      * 굿즈 수정 제출 처리 (다중 이미지 추가 업로드 지원)
      */
-    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @PostMapping("/{goodsId}/edit")
     public String updateGoods(
             @PathVariable Long goodsId,
@@ -212,11 +212,12 @@ public class SellerGoodsController {
     /**
      * 굿즈 단독 재고 수량 변경 처리 (목록 등에서 간편 변경)
      */
-    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @PostMapping("/{goodsId}/stock")
     public String updateStock(
             @PathVariable Long goodsId,
             @org.springframework.web.bind.annotation.RequestParam("stockQuantity") int stockQuantity,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -224,16 +225,36 @@ public class SellerGoodsController {
         }
         goodsService.updateGoodsStock(goodsId, userDetails.getUserId(), userDetails.isAdmin(), stockQuantity);
         redirectAttributes.addFlashAttribute("successMessage", "재고 수량이 " + stockQuantity + "개로 변경되었습니다.");
-        return "redirect:/goods";
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
+    }
+
+    /**
+     * 굿즈 상태 변경 처리 (판매중 / 품절 / 숨김)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
+    @PostMapping("/{goodsId}/status")
+    public String updateStatus(
+            @PathVariable Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam("status") com.roomtherapy.backend.domain.goods.entity.GoodsStatus status,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        goodsService.updateGoodsStatus(goodsId, userDetails.getUserId(), userDetails.isAdmin(), status);
+        redirectAttributes.addFlashAttribute("successMessage", "굿즈 상태가 '" + status.getDescription() + "'(으)로 변경되었습니다.");
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
     }
 
     /**
      * 굿즈 삭제 처리 (판매자 본인 또는 관리자 접근 가능)
      */
-    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @PostMapping("/{goodsId}/delete")
     public String deleteGoods(
             @PathVariable Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -241,7 +262,7 @@ public class SellerGoodsController {
         }
         goodsService.deleteGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin());
         redirectAttributes.addFlashAttribute("successMessage", "굿즈가 성공적으로 삭제되었습니다.");
-        return "redirect:/goods";
+        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
     }
 
     /**

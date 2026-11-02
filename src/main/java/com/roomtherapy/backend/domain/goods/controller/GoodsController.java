@@ -1,6 +1,7 @@
 package com.roomtherapy.backend.domain.goods.controller;
 
 import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -22,21 +23,28 @@ public class GoodsController {
 
     /**
      * 굿즈 리워드 상품 목록 페이지 (전체 또는 내가 등록한 굿즈 필터링 지원)
+     * 숨김(INACTIVE) 상품은 일반 유저에게 노출되지 않으며, 관리자 또는 해당 상품 등록자에게만 표시됩니다.
      */
     @GetMapping
     public String listGoods(
             @RequestParam(name = "filter", defaultValue = "all") String filter,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
+        boolean isAdmin = userDetails != null && userDetails.isAdmin();
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+
         List<Goods> goodsList;
         if ("my".equals(filter) && userDetails != null) {
             goodsList = goodsRepository.findAllBySellerId(userDetails.getUserId());
         } else {
-            goodsList = goodsRepository.findAll();
+            goodsList = goodsRepository.findAll().stream()
+                    .filter(g -> g.getStatus() != GoodsStatus.INACTIVE || isAdmin || (currentUserId != null && g.isOwnedBy(currentUserId)))
+                    .toList();
         }
         model.addAttribute("goodsList", goodsList);
         model.addAttribute("currentFilter", filter);
         model.addAttribute("user", userDetails);
+        model.addAttribute("statuses", GoodsStatus.values());
         return "goods/list";
     }
 }

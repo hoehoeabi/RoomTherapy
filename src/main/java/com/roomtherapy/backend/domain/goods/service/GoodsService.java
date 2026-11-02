@@ -142,13 +142,21 @@ public class GoodsService {
      * 굿즈 등록자(소유자) 여부 검증 (SpEL / @PreAuthorize 연동)
      */
     @Transactional(readOnly = true)
-    public boolean isOwner(Long goodsId, Long userId) {
-        if (goodsId == null || userId == null) {
+    public boolean isOwner(Long goodsId, Object principal) {
+        if (goodsId == null) {
             return false;
         }
-        return goodsRepository.findById(goodsId)
-                .map(goods -> goods.isOwnedBy(userId))
-                .orElse(false);
+        if (principal instanceof com.roomtherapy.backend.global.security.user.CustomUserDetails userDetails) {
+            return goodsRepository.findById(goodsId)
+                    .map(goods -> goods.isOwnedBy(userDetails.getUserId()))
+                    .orElse(false);
+        }
+        if (principal instanceof Long userId) {
+            return goodsRepository.findById(goodsId)
+                    .map(goods -> goods.isOwnedBy(userId))
+                    .orElse(false);
+        }
+        return false;
     }
 
     /**
@@ -219,6 +227,16 @@ public class GoodsService {
         } catch (Exception e) {
             log.warn("Redis 재고 동기화 실패: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 굿즈 상태 변경 처리 (활성/품절/숨김, 권한 검증 포함)
+     */
+    @Transactional
+    public void updateGoodsStatus(Long goodsId, Long currentUserId, boolean isAdmin, GoodsStatus newStatus) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+        goods.updateStatus(newStatus);
+        log.info("굿즈 ID({}) 상태 변경 완료: {} - 처리자: {}", goodsId, newStatus, currentUserId);
     }
 
     /**

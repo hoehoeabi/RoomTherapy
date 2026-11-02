@@ -261,6 +261,33 @@ public class DeliveryOrderService {
     }
 
     /**
+     * 관리자용 배송 주문 삭제 처리
+     */
+    @Transactional
+    public void deleteOrder(Long orderId) {
+        DeliveryOrder order = deliveryOrderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        deliveryOrderRepository.delete(order);
+        log.info("관리자에 의한 배송 주문 삭제 완료 - OrderId: {}", orderId);
+    }
+
+    /**
+     * 판매자용 본인 굿즈 배송 주문 삭제 처리
+     */
+    @Transactional
+    public void deleteOrderBySeller(Long sellerId, Long orderId) {
+        DeliveryOrder order = deliveryOrderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (order.getGoods() == null || order.getGoods().getSeller() == null || !order.getGoods().getSeller().getId().equals(sellerId)) {
+            throw new BusinessException(ErrorCode.NOT_SELLER_OWNER);
+        }
+
+        deliveryOrderRepository.delete(order);
+        log.info("판매자에 의한 배송 주문 삭제 완료 - SellerId: {}, OrderId: {}", sellerId, orderId);
+    }
+
+    /**
      * 관리자용 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
      */
     @Transactional(readOnly = true)
