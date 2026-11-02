@@ -6,7 +6,8 @@ server:
   servlet:
     session:
       cookie:
-        secure: false # HTTP 환경 허용 (추후 HTTPS 도메인 적용 시 true 전환)
+        secure: true # HTTPS 도메인(roomtherapy.kr) 적용 완료
+
 
 spring:
   # 운영용 MySQL DB 연동

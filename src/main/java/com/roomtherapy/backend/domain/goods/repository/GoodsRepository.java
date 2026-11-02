@@ -11,4 +11,6 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
     List<Goods> findAllBySellerId(Long sellerId);
 
     List<Goods> findAllByStatus(GoodsStatus status);
+
+    java.util.Optional<Goods> findFirstByName(String name);
 }

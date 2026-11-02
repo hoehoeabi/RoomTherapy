@@ -105,7 +105,7 @@ public class DeliveryController {
     /**
      * 굿즈 배송 신청 완료 및 확인 페이지 (본인 주문 또는 관리자만 조회 가능)
      */
-    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal)")
     @GetMapping("/delivery/confirm/{orderId}")
     public String confirmPage(
             @PathVariable Long orderId,
@@ -128,7 +128,7 @@ public class DeliveryController {
     /**
      * 배송 정보 수정 폼 화면 (본인 주문 또는 관리자만 접근 가능)
      */
-    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal)")
     @GetMapping("/delivery/edit/{orderId}")
     public String editDeliveryForm(
             @PathVariable Long orderId,
@@ -152,7 +152,7 @@ public class DeliveryController {
     /**
      * 배송 정보 수정 처리 (본인 주문 또는 관리자만 수정 가능)
      */
-    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal.userId)")
+    @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal)")
     @PostMapping("/delivery/edit/{orderId}")
     public String updateDelivery(
             @PathVariable Long orderId,

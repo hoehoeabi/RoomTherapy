@@ -41,6 +41,9 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.29.51')
 	implementation 'software.amazon.awssdk:s3'
 
+	// Apache POI (Excel Export & Import)
+	implementation 'org.apache.poi:poi-ooxml:5.4.0'
+
 	compileOnly 'org.projectlombok:lombok'
 	implementation 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
