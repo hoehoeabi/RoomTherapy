@@ -56,6 +56,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .id(java.util.UUID.randomUUID().toString())
                 .subject(String.valueOf(userId))
+                .claim("type", "REFRESH")
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(secretKey)
@@ -71,6 +72,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("type", "ACCESS")
                 .claim("email", email)
                 .claim("role", role)
                 .issuedAt(now)
@@ -88,6 +90,28 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    /**
+     * Access Token 타입 여부 검증
+     */
+    public boolean isAccessToken(String token) {
+        try {
+            return "ACCESS".equals(getClaims(token).get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Refresh Token 타입 여부 검증
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            return "REFRESH".equals(getClaims(token).get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

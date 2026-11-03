@@ -37,8 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 1. 토큰 추출 (헤더 우선 -> 없을 시 브라우저 쿠키에서 추출)
         String token = resolveToken(request);
 
-        // 2. 토큰 유효성 검증 및 SecurityContext 인증 정보 저장
-        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
+        // 2. 토큰 유효성 및 Access Token 타입 검증 후 SecurityContext 인증 정보 저장
+        if (StringUtils.hasText(token) && jwtProvider.validateToken(token) && jwtProvider.isAccessToken(token)) {
             setAuthentication(request, token);
         }
 
