@@ -1,5 +1,6 @@
 package com.roomtherapy.backend.domain.goods.service;
 
+import com.roomtherapy.backend.domain.delivery.validator.StageCodeValidator;
 import com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto;
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.validator.GoodsAuthCodeValidator;
@@ -17,6 +18,7 @@ import java.util.List;
 public class GoodsAuthCodeManager {
 
     private final List<GoodsAuthCodeValidator> validators;
+    private final List<StageCodeValidator> stageCodeValidators;
     private final GoodsAuthCodeRepository goodsAuthCodeRepository;
 
     /**
@@ -61,7 +63,17 @@ public class GoodsAuthCodeManager {
         }
 
         if (goodsId == null) {
-            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "굿즈 미선택 기본 코드입니다.", "DEFAULT");
+            String targetCode = code.trim();
+            for (StageCodeValidator stageValidator : stageCodeValidators) {
+                if (stageValidator.supports(targetCode)) {
+                    if (stageValidator.validate(targetCode)) {
+                        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(true, "유효한 기본 스테이지 인증코드입니다.", "DEFAULT");
+                    } else {
+                        return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, ErrorCode.INVALID_AUTH_CODE.getMessage(), null);
+                    }
+                }
+            }
+            return new com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeVerifyResponseDto(false, ErrorCode.INVALID_AUTH_CODE.getMessage(), null);
         }
 
         for (GoodsAuthCodeValidator validator : validators) {

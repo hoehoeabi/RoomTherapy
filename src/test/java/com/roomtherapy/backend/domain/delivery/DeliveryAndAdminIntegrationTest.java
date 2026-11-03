@@ -241,11 +241,23 @@ class DeliveryAndAdminIntegrationTest {
     }
 
     @Test
-    @DisplayName("인증코드에 형식 제한 없이 임의의 코드(예: ㅁㅁ)로도 정상 신청 가능")
+    @DisplayName("굿즈에 등록된 자유 형식 인증코드(예: ㅁㅁ)로도 정상 신청 가능")
     void submitDelivery_arbitraryStageCode_success() throws Exception {
+        Goods goods = goodsRepository.save(Goods.builder()
+                .seller(adminUser)
+                .name("한글코드 테스트 굿즈")
+                .description("설명")
+                .price(0)
+                .stockQuantity(5)
+                .status(GoodsStatus.ON_SALE)
+                .build());
+        goodsAuthCodeRepository.save(new GoodsAuthCode(goods, "ㅁㅁ"));
+        redisGoodsStockService.syncStock(goods.getId(), 5);
+
         mockMvc.perform(post("/delivery")
                         .cookie(new Cookie("accessToken", userToken))
-                        .param("stageCode", "ㅁㅁ") // 임의의 한글/자유 형식 코드
+                        .param("goodsId", String.valueOf(goods.getId()))
+                        .param("stageCode", "ㅁㅁ") // 등록된 한글/자유 형식 코드
                         .param("recipientName", "홍길동")
                         .param("phone", "010-1234-5678")
                         .param("zipcode", "12345")
@@ -437,7 +449,7 @@ class DeliveryAndAdminIntegrationTest {
     void deliverySubmit_saveAsDefaultAddress_updatesUserProfile() throws Exception {
         mockMvc.perform(post("/delivery")
                         .cookie(new Cookie("accessToken", userToken))
-                        .param("stageCode", "ew-autofill-test")
+                        .param("stageCode", "ew-stage1-clear-03")
                         .param("recipientName", "새기본수령인")
                         .param("phone", "010-5555-6666")
                         .param("zipcode", "03186")

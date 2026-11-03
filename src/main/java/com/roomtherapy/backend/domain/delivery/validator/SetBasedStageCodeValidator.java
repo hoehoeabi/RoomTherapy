@@ -54,7 +54,13 @@ public class SetBasedStageCodeValidator implements StageCodeValidator {
 
         String targetCode = code.trim();
 
-        // 이미 배송 신청에 사용된 코드인지 중복 검사 (1회용 보장)
+        // 1. 사전 등록된 고정 인증코드 목록에 존재하는지 검증
+        if (!validCodeSet.contains(targetCode)) {
+            log.warn("등록되지 않은 고정 인증코드입니다: {}", targetCode);
+            return false;
+        }
+
+        // 2. 이미 배송 신청에 사용된 코드인지 중복 검사 (1회용 보장)
         if (deliveryOrderRepository.existsByStageCode(targetCode)) {
             log.warn("이미 사용된 인증코드입니다: {}", targetCode);
             return false;
