@@ -249,7 +249,7 @@ class DeliveryAndAdminIntegrationTest {
                 .description("설명")
                 .price(0)
                 .stockQuantity(5)
-                .status(GoodsStatus.ON_SALE)
+                .status(GoodsStatus.ACTIVE)
                 .build());
         goodsAuthCodeRepository.save(new GoodsAuthCode(goods, "ㅁㅁ"));
         redisGoodsStockService.syncStock(goods.getId(), 5);

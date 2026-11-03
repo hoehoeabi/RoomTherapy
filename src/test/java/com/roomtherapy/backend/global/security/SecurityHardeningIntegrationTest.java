@@ -37,6 +37,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -125,8 +126,8 @@ class SecurityHardeningIntegrationTest {
     @Test
     @DisplayName("보안 1: 기본 리워드(goodsId=null)에서 등록되지 않은 임의 문자열 코드는 배송 신청 및 사전 검증에서 차단됨")
     void unregisteredDefaultStageCode_isRejected() throws Exception {
-        // 1. 사전 검증 API (/api/goods/verify-code)에서 미등록 코드 거절
-        mockMvc.perform(post("/api/goods/verify-code")
+        // 1. 사전 검증 API (GET /api/goods/verify-code)에서 미등록 코드 거절
+        mockMvc.perform(get("/api/goods/verify-code")
                         .cookie(new Cookie("accessToken", userAccessToken))
                         .param("code", "random-unregistered-code"))
                 .andExpect(status().isOk())
@@ -141,7 +142,7 @@ class SecurityHardeningIntegrationTest {
                         .param("zipcode", "12345")
                         .param("address", "서울시 강남구"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery/form"))
+                .andExpect(view().name("delivery"))
                 .andExpect(model().attributeExists("errorMessage"));
 
         assertThat(deliveryOrderRepository.count()).isZero();
@@ -154,10 +155,10 @@ class SecurityHardeningIntegrationTest {
                 "유니티 보안 굿즈", "설명", 0, "https://img.test/a.png", 10, "CODE-1"
         ));
 
-        // 1. 비인증 호출 시 차단 (로그인 리다이렉트 또는 401/3xx)
+        // 1. 비인증 호출 시 401 Unauthorized 차단
         mockMvc.perform(post("/api/unity/goods/" + goods.id() + "/issue-code")
                         .param("durationMinutes", "30"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
 
         // 2. 비정상 TTL (0분 또는 1440분 초과) 요청 시 400 Bad Request
         mockMvc.perform(post("/api/unity/goods/" + goods.id() + "/issue-code")
@@ -181,12 +182,12 @@ class SecurityHardeningIntegrationTest {
         assertThat(jwtProvider.isRefreshToken(userRefreshToken)).isTrue();
         assertThat(jwtProvider.isAccessToken(userRefreshToken)).isFalse();
 
-        // 1. Refresh Token을 accessToken 쿠키에 담아 인증 필요 페이지 접근 시 인증되지 않음 (로그인 페이지로 리다이렉트)
+        // 1. Refresh Token을 accessToken 쿠키에 담아 인증 필요 페이지 접근 시 인증되지 않음 (카카오 로그인 페이지로 리다이렉트)
         mockMvc.perform(post("/user/role")
                         .cookie(new Cookie("accessToken", userRefreshToken))
                         .param("role", "SELLER"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+                .andExpect(redirectedUrl("/oauth2/authorization/kakao"));
 
         // 2. Access Token을 AuthService.reissue()에 전달 시 INVALID_REFRESH_TOKEN 예외 발생
         assertThatThrownBy(() -> authService.reissue(userAccessToken))
@@ -231,7 +232,7 @@ class SecurityHardeningIntegrationTest {
                 .address("@SUM(1+1)")
                 .detailAddress("-101호")
                 .feedback("=HYPERLINK(\"http://evil.com\")")
-                .status(DeliveryStatus.PENDING)
+                .status(DeliveryStatus.ORDERED)
                 .build();
 
         byte[] excelBytes = deliveryExcelService.exportDeliveriesToExcel(
