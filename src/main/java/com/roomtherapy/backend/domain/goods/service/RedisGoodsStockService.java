@@ -31,11 +31,11 @@ public class RedisGoodsStockService {
     public boolean tryDecreaseStock(Long goodsId, int quantity) {
         String stockKey = REDIS_STOCK_PREFIX + goodsId;
 
-        // Redis에 재고 키가 없으면 DB에서 조회하여 초기화
+        // Redis에 재고 키가 없으면 DB에서 조회하여 원자적(setIfAbsent) 초기화
         if (Boolean.FALSE.equals(redisTemplate.hasKey(stockKey))) {
             Goods goods = goodsRepository.findById(goodsId)
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 굿즈입니다: " + goodsId));
-            redisTemplate.opsForValue().set(stockKey, String.valueOf(goods.getStockQuantity()), Duration.ofDays(7));
+            redisTemplate.opsForValue().setIfAbsent(stockKey, String.valueOf(goods.getStockQuantity()), Duration.ofDays(7));
         }
 
         // Redis DECR 원자적 연산 실행
