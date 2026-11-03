@@ -50,6 +50,7 @@ public class SecurityConfig {
                 )
                 // 접근 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/unity/goods/*/issue-code").authenticated()
                         .requestMatchers(
                                 "/",
                                 "/css/**",

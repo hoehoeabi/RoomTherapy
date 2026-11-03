@@ -24,6 +24,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3StorageService implements StorageService {
 
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+            ".png", ".jpg", ".jpeg", ".webp", ".gif", ".glb"
+    );
+
     private final S3Client s3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -38,14 +42,17 @@ public class S3StorageService implements StorageService {
             return null;
         }
 
-        try {
-            String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload.bin";
-            String extension = "";
-            int extIdx = originalFilename.lastIndexOf('.');
-            if (extIdx >= 0) {
-                extension = originalFilename.substring(extIdx);
-            }
+        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload.bin";
+        String extension = "";
+        int extIdx = originalFilename.lastIndexOf('.');
+        if (extIdx >= 0) {
+            extension = originalFilename.substring(extIdx).toLowerCase();
+        }
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("허용되지 않는 파일 확장자입니다: " + extension);
+        }
 
+        try {
             String savedFilename = UUID.randomUUID().toString().replace("-", "") + extension;
             String key = (directory != null && !directory.isBlank())
                     ? directory.trim() + "/" + savedFilename

@@ -177,18 +177,30 @@ public class GoodsExcelService {
         }
     }
 
+    private static final int MAX_ZIP_ENTRIES = 200;
+    private static final long MAX_ZIP_ENTRY_BYTES = 20L * 1024 * 1024; // 개별 파일 최대 20MB
+    private static final long MAX_ZIP_TOTAL_BYTES = 100L * 1024 * 1024; // 전체 압축 해제 최대 100MB
+
     /**
      * ZIP 압축 파일 처리: .xlsx 파일 추출 및 동봉된 이미지 일괄 스토리지 업로드 후 매핑
      */
     private GoodsExcelImportResult importFromZip(MultipartFile zipFile, Long sellerId) {
         byte[] excelBytes = null;
         Map<String, byte[]> imageFiles = new LinkedHashMap<>();
+        int entryCount = 0;
+        long totalUncompressedBytes = 0L;
 
         try (ZipInputStream zis = new ZipInputStream(zipFile.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
                     continue;
+                }
+
+                entryCount++;
+                if (entryCount > MAX_ZIP_ENTRIES) {
+                    log.warn("ZIP 압축 파일 내 엔트리 개수 초과: {}", entryCount);
+                    return GoodsExcelImportResult.empty("ZIP 압축 파일 내 파일 개수가 허용 한도(" + MAX_ZIP_ENTRIES + "개)를 초과했습니다.");
                 }
 
                 String entryName = entry.getName();
@@ -202,7 +214,15 @@ public class GoodsExcelService {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[8192];
                 int len;
+                long entryUncompressedBytes = 0L;
                 while ((len = zis.read(buffer)) != -1) {
+                    entryUncompressedBytes += len;
+                    totalUncompressedBytes += len;
+                    if (entryUncompressedBytes > MAX_ZIP_ENTRY_BYTES || totalUncompressedBytes > MAX_ZIP_TOTAL_BYTES) {
+                        log.warn("ZIP 압축 해제 용량 한도 초과 (Zip Bomb 방어) - Entry: {}, EntryBytes: {}, TotalBytes: {}",
+                                simpleName, entryUncompressedBytes, totalUncompressedBytes);
+                        return GoodsExcelImportResult.empty("ZIP 압축 해제 용량이 허용 한도(최대 100MB)를 초과했습니다.");
+                    }
                     baos.write(buffer, 0, len);
                 }
                 byte[] entryBytes = baos.toByteArray();

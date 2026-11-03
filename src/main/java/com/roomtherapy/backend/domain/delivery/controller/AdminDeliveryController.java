@@ -75,7 +75,7 @@ public class AdminDeliveryController {
             @RequestParam DeliveryStatus status,
             @RequestParam(name = "redirect", required = false) String redirect) {
         deliveryOrderService.updateOrderStatus(orderId, status);
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/admin/deliveries";
+        return "redirect:" + resolveSafeRedirect(redirect, "/admin/deliveries");
     }
 
     /**
@@ -89,7 +89,14 @@ public class AdminDeliveryController {
         log.info("관리자 배송 주문 삭제 요청: orderId={}", orderId);
         deliveryOrderService.deleteOrder(orderId);
         redirectAttributes.addFlashAttribute("successMessage", "배송 주문 #" + orderId + "이(가) 정상적으로 삭제되었습니다.");
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/admin/deliveries";
+        return "redirect:" + resolveSafeRedirect(redirect, "/admin/deliveries");
+    }
+
+    private String resolveSafeRedirect(String redirect, String defaultPath) {
+        if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//") && !redirect.startsWith("/\\")) {
+            return redirect;
+        }
+        return defaultPath;
     }
 
     /**

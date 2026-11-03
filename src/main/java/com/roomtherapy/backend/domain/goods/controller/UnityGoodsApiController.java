@@ -48,11 +48,17 @@ public class UnityGoodsApiController {
      * @param goodsId 굿즈 PK
      * @param durationMinutes 유효시간(분) (기본 60분)
      */
-    @Operation(summary = "스테이지 클리어 시 굿즈 동적 인증코드 발급", description = "유저가 스테이지 클리어 시 굿즈 PK를 전송하면, Redis에 TTL(기본 60분)로 저장되는 1회용 고유 난수 코드(예: RT-A8F2K9Z)를 즉시 발급합니다.")
+    @Operation(summary = "스테이지 클리어 시 굿즈 동적 인증코드 발급", description = "유저가 스테이지 클리어 시 굿즈 PK를 전송하면, Redis에 TTL(기본 60분, 최대 1440분)로 저장되는 1회용 고유 난수 코드(예: RT-A8F2K9Z)를 즉시 발급합니다.")
     @PostMapping("/{goodsId}/issue-code")
     public ApiResponse<UnityCodeIssueResponseDto> issueAuthCode(
             @Parameter(description = "리워드 굿즈 PK ID", example = "1") @PathVariable Long goodsId,
-            @Parameter(description = "인증코드 유효 시간(분 단위, 기본 60분)", example = "60") @RequestParam(name = "durationMinutes", defaultValue = "60") int durationMinutes) {
+            @Parameter(description = "인증코드 유효 시간(분 단위, 1~1440분, 기본 60분)", example = "60") @RequestParam(name = "durationMinutes", defaultValue = "60") int durationMinutes) {
+        if (durationMinutes < 1 || durationMinutes > 1440) {
+            throw new com.roomtherapy.backend.global.error.BusinessException(
+                    com.roomtherapy.backend.global.error.ErrorCode.INVALID_INPUT_VALUE,
+                    "인증코드 유효 시간은 1분 이상 1440분(24시간) 이하로 설정해야 합니다."
+            );
+        }
         UnityCodeIssueResponseDto response = goodsService.issueDynamicCodeForUnity(goodsId, Duration.ofMinutes(durationMinutes));
         return ApiResponse.success("인증코드 발급 성공", response);
     }

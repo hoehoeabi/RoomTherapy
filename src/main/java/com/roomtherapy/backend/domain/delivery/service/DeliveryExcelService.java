@@ -94,7 +94,7 @@ public class DeliveryExcelService {
                     String colKey = columns.get(colIdx);
                     Cell cell = row.createCell(colIdx);
                     String val = extractCellValue(order, colKey);
-                    cell.setCellValue(val != null ? val : "");
+                    cell.setCellValue(sanitizeExcelCellValue(val));
 
                     if ("address".equals(colKey) || "feedback".equals(colKey)) {
                         cell.setCellStyle(leftStyle);
@@ -123,6 +123,20 @@ public class DeliveryExcelService {
             log.error("엑셀 파일 생성 중 오류 발생", e);
             throw new RuntimeException("엑셀 파일 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 엑셀 수식 인젝션(Formula Injection) 방어: =, +, -, @, 탭, 개행으로 시작하는 문자열 앞에 작은따옴표(') 추가
+     */
+    private String sanitizeExcelCellValue(String val) {
+        if (val == null || val.isEmpty()) {
+            return "";
+        }
+        char first = val.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return "'" + val;
+        }
+        return val;
     }
 
     /**

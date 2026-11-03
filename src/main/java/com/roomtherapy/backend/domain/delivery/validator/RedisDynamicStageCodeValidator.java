@@ -87,6 +87,10 @@ public class RedisDynamicStageCodeValidator implements StageCodeValidator {
 
         // Redis에서 즉시 삭제하여 중복 소모 방지 (원자적 처리)
         Boolean deleted = redisTemplate.delete(redisKey);
+        if (!Boolean.TRUE.equals(deleted)) {
+            log.warn("동시 요청으로 이미 소모된 Redis 동적 인증코드입니다 - Code: {}, UserId: {}", targetCode, userId);
+            throw new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.INVALID_AUTH_CODE);
+        }
         log.info("Redis 동적 인증코드 소모 처리 완료 - Code: {}, Deleted: {}, UserId: {}", targetCode, deleted, userId);
     }
 }

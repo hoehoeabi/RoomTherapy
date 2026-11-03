@@ -27,8 +27,8 @@ public class AuthService {
      */
     @Transactional
     public TokenResponseDto reissue(String refreshToken) {
-        // 1. Refresh Token 자체 서명 및 유효성 검증
-        if (!jwtProvider.validateToken(refreshToken)) {
+        // 1. Refresh Token 자체 서명, 유효성 및 타입(REFRESH) 검증
+        if (!jwtProvider.validateToken(refreshToken) || !jwtProvider.isRefreshToken(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 

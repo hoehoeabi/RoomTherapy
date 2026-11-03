@@ -66,8 +66,12 @@ public class RedisGoodsAuthCodeValidator implements GoodsAuthCodeValidator {
         String targetCode = code.trim().toUpperCase();
         String redisKey = REDIS_GOODS_CODE_PREFIX + targetCode;
 
-        // Redis에서 즉시 삭제하여 1회용 소진 완료
+        // Redis에서 즉시 삭제하여 1회용 소진 완료 (동시성 경합 시 중복 소진 차단)
         Boolean deleted = redisTemplate.delete(redisKey);
+        if (!Boolean.TRUE.equals(deleted)) {
+            log.warn("동시 요청으로 이미 소진된 Redis 굿즈 인증코드입니다 - GoodsId: {}, Code: {}, UserId: {}", goodsId, targetCode, userId);
+            throw new com.roomtherapy.backend.global.error.BusinessException(com.roomtherapy.backend.global.error.ErrorCode.INVALID_AUTH_CODE);
+        }
         log.info("Redis 굿즈 동적 인증코드 소진 완료 - GoodsId: {}, Code: {}, Deleted: {}, UserId: {}",
                 goodsId, targetCode, deleted, userId);
     }

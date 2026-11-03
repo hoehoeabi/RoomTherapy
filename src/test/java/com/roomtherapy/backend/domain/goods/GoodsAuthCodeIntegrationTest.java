@@ -279,8 +279,9 @@ class GoodsAuthCodeIntegrationTest {
                 "레디스 동적 굿즈", "설명", 0, "", 10, null, null
         ));
 
-        // 1. 유니티에서 동적 인증코드 발급 요청
+        // 1. 유니티에서 동적 인증코드 발급 요청 (인증된 사용자)
         String responseJson = mockMvc.perform(post("/api/unity/goods/" + goods.id() + "/issue-code")
+                        .cookie(new Cookie("accessToken", user1Token))
                         .param("durationMinutes", "30"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
