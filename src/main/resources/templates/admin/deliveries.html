@@ -874,26 +874,40 @@
             checks.forEach(c => c.checked = master.checked);
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function confirmOrderDelete(orderId, status, goodsName) {
             const form = document.getElementById('deleteOrderForm');
-            form.action = '/admin/deliveries/' + orderId + '/delete';
+            form.action = '/admin/deliveries/' + encodeURIComponent(orderId) + '/delete';
 
             const iconEl = document.getElementById('deleteModalIcon');
             const titleEl = document.getElementById('deleteModalTitle');
             const subEl = document.getElementById('deleteModalSub');
             const descEl = document.getElementById('deleteModalDesc');
 
+            const safeOrderId = escapeHtml(orderId);
+            const safeGoodsName = escapeHtml(goodsName || '굿즈');
+            const safeStatus = escapeHtml(status);
+
             if (status !== 'DELIVERED') {
                 iconEl.textContent = '⚠️';
                 titleEl.textContent = '아직 배송완료되지 않았습니다';
                 subEl.textContent = '삭제하시겠습니까?';
                 subEl.style.display = 'block';
-                descEl.innerHTML = '주문번호 <strong>#' + orderId + '</strong> (' + (goodsName || '굿즈') + ')<br>현재 상태: <strong>' + status + '</strong>';
+                descEl.innerHTML = '주문번호 <strong>#' + safeOrderId + '</strong> (' + safeGoodsName + ')<br>현재 상태: <strong>' + safeStatus + '</strong>';
             } else {
                 iconEl.textContent = '🗑️';
                 titleEl.textContent = '배송 주문을 삭제하시겠습니까?';
                 subEl.style.display = 'none';
-                descEl.innerHTML = '주문번호 <strong>#' + orderId + '</strong> (' + (goodsName || '굿즈') + ')<br>삭제된 주문 정보는 복구할 수 없습니다.';
+                descEl.innerHTML = '주문번호 <strong>#' + safeOrderId + '</strong> (' + safeGoodsName + ')<br>삭제된 주문 정보는 복구할 수 없습니다.';
             }
 
             document.getElementById('deleteConfirmModal').classList.add('active');

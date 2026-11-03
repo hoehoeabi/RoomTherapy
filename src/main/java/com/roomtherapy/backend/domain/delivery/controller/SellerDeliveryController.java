@@ -77,7 +77,7 @@ public class SellerDeliveryController {
             @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         deliveryOrderService.updateOrderStatusBySeller(userDetails.getUserId(), orderId, status);
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/seller/deliveries";
+        return "redirect:" + resolveSafeRedirect(redirect, "/seller/deliveries");
     }
 
     /**
@@ -92,7 +92,14 @@ public class SellerDeliveryController {
         log.info("판매자 배송 주문 삭제 요청: sellerId={}, orderId={}", userDetails.getUserId(), orderId);
         deliveryOrderService.deleteOrderBySeller(userDetails.getUserId(), orderId);
         redirectAttributes.addFlashAttribute("successMessage", "배송 주문 #" + orderId + "이(가) 정상적으로 삭제되었습니다.");
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/seller/deliveries";
+        return "redirect:" + resolveSafeRedirect(redirect, "/seller/deliveries");
+    }
+
+    private String resolveSafeRedirect(String redirect, String defaultPath) {
+        if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//") && !redirect.startsWith("/\\")) {
+            return redirect;
+        }
+        return defaultPath;
     }
 
     /**

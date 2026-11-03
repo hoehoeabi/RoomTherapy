@@ -234,7 +234,7 @@ public class SellerGoodsController {
         }
         goodsService.updateGoodsStock(goodsId, userDetails.getUserId(), userDetails.isAdmin(), stockQuantity);
         redirectAttributes.addFlashAttribute("successMessage", "재고 수량이 " + stockQuantity + "개로 변경되었습니다.");
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
+        return "redirect:" + resolveSafeRedirect(redirect, "/goods");
     }
 
     /**
@@ -253,7 +253,7 @@ public class SellerGoodsController {
         }
         goodsService.updateGoodsStatus(goodsId, userDetails.getUserId(), userDetails.isAdmin(), status);
         redirectAttributes.addFlashAttribute("successMessage", "굿즈 상태가 '" + status.getDescription() + "'(으)로 변경되었습니다.");
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
+        return "redirect:" + resolveSafeRedirect(redirect, "/goods");
     }
 
     /**
@@ -271,7 +271,14 @@ public class SellerGoodsController {
         }
         goodsService.deleteGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin());
         redirectAttributes.addFlashAttribute("successMessage", "굿즈가 성공적으로 삭제되었습니다.");
-        return (redirect != null && !redirect.isBlank()) ? "redirect:" + redirect : "redirect:/goods";
+        return "redirect:" + resolveSafeRedirect(redirect, "/goods");
+    }
+
+    private String resolveSafeRedirect(String redirect, String defaultPath) {
+        if (redirect != null && redirect.startsWith("/") && !redirect.startsWith("//") && !redirect.startsWith("/\\")) {
+            return redirect;
+        }
+        return defaultPath;
     }
 
     /**
