@@ -19,6 +19,10 @@ import java.util.UUID;
 @Service
 public class LocalStorageService implements StorageService {
 
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+            ".png", ".jpg", ".jpeg", ".webp", ".gif", ".glb"
+    );
+
     private final Path rootLocation = Paths.get("uploads").toAbsolutePath().normalize();
 
     public LocalStorageService() {
@@ -43,7 +47,10 @@ public class LocalStorageService implements StorageService {
             String extension = "";
             int extIdx = originalFilename.lastIndexOf('.');
             if (extIdx >= 0) {
-                extension = originalFilename.substring(extIdx);
+                extension = originalFilename.substring(extIdx).toLowerCase();
+            }
+            if (!ALLOWED_EXTENSIONS.contains(extension)) {
+                throw new IllegalArgumentException("허용되지 않는 파일 확장자입니다: " + extension);
             }
 
             String savedFilename = UUID.randomUUID().toString().replace("-", "") + extension;
