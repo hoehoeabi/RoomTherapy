@@ -26,597 +26,223 @@
         html, body {
             width: 100%;
             min-height: 100vh;
-            background: #07080C;
-            color: #F8FAFC;
+            background: #F7F7F7;
+            color: #1F1F1F;
             overflow-x: hidden;
         }
 
-        /* 스페이셜 갤러리 배경 (비전프로/메타퀘스트 다크 룸 조명 연출) */
         .spatial-room {
             position: relative;
             width: 100%;
+            max-width: 560px;
             min-height: 100vh;
-            background:
-                radial-gradient(circle at 50% 22%, rgba(56, 68, 94, 0.32) 0%, rgba(15, 18, 28, 0.78) 48%, #050609 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 88px 24px 56px;
-            overflow: hidden;
+            margin: 0 auto;
+            padding: max(22px, env(safe-area-inset-top)) 20px 48px;
         }
 
-        /* 은은한 바닥 반사광 */
-        .spatial-room::after {
-            content: "";
-            position: absolute;
-            bottom: -120px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85vw;
-            height: 240px;
-            background: radial-gradient(ellipse at center, rgba(148, 163, 184, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
-            pointer-events: none;
-        }
-
-        /* 상단 플로팅 글라스 네비게이션 바 */
-        .spatial-topbar {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 40px);
-            max-width: 1180px;
-            height: 54px;
-            padding: 0 18px;
-            border-radius: 999px;
-            background: rgba(22, 25, 35, 0.62);
-            backdrop-filter: blur(20px) saturate(160%);
-            -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        /* 상단 바 */
+        .exh-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            z-index: 100;
+            margin-bottom: 26px;
         }
-
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .btn-back-goods {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 34px;
-            padding: 0 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #FFFFFF;
+        .btn-back {
             font-size: 12.5px;
-            font-weight: 700;
+            font-weight: 600;
+            color: #6B6B6B;
             text-decoration: none;
-            white-space: nowrap;
-            transition: background 0.18s ease, transform 0.18s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
-
-        .btn-back-goods:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .stage-title-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .stage-pill {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            background: rgba(255, 75, 78, 0.22);
-            border: 1px solid rgba(255, 75, 78, 0.5);
-            color: #FF8A8C;
-            white-space: nowrap;
-        }
-
-        .stage-name {
-            font-size: 14px;
-            font-weight: 800;
-            color: #FFFFFF;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .object-total-pill {
-            font-size: 11.5px;
-            font-weight: 700;
-            color: #CBD5E1;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 5px 12px;
-            border-radius: 999px;
-        }
-
+        .btn-back:hover { color: #1F1F1F; }
         .btn-manage-objects {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            height: 34px;
-            padding: 0 13px;
-            border-radius: 999px;
-            background: rgba(255, 75, 78, 0.88);
-            color: #FFFFFF;
             font-size: 12px;
             font-weight: 700;
+            color: #FF4B4E;
             text-decoration: none;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            transition: background 0.18s ease, transform 0.18s ease;
+            background: #FFEBEB;
+            padding: 6px 12px;
+            border-radius: 999px;
         }
 
-        .btn-manage-objects:hover {
-            background: #FF4B4E;
-            transform: translateY(-1px);
-        }
-
-        /* 플래시 알림 배너 */
         .flash-banner {
-            width: 100%;
-            max-width: 980px;
-            margin-bottom: 18px;
-            padding: 11px 16px;
-            border-radius: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
             font-size: 12.5px;
-            font-weight: 700;
-            text-align: center;
-            backdrop-filter: blur(12px);
+            font-weight: 600;
+            margin-bottom: 14px;
         }
-        .flash-banner.success {
-            background: rgba(16, 185, 129, 0.18);
-            border: 1px solid rgba(16, 185, 129, 0.45);
-            color: #A7F3D0;
-        }
-        .flash-banner.error {
-            background: rgba(239, 68, 68, 0.18);
-            border: 1px solid rgba(239, 68, 68, 0.45);
-            color: #FECACA;
-        }
-
-        /* 전시관 상단 헤더 안내 */
-        .gallery-intro {
-            text-align: center;
-            margin-bottom: 26px;
-            z-index: 2;
-        }
-
-        .gallery-intro-sub {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: #94A3B8;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
+        .flash-banner.success { background: #EBFBEE; color: #2B8A3E; }
+        .flash-banner.error { background: #FFEAEA; color: #DC2626; }
 
         .gallery-intro-title {
-            font-size: 22px;
+            font-size: 24px;
+            line-height: 1.3;
             font-weight: 800;
-            color: #F8FAFC;
-            letter-spacing: -0.4px;
-            margin-bottom: 6px;
+            color: #111;
+            letter-spacing: -0.8px;
+            margin-bottom: 8px;
+            word-break: keep-all;
         }
-
         .gallery-intro-desc {
             font-size: 12.5px;
-            color: #94A3B8;
+            color: #7A7A7A;
+            font-weight: 500;
+            margin-bottom: 26px;
+            letter-spacing: -0.2px;
         }
 
-        /* =========================================================
-           VIEW 1: 3D 퍼스펙티브 액자 갤러리 월 (참조 이미지 1 & 2)
-           ========================================================= */
-        .gallery-perspective-stage {
-            width: 100%;
-            max-width: 1120px;
-            perspective: 1350px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 18px 10px 36px;
-            z-index: 2;
-        }
-
+        /* 3열 오브제 카드 그리드 */
         .gallery-wall-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 230px));
-            justify-content: center;
-            gap: 28px 30px;
-            width: 100%;
-            transform-style: preserve-3d;
-            transform: rotateY(-8deg) rotateX(2deg);
-            transition: transform 0.25s ease-out;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            transform: none !important;
         }
-
-        /* 갤러리 액자 프레임 (참조 이미지의 베이지/메탈릭 외곽 프레임 + 화이트 매트) */
         .gallery-frame-card {
             position: relative;
             aspect-ratio: 1 / 1;
-            border-radius: 6px;
-            padding: 14px;
-            background: linear-gradient(145deg, #D5C7B8 0%, #B8A693 52%, #8F7E6D 100%);
-            box-shadow:
-                -14px 18px 32px rgba(0, 0, 0, 0.65),
-                0 4px 12px rgba(0, 0, 0, 0.4),
-                inset 0 1px 1px rgba(255, 255, 255, 0.55);
+            background: #FFFFFF;
+            border-radius: 16px;
             cursor: pointer;
-            transform-style: preserve-3d;
-            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
-            user-select: none;
-        }
-
-        .gallery-frame-card:hover {
-            transform: translateZ(26px) translateY(-6px) scale(1.03);
-            box-shadow:
-                -18px 26px 42px rgba(0, 0, 0, 0.78),
-                0 0 24px rgba(255, 255, 255, 0.14),
-                inset 0 1px 2px rgba(255, 255, 255, 0.75);
-        }
-
-        .gallery-frame-mat {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 42%, #FFFFFF 0%, #F1F5F9 72%, #E2E8F0 100%);
-            border-radius: 2px;
-            box-shadow: inset 0 3px 8px rgba(15, 23, 42, 0.18);
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-
+        .gallery-frame-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+        }
+        .gallery-frame-mat { width: 100%; height: 100%; position: relative; }
+        .frame-index-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            background: #FFEBEB;
+            color: #FF4B4E;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
         .frame-thumb-canvas-wrap {
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
+            padding: 14px;
         }
-
         .frame-thumb-img {
-            width: 88%;
-            height: 88%;
-            object-fit: contain;
             display: none;
-            filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.22));
-            transition: transform 0.3s ease;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
-
-        .gallery-frame-card:hover .frame-thumb-img {
-            transform: scale(1.07);
-        }
-
         .frame-thumb-placeholder {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            color: #475569;
-            padding: 12px;
+            gap: 4px;
             text-align: center;
+            color: #B0B0B0;
         }
-
-        .frame-cube-icon {
-            font-size: 34px;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
-        }
-
+        .frame-cube-icon { font-size: 22px; opacity: 0.6; }
         .frame-loading-text {
-            font-size: 10.5px;
-            font-weight: 700;
-            color: #64748B;
+            font-size: 10px;
+            font-weight: 600;
+            color: #A8A8A8;
+            line-height: 1.3;
+            word-break: keep-all;
         }
 
-        /* 액자 상단 순번 & 포맷 뱃지 */
-        .frame-top-badges {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            right: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            pointer-events: none;
-            z-index: 3;
-        }
-
-        .frame-index-tag {
-            font-size: 9.5px;
-            font-weight: 800;
-            letter-spacing: 0.6px;
-            color: #334155;
-            background: rgba(255, 255, 255, 0.85);
-            padding: 2px 6px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .frame-format-tag {
-            font-size: 9px;
-            font-weight: 800;
-            color: #FFFFFF;
-            background: #1E293B;
-            padding: 2px 5px;
-            border-radius: 4px;
-        }
-
-        /* 액자 하단 오브제 이름 캡션 바 */
-        .frame-caption-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 7px 9px;
-            background: linear-gradient(to top, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.45) 75%, transparent 100%);
-            color: #FFFFFF;
+        /* 빈 전시관 */
+        .empty-exhibition-box {
             display: flex;
             flex-direction: column;
-            gap: 1px;
-            z-index: 3;
-        }
-
-        .frame-caption-name {
-            font-size: 12px;
-            font-weight: 800;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-        }
-
-        /* 빈 전시관 안내 카드 */
-        .empty-exhibition-box {
-            max-width: 480px;
-            width: 100%;
-            padding: 42px 28px;
-            border-radius: 22px;
-            background: rgba(30, 35, 48, 0.55);
-            backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            align-items: center;
             text-align: center;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-            z-index: 2;
+            padding: 56px 0 40px;
         }
-
-        .empty-exhibition-icon {
-            font-size: 44px;
-            margin-bottom: 12px;
+        .empty-monkey {
+            width: 190px;
+            height: auto;
+            margin-bottom: 18px;
         }
-
         .empty-exhibition-title {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 800;
-            color: #FFFFFF;
-            margin-bottom: 8px;
+            color: #BDBDBD;
+            line-height: 1.5;
+            letter-spacing: -0.3px;
+            margin-bottom: 18px;
         }
 
-        .empty-exhibition-desc {
-            font-size: 13px;
-            color: #94A3B8;
-            line-height: 1.55;
-            margin-bottom: 20px;
-        }
-
-        /* =========================================================
-           VIEW 2: 스페이셜 듀얼 글라스 3D 상세 뷰어 (참조 이미지 3, 4, 5)
-           ========================================================= */
+        /* 상세 뷰어 (라이트 풀스크린) */
         .spatial-detail-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(6, 8, 14, 0.55);
-            backdrop-filter: blur(22px) saturate(150%);
-            -webkit-backdrop-filter: blur(22px) saturate(150%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 28px 68px;
+            background: #F7F7F7;
+            overflow-y: auto;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.28s ease, visibility 0.28s ease;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
             z-index: 1500;
         }
-
         .spatial-detail-overlay.active {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
-
         .spatial-detail-layout {
             width: 100%;
-            max-width: 1040px;
-            height: min(76vh, 620px);
-            min-height: 440px;
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 24px;
-            align-items: stretch;
-            transform: scale(0.95) translateY(10px);
-            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            max-width: 560px;
+            margin: 0 auto;
+            padding: max(22px, env(safe-area-inset-top)) 20px 40px;
         }
-
-        .spatial-detail-overlay.active .spatial-detail-layout {
-            transform: scale(1) translateY(0);
-        }
-
-        /* 좌측 반투명 다크 글라스 패널 (1. 오브제 이름 + 2. 오브제 설명) */
-        .spatial-info-panel {
-            background: rgba(20, 22, 30, 0.72);
-            backdrop-filter: blur(26px) saturate(170%);
-            -webkit-backdrop-filter: blur(26px) saturate(170%);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow:
-                0 24px 48px rgba(0, 0, 0, 0.55),
-                inset 0 1px 0 rgba(255, 255, 255, 0.22);
-            border-radius: 20px;
-            padding: 28px 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow-y: auto;
-        }
-
-        .info-top-meta {
+        .detail-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 18px;
         }
-
-        .info-artwork-label {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 1.4px;
-            color: #94A3B8;
-            text-transform: uppercase;
-        }
-
-        .info-format-badge {
-            font-size: 10px;
-            font-weight: 800;
-            color: #F8FAFC;
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 999px;
-        }
-
-        .info-object-title {
-            font-size: 24px;
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.4px;
-            line-height: 1.3;
-            margin-bottom: 16px;
-            word-break: keep-all;
-        }
-
-        .info-object-desc {
-            font-size: 13.5px;
-            line-height: 1.68;
-            color: rgba(241, 245, 249, 0.85);
-            white-space: pre-line;
-            word-break: keep-all;
-        }
-
-        .info-bottom-area {
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .detail-topbar-left, .detail-topbar-right {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .info-seller-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-detail-edit, .btn-detail-delete {
-            flex: 1;
-            height: 32px;
-            border-radius: 8px;
-            font-size: 11.5px;
-            font-weight: 700;
-            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 4px;
+            gap: 14px;
+        }
+        .btn-spatial-nav {
+            background: none;
+            border: none;
             cursor: pointer;
-            text-decoration: none;
-            transition: all 0.15s ease;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #6B6B6B;
         }
+        .btn-spatial-nav.next { color: #FF4B4E; }
 
-        .btn-detail-edit {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #FFFFFF;
-        }
-        .btn-detail-edit:hover {
-            background: rgba(255, 255, 255, 0.22);
-        }
-
-        .btn-detail-delete {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.45);
-            color: #FCA5A5;
-        }
-        .btn-detail-delete:hover {
-            background: rgba(239, 68, 68, 0.85);
-            color: #FFFFFF;
-        }
-
-        .info-rotate-hint {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(148, 163, 184, 0.9);
-        }
-
-        /* 우측 플로팅 반투명 글라스 3D 모델 뷰어 프레임 */
         .spatial-stage-panel {
             position: relative;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(24px) saturate(160%);
-            -webkit-backdrop-filter: blur(24px) saturate(160%);
-            border: 1.5px solid rgba(255, 255, 255, 0.28);
-            box-shadow:
-                0 28px 60px rgba(0, 0, 0, 0.6),
-                inset 0 1px 1px rgba(255, 255, 255, 0.35);
-            border-radius: 22px;
+            width: 100%;
+            aspect-ratio: 1 / 1.05;
+            background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #F3F3F3 100%);
+            border: 2px solid #D9D9D9;
+            border-radius: 28px;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
         }
-
         #threeCanvasContainer {
             width: 100%;
             height: 100%;
             cursor: grab;
             touch-action: none;
         }
+        #threeCanvasContainer:active { cursor: grabbing; }
 
-        #threeCanvasContainer:active {
-            cursor: grabbing;
-        }
-
-        /* 3D 모델 로딩 오버레이 (실시간 다운로드 퍼센트 및 에러/재시도 표시) */
         .model-loading-state {
             position: absolute;
             inset: 0;
@@ -625,295 +251,225 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            background: rgba(15, 18, 26, 0.42);
-            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.82);
             z-index: 5;
-            transition: opacity 0.2s ease;
             padding: 20px;
             text-align: center;
+            transition: opacity 0.2s ease;
         }
-
         .model-loading-state.hidden {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
         }
-
         .model-spinner {
-            width: 34px;
-            height: 34px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #FFFFFF;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #E3E3E3;
+            border-top-color: #FF4B4E;
             border-radius: 50%;
             animation: spin3d 0.85s linear infinite;
         }
-
-        @keyframes spin3d {
-            to { transform: rotate(360deg); }
-        }
-
-        .model-loading-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.94);
-            letter-spacing: 0.2px;
-        }
-
-        .model-loading-sub {
-            font-size: 11.5px;
-            font-weight: 600;
-            color: rgba(203, 213, 225, 0.88);
-        }
-
+        @keyframes spin3d { to { transform: rotate(360deg); } }
+        .model-loading-label { font-size: 13px; font-weight: 700; color: #333; }
+        .model-loading-sub { font-size: 11.5px; font-weight: 500; color: #8A8A8A; }
         .model-progress-track {
             width: min(220px, 75%);
             height: 6px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
+            background: #E6E6E6;
             overflow: hidden;
         }
-
         .model-progress-fill {
             width: 0%;
             height: 100%;
             border-radius: 999px;
-            background: linear-gradient(90deg, #38BDF8, #818CF8);
+            background: #FF4B4E;
             transition: width 0.15s ease;
         }
-
         .btn-model-retry {
             display: none;
             margin-top: 4px;
-            padding: 6px 14px;
+            padding: 7px 16px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            background: rgba(255, 255, 255, 0.15);
-            color: #FFFFFF;
+            border: 1px solid #DDD;
+            background: #FFF;
+            color: #333;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.15s ease;
         }
 
-        .btn-model-retry:hover {
-            background: rgba(255, 255, 255, 0.28);
-        }
-
-        /* 우측 상단 닫기(X) 버튼 */
-        .btn-stage-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(15, 23, 42, 0.55);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            color: #FFFFFF;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            transition: background 0.18s ease, transform 0.18s ease;
-        }
-
-        .btn-stage-close:hover {
-            background: rgba(239, 68, 68, 0.85);
-            transform: scale(1.08);
-        }
-
-        /* 우측 하단 줌(+ / -) 및 리셋 컨트롤 버튼 */
         .stage-zoom-controls {
             position: absolute;
-            bottom: 16px;
             right: 16px;
+            bottom: 16px;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 10px;
             z-index: 10;
         }
-
         .btn-stage-ctrl {
-            width: 34px;
-            height: 34px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.55);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            color: #FFFFFF;
-            font-size: 16px;
-            font-weight: 700;
+            background: #FFFFFF;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            color: #555;
+            font-size: 20px;
+            font-weight: 500;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.18s ease, transform 0.18s ease;
         }
-
-        .btn-stage-ctrl:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.08);
-        }
-
-        /* 비전프로 / iOS Quick Look AR 버튼 (.usdz 파일인 경우 활성화) */
         .btn-ar-quicklook {
             position: absolute;
-            bottom: 16px;
             left: 16px;
+            bottom: 16px;
             height: 34px;
-            padding: 0 13px;
+            padding: 0 14px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
-            border: 1px solid rgba(255, 255, 255, 0.32);
-            color: #FFFFFF;
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            color: #333;
             font-size: 11.5px;
             font-weight: 700;
             text-decoration: none;
             display: none;
             align-items: center;
-            gap: 5px;
             z-index: 10;
-            backdrop-filter: blur(12px);
         }
 
-        /* 화면 좌우 외곽 이전(<) / 다음(>) 원형 글라스 버튼 */
-        .btn-spatial-nav {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            color: #FFFFFF;
-            font-size: 18px;
-            font-weight: 800;
+        .spatial-info-panel {
+            margin-top: 14px;
+            background: #FFFFFF;
+            border: 1px solid #E6E6E6;
+            border-radius: 24px;
+            padding: 26px 24px 20px;
+            min-height: 220px;
             display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .info-top-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .info-artwork-label {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #7A7A7A;
+        }
+        .info-format-badge {
+            font-size: 10px;
+            font-weight: 800;
+            color: #8A8A8A;
+            background: #F1F1F1;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .info-object-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #111;
+            letter-spacing: -0.6px;
+            line-height: 1.3;
+            margin-bottom: 14px;
+            word-break: keep-all;
+        }
+        .info-object-desc {
+            font-size: 14px;
+            line-height: 1.65;
+            color: #7D7D7D;
+            font-weight: 500;
+            white-space: pre-line;
+            word-break: keep-all;
+        }
+        .info-bottom-area {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .info-seller-actions { display: flex; gap: 8px; }
+        .btn-detail-edit, .btn-detail-delete {
+            flex: 1;
+            height: 34px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 1600;
-            transition: background 0.18s ease, transform 0.18s ease;
+            text-decoration: none;
+        }
+        .btn-detail-edit {
+            background: #F3F3F3;
+            border: 1px solid #E3E3E3;
+            color: #333;
+        }
+        .btn-detail-delete {
+            background: #FFEAEA;
+            border: 1px solid #FFD2D2;
+            color: #DC3545;
+        }
+        .info-rotate-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #7A7A7A;
         }
 
-        .btn-spatial-nav:hover {
-            background: rgba(255, 255, 255, 0.28);
-            transform: translateY(-50%) scale(1.08);
-        }
-
-        .btn-spatial-nav.prev {
-            left: 16px;
-        }
-
-        .btn-spatial-nav.next {
-            right: 16px;
-        }
-
-        /* 반응형 (모바일 / 태블릿) */
-        @media (max-width: 860px) {
-            .spatial-topbar {
-                width: calc(100% - 24px);
-                padding: 0 12px;
-            }
-            .gallery-wall-grid {
-                grid-template-columns: repeat(2, minmax(135px, 185px));
-                gap: 16px;
-                transform: none !important;
-            }
-            .spatial-detail-overlay {
-                padding: 16px;
-            }
-            .spatial-detail-layout {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr auto;
-                height: 86vh;
-                gap: 12px;
-            }
-            .spatial-stage-panel {
-                order: 1;
-                min-height: 260px;
-            }
-            .spatial-info-panel {
-                order: 2;
-                padding: 18px;
-                max-height: 38vh;
-            }
-            .info-object-title {
-                font-size: 19px;
-                margin-bottom: 8px;
-            }
-            .btn-spatial-nav.prev {
-                left: 8px;
-            }
-            .btn-spatial-nav.next {
-                right: 8px;
-            }
+        @media (max-width: 420px) {
+            .gallery-intro-title { font-size: 21px; }
+            .gallery-wall-grid { gap: 8px; }
+            .info-object-title { font-size: 21px; }
         }
     </style>
 </head>
 <body>
-    <!-- 상단 스페이셜 네비게이션 바 -->
-    <header class="spatial-topbar">
-        <div class="topbar-left">
-            <a href="/goods" class="btn-back-goods">&larr; 굿즈 목록</a>
-            <div class="stage-title-group">
-                <span class="stage-pill">3D EXHIBITION</span>
-                <span class="stage-name" th:text="${goods.name}">스테이지 굿즈명</span>
-            </div>
-        </div>
-        <div class="topbar-right">
-            <span class="object-total-pill" th:text="'오브제 ' + ${objects3d != null ? objects3d.size() : 0} + '점'">오브제 0점</span>
+    <main class="spatial-room" id="spatialRoom">
+        <div class="exh-topbar">
+            <a href="/goods" class="btn-back">&lt; 돌아가기</a>
+            <!-- 판매자/관리자 전용 수정 버튼 -->
             <a th:if="${canManage}"
                th:href="@{'/seller/goods/' + ${goods.id} + '/edit#section-3d-objects'}"
-               class="btn-manage-objects">
-                ⚙️ 오브제 등록·수정·삭제
-            </a>
+               class="btn-manage-objects">오브제 수정</a>
         </div>
-    </header>
 
-    <main class="spatial-room" id="spatialRoom">
-        <!-- 알림 메시지 -->
         <div class="flash-banner success" th:if="${successMessage != null}" th:text="${successMessage}"></div>
         <div class="flash-banner error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
 
-        <div class="gallery-intro">
-            <div class="gallery-intro-sub">ROOMTHERAPY SPATIAL GALLERY</div>
-            <h1 class="gallery-intro-title" th:text="${goods.name} + ' — 스테이지 오브제 전시관'">스테이지 오브제 전시관</h1>
-            <p class="gallery-intro-desc">전시된 액자를 클릭하면 스페이셜 글라스 뷰어에서 3D 오브제를 360° 돌려볼 수 있습니다.</p>
-        </div>
+        <h1 class="gallery-intro-title" th:text="${goods.name} + ' 스테이지 오브제 전시관'">스테이지 오브제 전시관</h1>
+        <p class="gallery-intro-desc">그림을 누르면 전시된 3D 오브제와 설명을 확인할 수 있어요.</p>
 
         <!-- 등록된 3D 오브제가 없는 경우 -->
         <div class="empty-exhibition-box" th:if="${objects3d == null or objects3d.empty}">
-            <div class="empty-exhibition-icon">🧊</div>
-            <h2 class="empty-exhibition-title">아직 전시된 3D 오브제가 없습니다</h2>
-            <p class="empty-exhibition-desc">
-                이 스테이지(굿즈)에 등록된 3D 오브제가 없습니다.<br>
-                판매자 또는 관리자는 굿즈 수정 페이지에서 <strong>.glb, .fbx, .obj, .usdz</strong> 3D 오브제를 추가할 수 있습니다.
-            </p>
+            <img class="empty-monkey" src="/images/monkey_light_color.png" alt="">
+            <h2 class="empty-exhibition-title">앗! 아직 전시된 오브제가 없어요.<br>곧 새로운 오브제로 찾아올게요!</h2>
             <a th:if="${canManage}"
                th:href="@{'/seller/goods/' + ${goods.id} + '/edit#section-3d-objects'}"
-               class="btn-manage-objects"
-               style="height:40px;padding:0 20px;font-size:13px;">
-                + 지금 3D 오브제 등록하러 가기
-            </a>
+               class="btn-manage-objects">+ 3D 오브제 등록하러 가기</a>
         </div>
 
-        <!-- VIEW 1: 3D 퍼스펙티브 액자 갤러리 월 -->
-        <div class="gallery-perspective-stage" th:if="${objects3d != null and !objects3d.empty}">
+        <!-- 오브제 그리드 -->
+        <div th:if="${objects3d != null and !objects3d.empty}">
             <div class="gallery-wall-grid" id="galleryWallGrid">
                 <div class="gallery-frame-card"
                      th:each="obj, stat : ${objects3d}"
                      th:data-index="${stat.index}"
                      onclick="openSpatialViewer(Number(this.getAttribute('data-index')))">
                     <div class="gallery-frame-mat">
-                        <div class="frame-top-badges">
-                            <span class="frame-index-tag" th:text="${#numbers.formatInteger(stat.count, 2)}">01</span>
-                            <span class="frame-format-tag" th:text="${obj.modelFormat()}">GLB</span>
-                        </div>
+                        <span class="frame-index-tag" th:text="${#numbers.formatInteger(stat.count, 2)}">01</span>
+                        <span class="frame-format-tag" th:text="${obj.modelFormat()}" style="position:absolute;right:10px;top:10px;font-size:10px;color:#9A9A9A;font-weight:600;">GLB</span>
                         <div class="frame-thumb-canvas-wrap">
                             <img class="frame-thumb-img" th:id="'frameThumbImg-' + ${stat.index}" th:alt="${obj.name}">
                             <div class="frame-thumb-placeholder" th:id="'frameThumbPlaceholder-' + ${stat.index}">
@@ -921,53 +477,26 @@
                                 <span class="frame-loading-text">3D 프리뷰 생성 중...</span>
                             </div>
                         </div>
-                        <div class="frame-caption-bar">
-                            <div class="frame-caption-name" th:text="${obj.name}">오브제 이름</div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- VIEW 2: 스페이셜 듀얼 글라스 상세 뷰어 모달 -->
-    <div id="spatialDetailOverlay" class="spatial-detail-overlay" onclick="handleOverlayBackdrop(event)" aria-hidden="true">
-        <button type="button" id="btnPrevObj" class="btn-spatial-nav prev" onclick="stepSpatialObject(-1)" title="이전 오브제">&lt;</button>
-
-        <div class="spatial-detail-layout" onclick="event.stopPropagation()">
-            <!-- 좌측 정보 글라스 패널 (1. 오브제 이름 / 2. 오브제 설명) -->
-            <aside class="spatial-info-panel">
-                <div>
-                    <div class="info-top-meta">
-                        <span class="info-artwork-label" id="detailObjOrder">OBJECT 01</span>
-                        <span class="info-format-badge" id="detailObjFormat">GLB</span>
-                    </div>
-                    <h2 class="info-object-title" id="detailObjName">오브제 이름</h2>
-                    <p class="info-object-desc" id="detailObjDesc">오브제 설명</p>
+    <!-- 3D 오브제 상세 뷰어 -->
+    <div id="spatialDetailOverlay" class="spatial-detail-overlay" aria-hidden="true">
+        <div class="spatial-detail-layout">
+            <div class="detail-topbar">
+                <div class="detail-topbar-left">
+                    <button type="button" class="btn-back" onclick="closeSpatialViewer()">&lt; 돌아가기</button>
+                    <button type="button" id="btnPrevObj" class="btn-spatial-nav prev" onclick="stepSpatialObject(-1)">이전 오브제</button>
                 </div>
-
-                <div class="info-bottom-area">
-                    <!-- 판매자/관리자 전용 즉시 수정·삭제 버튼 -->
-                    <div class="info-seller-actions" th:if="${canManage}">
-                        <a th:href="@{'/seller/goods/' + ${goods.id} + '/edit#section-3d-objects'}" class="btn-detail-edit">
-                            ✏️ 수정/추가
-                        </a>
-                        <form id="singleObjectDeleteForm" method="post" style="flex:1;display:flex;" onsubmit="return confirm('이 3D 오브제를 전시관에서 삭제하시겠습니까?');">
-                            <input type="hidden" name="redirect" th:value="'/goods/' + ${goods.id} + '/exhibition'">
-                            <button type="submit" class="btn-detail-delete" style="width:100%;">🗑️ 삭제</button>
-                        </form>
-                    </div>
-                    <div class="info-rotate-hint">
-                        <span>↻</span>
-                        <span>Drag to rotate model (드래그하여 360° 회전)</span>
-                    </div>
+                <div class="detail-topbar-right">
+                    <button type="button" id="btnNextObj" class="btn-spatial-nav next" onclick="stepSpatialObject(1)">다음 오브제 보기</button>
                 </div>
-            </aside>
+            </div>
 
-            <!-- 우측 플로팅 글라스 3D 모델 스테이지 (3. 오브제 3D 모델) -->
             <section class="spatial-stage-panel">
-                <button type="button" class="btn-stage-close" onclick="closeSpatialViewer()" title="닫기 (ESC)">&times;</button>
-
                 <div id="modelLoadingState" class="model-loading-state">
                     <div id="modelSpinner" class="model-spinner"></div>
                     <div class="model-loading-label" id="modelLoadingText">3D 모델을 불러오는 중입니다...</div>
@@ -980,20 +509,40 @@
 
                 <div id="threeCanvasContainer"></div>
 
-                <!-- Apple Vision Pro / iOS AR Quick Look 연동 링크 (.usdz일 때 자동 표시) -->
-                <a id="arQuickLookLink" rel="ar" href="#" class="btn-ar-quicklook">
-                    🥽 Vision Pro / AR 공간 보기
-                </a>
+                <a id="arQuickLookLink" rel="ar" href="#" class="btn-ar-quicklook">🥽 AR 공간 보기</a>
 
                 <div class="stage-zoom-controls">
-                    <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(-0.22)" title="확대 (+)">+</button>
-                    <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(0.22)" title="축소 (-)">&minus;</button>
-                    <button type="button" class="btn-stage-ctrl" onclick="resetStageCamera()" title="시점 초기화" style="font-size:13px;">&#8634;</button>
+                    <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(-0.22)" title="확대">+</button>
+                    <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(0.22)" title="축소">&minus;</button>
                 </div>
             </section>
-        </div>
 
-        <button type="button" id="btnNextObj" class="btn-spatial-nav next" onclick="stepSpatialObject(1)" title="다음 오브제">&gt;</button>
+            <aside class="spatial-info-panel">
+                <div>
+                    <div class="info-top-meta">
+                        <span class="info-artwork-label" id="detailObjOrder">ARTWORK 01</span>
+                        <span class="info-format-badge" id="detailObjFormat">GLB</span>
+                    </div>
+                    <h2 class="info-object-title" id="detailObjName">오브제 이름</h2>
+                    <p class="info-object-desc" id="detailObjDesc">오브제 설명</p>
+                </div>
+
+                <div class="info-bottom-area">
+                    <!-- 판매자/관리자 전용 -->
+                    <div class="info-seller-actions" th:if="${canManage}">
+                        <a th:href="@{'/seller/goods/' + ${goods.id} + '/edit#section-3d-objects'}" class="btn-detail-edit">수정/추가</a>
+                        <form id="singleObjectDeleteForm" method="post" style="flex:1;display:flex;" onsubmit="return confirm('이 3D 오브제를 전시관에서 삭제하시겠습니까?');">
+                            <input type="hidden" name="redirect" th:value="'/goods/' + ${goods.id} + '/exhibition'">
+                            <button type="submit" class="btn-detail-delete" style="width:100%;">삭제</button>
+                        </form>
+                    </div>
+                    <div class="info-rotate-hint">
+                        <span>↻</span>
+                        <span>Drag to rotate model</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
 
     <!-- 서버 데이터를 JS에 주입 -->
