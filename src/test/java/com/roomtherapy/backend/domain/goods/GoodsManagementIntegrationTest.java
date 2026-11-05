@@ -740,5 +740,74 @@ class GoodsManagementIntegrationTest {
         assertThat(finalList).hasSize(1);
         assertThat(finalList.get(0).getName()).isEqualTo("오브제 A 수정됨");
     }
+
+    @Test
+    @DisplayName("MVC: 굿즈별 인증코드 통합/그룹 조회 시 소속 굿즈명이 매핑되며 인증코드 추가 및 개별 삭제가 정상 동작한다")
+    void auth_codes_grouped_view_and_add_delete_test() throws Exception {
+        GoodsResponseDto goodsA = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("스테이지1 무드등", "설명A", 0, "/a.png", 10, "RT-A01\nRT-A02"));
+        GoodsResponseDto goodsB = goodsService.registerGoods(seller1.getId(),
+                new GoodsCreateRequestDto("스테이지2 협탁", "설명B", 0, "/b.png", 10, "RT-B01"));
+        goodsService.registerGoods(seller2.getId(),
+                new GoodsCreateRequestDto("타판매자 굿즈", "설명C", 0, "/c.png", 10, "RT-OTHER"));
+
+        // 1. 판매자1이 통합 인증코드 관리 페이지(/seller/goods/codes) 조회 시 본인 굿즈(A, B)의 코드 3개와 소속 굿즈명이 조회됨
+        mockMvc.perform(get("/seller/goods/codes")
+                        .cookie(new Cookie("accessToken", seller1Token)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("seller/goods-codes"))
+                .andExpect(model().attributeExists("manageableGoods", "allAuthCodeItems", "codesByGoodsId"))
+                .andExpect(result -> {
+                    @SuppressWarnings("unchecked")
+                    List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> items =
+                            (List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto>) result.getModelAndView().getModel().get("allAuthCodeItems");
+                    assertThat(items).hasSize(3);
+                    assertThat(items).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::goodsName)
+                            .containsExactlyInAnyOrder("스테이지1 무드등", "스테이지1 무드등", "스테이지2 협탁");
+                });
+
+        // 2. 타 판매자(seller2)가 goodsA에 인증코드 추가 시도 시 403 Forbidden 차단
+        mockMvc.perform(post("/seller/goods/" + goodsA.id() + "/codes")
+                        .cookie(new Cookie("accessToken", seller2Token))
+                        .param("authCodesInput", "RT-HACK-01"))
+                .andExpect(status().isForbidden());
+
+        // 3. 판매자1이 goodsA에 신규 인증코드 2개 추가 (기존 RT-A01 중복 포함 시 신규 2개만 등록)
+        mockMvc.perform(post("/seller/goods/" + goodsA.id() + "/codes")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("authCodesInput", "RT-A01\nRT-A03\nRT-A04")
+                        .param("redirect", "/seller/goods/" + goodsA.id() + "/codes"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seller/goods/" + goodsA.id() + "/codes"));
+
+        var codesAfterAdd = goodsService.getAuthCodeItems(goodsA.id(), seller1.getId(), false);
+        assertThat(codesAfterAdd).hasSize(4);
+        assertThat(codesAfterAdd).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::code)
+                .containsExactly("RT-A01", "RT-A02", "RT-A03", "RT-A04");
+
+        Long codeToDeleteId = codesAfterAdd.stream()
+                .filter(c -> "RT-A02".equals(c.code()))
+                .findFirst()
+                .orElseThrow()
+                .id();
+
+        // 4. 타 판매자(seller2)가 개별 인증코드 삭제 시도 시 403 Forbidden 차단
+        mockMvc.perform(post("/seller/goods/" + goodsA.id() + "/codes/" + codeToDeleteId + "/delete")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isForbidden());
+
+        // 5. 판매자1이 RT-A02 개별 삭제 수행 시 정상 삭제
+        mockMvc.perform(post("/seller/goods/" + goodsA.id() + "/codes/" + codeToDeleteId + "/delete")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("redirect", "/seller/goods/codes?view=list"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seller/goods/codes?view=list"));
+
+        var codesAfterDelete = goodsService.getAuthCodeItems(goodsA.id(), seller1.getId(), false);
+        assertThat(codesAfterDelete).hasSize(3);
+        assertThat(codesAfterDelete).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::code)
+                .containsExactly("RT-A01", "RT-A03", "RT-A04");
+    }
 }
+
 
