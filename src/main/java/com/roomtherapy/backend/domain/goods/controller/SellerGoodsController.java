@@ -125,18 +125,140 @@ public class SellerGoodsController {
     }
 
     /**
-     * 특정 굿즈의 등록된 인증코드 목록 확인
+     * 전체 또는 굿즈별 인증코드 통합 관리 화면
+     */
+    @GetMapping("/codes")
+    public String viewAllAuthCodes(
+            @org.springframework.web.bind.annotation.RequestParam(name = "goodsId", required = false) Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "view", defaultValue = "grouped") String viewMode,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Model model) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        if (goodsId != null) {
+            goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
+        }
+        populateAuthCodesModel(goodsId, viewMode, userDetails, model);
+        return "seller/goods-codes";
+    }
+
+    /**
+     * 특정 굿즈의 등록된 인증코드 목록 확인 및 관리
      */
     @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @GetMapping("/{goodsId}/codes")
     public String viewAuthCodes(
             @PathVariable Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "view", defaultValue = "grouped") String viewMode,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
-        GoodsResponseDto goods = goodsService.getGoodsWithCodes(goodsId);
-        model.addAttribute("goods", goods);
-        model.addAttribute("user", userDetails);
+        populateAuthCodesModel(goodsId, viewMode, userDetails, model);
         return "seller/goods-codes";
+    }
+
+    private void populateAuthCodesModel(
+            Long selectedGoodsId,
+            String viewMode,
+            CustomUserDetails userDetails,
+            Model model) {
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
+        boolean isAdmin = userDetails != null && userDetails.isAdmin();
+
+        java.util.List<Goods> manageableGoods = goodsService.getManageableGoodsList(userId, isAdmin);
+        java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> allAuthCodeItems =
+                goodsService.getAuthCodeItems(null, userId, isAdmin);
+
+        java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> filteredAuthCodeItems =
+                selectedGoodsId != null
+                        ? allAuthCodeItems.stream().filter(item -> selectedGoodsId.equals(item.goodsId())).toList()
+                        : allAuthCodeItems;
+
+        java.util.Map<Long, java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto>> codesByGoodsId =
+                new java.util.LinkedHashMap<>();
+        for (Goods g : manageableGoods) {
+            codesByGoodsId.put(g.getId(), new java.util.ArrayList<>());
+        }
+        for (com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto item : allAuthCodeItems) {
+            if (item.goodsId() != null) {
+                codesByGoodsId.computeIfAbsent(item.goodsId(), k -> new java.util.ArrayList<>()).add(item);
+            }
+        }
+
+        if (selectedGoodsId != null) {
+            GoodsResponseDto goods = goodsService.getGoodsWithCodes(selectedGoodsId);
+            model.addAttribute("goods", goods);
+        } else if (!manageableGoods.isEmpty()) {
+            GoodsResponseDto firstGoods = goodsService.getGoodsWithCodes(manageableGoods.get(0).getId());
+            model.addAttribute("goods", firstGoods);
+        }
+
+        model.addAttribute("selectedGoodsId", selectedGoodsId);
+        model.addAttribute("viewMode", viewMode);
+        model.addAttribute("manageableGoods", manageableGoods);
+        model.addAttribute("allAuthCodeItems", allAuthCodeItems);
+        model.addAttribute("authCodeItems", filteredAuthCodeItems);
+        model.addAttribute("codesByGoodsId", codesByGoodsId);
+        model.addAttribute("user", userDetails);
+    }
+
+    /**
+     * 특정 굿즈에 인증코드 추가 등록 처리 (판매자 본인 또는 관리자)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
+    @PostMapping("/{goodsId}/codes")
+    public String addAuthCodes(
+            @PathVariable Long goodsId,
+            @org.springframework.web.bind.annotation.RequestParam("authCodesInput") String authCodesInput,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        try {
+            int addedCount = goodsService.addAuthCodesToGoods(
+                    goodsId, userDetails.getUserId(), userDetails.isAdmin(), authCodesInput);
+            if (addedCount > 0) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        String.format("신규 인증코드 %d개가 성공적으로 추가 등록되었습니다.", addedCount));
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "입력하신 인증코드가 이미 등록되어 있거나 유효한 코드가 없습니다.");
+            }
+        } catch (Exception e) {
+            log.error("인증코드 추가 등록 실패", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    e.getMessage() != null ? e.getMessage() : "인증코드 추가 중 오류가 발생했습니다.");
+        }
+        return "redirect:" + resolveSafeRedirect(redirect, "/seller/goods/" + goodsId + "/codes");
+    }
+
+    /**
+     * 특정 굿즈의 개별 인증코드 삭제 처리 (판매자 본인 또는 관리자)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
+    @PostMapping("/{goodsId}/codes/{codeId}/delete")
+    public String deleteAuthCode(
+            @PathVariable Long goodsId,
+            @PathVariable Long codeId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        try {
+            String deletedCode = goodsService.deleteGoodsAuthCode(
+                    goodsId, codeId, userDetails.getUserId(), userDetails.isAdmin());
+            redirectAttributes.addFlashAttribute("successMessage",
+                    String.format("인증코드 '%s'이(가) 삭제되었습니다.", deletedCode));
+        } catch (Exception e) {
+            log.error("인증코드 개별 삭제 실패", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    e.getMessage() != null ? e.getMessage() : "인증코드 삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:" + resolveSafeRedirect(redirect, "/seller/goods/" + goodsId + "/codes");
     }
 
     /**
@@ -157,6 +279,7 @@ public class SellerGoodsController {
         }
         model.addAttribute("goods", goods);
         model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
+        model.addAttribute("authCodeItems", goodsService.getAuthCodeItems(goodsId, userDetails.getUserId(), userDetails.isAdmin()));
         model.addAttribute("user", userDetails);
         return "seller/goods-edit";
     }
@@ -192,6 +315,7 @@ public class SellerGoodsController {
             Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
             model.addAttribute("goods", goods);
             model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
+            model.addAttribute("authCodeItems", goodsService.getAuthCodeItems(goodsId, userDetails.getUserId(), userDetails.isAdmin()));
             model.addAttribute("user", userDetails);
             return "seller/goods-edit";
         }
@@ -218,6 +342,7 @@ public class SellerGoodsController {
                 Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
                 model.addAttribute("goods", goods);
                 model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
+                model.addAttribute("authCodeItems", goodsService.getAuthCodeItems(goodsId, userDetails.getUserId(), userDetails.isAdmin()));
                 model.addAttribute("user", userDetails);
                 return "seller/goods-edit";
             }
@@ -237,6 +362,7 @@ public class SellerGoodsController {
             Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
             model.addAttribute("goods", goods);
             model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
+            model.addAttribute("authCodeItems", goodsService.getAuthCodeItems(goodsId, userDetails.getUserId(), userDetails.isAdmin()));
             model.addAttribute("user", userDetails);
             return "seller/goods-edit";
         }

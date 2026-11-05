@@ -1,6 +1,7 @@
 package com.roomtherapy.backend.domain.goods.service;
 
 import com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsCreateRequestDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsResponseDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsUpdateRequestDto;
@@ -160,6 +161,97 @@ public class GoodsService {
                 .map(GoodsAuthCode::getCode)
                 .toList();
         return GoodsResponseDto.from(goods, codes);
+    }
+
+    /**
+     * 판매자/관리자가 관리 가능한 굿즈 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<Goods> getManageableGoodsList(Long currentUserId, boolean isAdmin) {
+        if (isAdmin) {
+            return goodsRepository.findAll();
+        }
+        if (currentUserId == null) {
+            return List.of();
+        }
+        return goodsRepository.findAllBySellerId(currentUserId);
+    }
+
+    /**
+     * 굿즈별 또는 전체 관리 대상 인증코드 상세 목록 조회 (소속 굿즈명 및 코드 ID 포함)
+     */
+    @Transactional(readOnly = true)
+    public List<GoodsAuthCodeItemDto> getAuthCodeItems(Long goodsId, Long currentUserId, boolean isAdmin) {
+        if (goodsId != null) {
+            getGoodsForManagement(goodsId, currentUserId, isAdmin);
+            return goodsAuthCodeRepository.findByGoodsIdWithGoods(goodsId).stream()
+                    .map(GoodsAuthCodeItemDto::from)
+                    .toList();
+        }
+        List<GoodsAuthCode> entities = isAdmin
+                ? goodsAuthCodeRepository.findAllWithGoods()
+                : goodsAuthCodeRepository.findAllBySellerIdWithGoods(currentUserId);
+        return entities.stream()
+                .map(GoodsAuthCodeItemDto::from)
+                .toList();
+    }
+
+    /**
+     * 특정 굿즈에 인증코드 추가 등록 (중복 코드는 자동 제외 후 신규 코드만 저장)
+     */
+    @Transactional
+    public int addAuthCodesToGoods(Long goodsId, Long currentUserId, boolean isAdmin, String authCodesInput) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+        if (authCodesInput == null || authCodesInput.isBlank()) {
+            throw new IllegalArgumentException("추가할 인증코드를 1개 이상 입력해주세요.");
+        }
+
+        String[] tokens = authCodesInput.split("[\\r\\n,]+");
+        List<String> validCodes = new ArrayList<>();
+        Set<String> seenLower = new HashSet<>();
+
+        for (String token : tokens) {
+            String trimmed = token != null ? token.trim() : "";
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String lower = trimmed.toLowerCase();
+            if (!seenLower.contains(lower) && !goodsAuthCodeRepository.existsByGoodsIdAndCodeIgnoreCase(goodsId, trimmed)) {
+                seenLower.add(lower);
+                validCodes.add(trimmed);
+            }
+        }
+
+        if (validCodes.isEmpty()) {
+            return 0;
+        }
+
+        List<GoodsAuthCode> newEntities = validCodes.stream()
+                .map(code -> GoodsAuthCode.builder()
+                        .goods(goods)
+                        .code(code)
+                        .build())
+                .toList();
+        goodsAuthCodeRepository.saveAll(newEntities);
+        log.info("굿즈 ID({}) '{}'에 인증코드 {}개 추가 등록 완료 - 처리자: {}",
+                goodsId, goods.getName(), newEntities.size(), currentUserId);
+        return newEntities.size();
+    }
+
+    /**
+     * 특정 굿즈의 개별 인증코드 삭제 처리 (판매자 본인 또는 관리자)
+     */
+    @Transactional
+    public String deleteGoodsAuthCode(Long goodsId, Long codeId, Long currentUserId, boolean isAdmin) {
+        Goods goods = getGoodsForManagement(goodsId, currentUserId, isAdmin);
+        GoodsAuthCode target = goodsAuthCodeRepository.findById(codeId)
+                .filter(c -> c.getGoods() != null && c.getGoods().getId().equals(goodsId))
+                .orElseThrow(() -> new IllegalArgumentException("삭제할 인증코드를 찾을 수 없습니다."));
+        String deletedCode = target.getCode();
+        goodsAuthCodeRepository.delete(target);
+        log.info("굿즈 ID({}) '{}'의 인증코드 ID({}) '{}' 개별 삭제 완료 - 처리자: {}",
+                goodsId, goods.getName(), codeId, deletedCode, currentUserId);
+        return deletedCode;
     }
 
     /**
