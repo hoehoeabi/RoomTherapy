@@ -590,4 +590,30 @@ class GoodsManagementIntegrationTest {
                     }
                 });
     }
+
+    @Test
+    @DisplayName("MVC: /goods 목록 화면에 리퀴드 글라스 이미지 상세보기 라이트박스 모달 및 썸네일 인덱스 속성이 정상 렌더링된다")
+    void goodsList_rendersImageLightboxAndClickableThumbnails() throws Exception {
+        goodsRepository.save(Goods.builder()
+                .seller(seller1)
+                .name("다중이미지 라이트박스 굿즈")
+                .description("설명")
+                .stockQuantity(10)
+                .imageUrl("https://s3/img1.png,https://s3/img2.png,https://s3/img3.png")
+                .status(GoodsStatus.ACTIVE)
+                .build());
+
+        String html = mockMvc.perform(get("/goods"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("goods/list"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("id=\"goodsImageLightbox\"");
+        assertThat(html).contains("class=\"lightbox-glass-box\"");
+        assertThat(html).contains("data-index=\"0\"");
+        assertThat(html).contains("data-index=\"1\"");
+        assertThat(html).contains("data-index=\"2\"");
+        assertThat(html).contains("data-src=\"https://s3/img3.png\"");
+    }
 }
+
