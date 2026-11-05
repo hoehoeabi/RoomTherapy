@@ -1,5 +1,6 @@
 package com.roomtherapy.backend.domain.delivery.service;
 
+import com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition;
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderRequestDto;
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderResponseDto;
 import com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderUpdateRequestDto;
@@ -15,12 +16,20 @@ import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.error.BusinessException;
 import com.roomtherapy.backend.global.error.ErrorCode;
+import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -135,21 +144,21 @@ public class DeliveryOrderService {
                 .toList();
     }
 
-    private static final java.time.format.DateTimeFormatter SUMMARY_DATE_FORMATTER =
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter SUMMARY_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     /**
      * 메인 화면 노출용 최신 주문 요약 정보 조회
      */
     @Transactional(readOnly = true)
-    public java.util.Optional<String> findLatestOrderSummary(Long userId) {
+    public Optional<String> findLatestOrderSummary(Long userId) {
         return deliveryOrderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
                 .findFirst()
                 .map(order -> {
                     // 발송/배송 완료는 판매자가 처리한 시각(updatedAt), 그 외에는 신청 시각(createdAt) 기준
                     boolean shipped = order.getStatus() == DeliveryStatus.SHIPPED
                             || order.getStatus() == DeliveryStatus.DELIVERED;
-                    java.time.LocalDateTime baseTime = (shipped && order.getUpdatedAt() != null)
+                    LocalDateTime baseTime = (shipped && order.getUpdatedAt() != null)
                             ? order.getUpdatedAt()
                             : order.getCreatedAt();
                     String formattedDate = baseTime != null
@@ -167,7 +176,7 @@ public class DeliveryOrderService {
         if (orderId == null) {
             return false;
         }
-        if (principal instanceof com.roomtherapy.backend.global.security.user.CustomUserDetails userDetails) {
+        if (principal instanceof CustomUserDetails userDetails) {
             return deliveryOrderRepository.findById(orderId)
                     .map(order -> order.getUser() != null && order.getUser().getId().equals(userDetails.getUserId()))
                     .orElse(true); // 주문 자체가 없으면 Controller에서 404 ORDER_NOT_FOUND 발생 유도
@@ -303,10 +312,10 @@ public class DeliveryOrderService {
      * 관리자용 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
      */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getAdminOrdersWithPaging(
-            java.time.LocalDate startDate, java.time.LocalDate endDate, String filter, org.springframework.data.domain.Pageable pageable) {
-        java.time.LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
-        java.time.LocalDateTime end = endDate != null ? endDate.atTime(java.time.LocalTime.MAX) : null;
+    public Page<DeliveryOrderResponseDto> getAdminOrdersWithPaging(
+            LocalDate startDate, LocalDate endDate, String filter, Pageable pageable) {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
 
         return deliveryOrderRepository.findAdminOrdersWithFilter(start, end, isModified, pageable)
@@ -317,10 +326,10 @@ public class DeliveryOrderService {
      * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
      */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getSellerOrdersWithPaging(
-            Long sellerId, java.time.LocalDate startDate, java.time.LocalDate endDate, String filter, org.springframework.data.domain.Pageable pageable) {
-        java.time.LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
-        java.time.LocalDateTime end = endDate != null ? endDate.atTime(java.time.LocalTime.MAX) : null;
+    public Page<DeliveryOrderResponseDto> getSellerOrdersWithPaging(
+            Long sellerId, LocalDate startDate, LocalDate endDate, String filter, Pageable pageable) {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
 
         return deliveryOrderRepository.findSellerOrdersWithFilter(sellerId, start, end, isModified, pageable)
@@ -331,8 +340,8 @@ public class DeliveryOrderService {
      * 사용자 마이페이지용 내 배송 신청 내역 페이징 조회
      */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<DeliveryOrderResponseDto> getMyOrdersWithPaging(
-            Long userId, org.springframework.data.domain.Pageable pageable) {
+    public Page<DeliveryOrderResponseDto> getMyOrdersWithPaging(
+            Long userId, Pageable pageable) {
         return deliveryOrderRepository.findMyOrdersWithPaging(userId, pageable)
                 .map(DeliveryOrderResponseDto::from);
     }
@@ -350,12 +359,12 @@ public class DeliveryOrderService {
      * 판매자용 엑셀 다운로드 필터 대상 본인 굿즈 주문 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<DeliveryOrder> getOrdersForSellerExport(Long sellerId, com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
+    public List<DeliveryOrder> getOrdersForSellerExport(Long sellerId, DeliveryExcelExportCondition condition) {
         List<DeliveryOrder> list = deliveryOrderRepository.findAllBySellerId(sellerId);
         return filterExportOrders(list, condition);
     }
 
-    private List<DeliveryOrder> filterExportOrders(List<DeliveryOrder> list, com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
+    private List<DeliveryOrder> filterExportOrders(List<DeliveryOrder> list, DeliveryExcelExportCondition condition) {
         if (condition == null) {
             return list;
         }
@@ -371,7 +380,7 @@ public class DeliveryOrderService {
 
                     // 2. 날짜 범위 필터
                     if (o.getCreatedAt() != null) {
-                        java.time.LocalDate orderDate = o.getCreatedAt().toLocalDate();
+                        LocalDate orderDate = o.getCreatedAt().toLocalDate();
                         if (condition.startDate() != null && orderDate.isBefore(condition.startDate())) {
                             return false;
                         }
