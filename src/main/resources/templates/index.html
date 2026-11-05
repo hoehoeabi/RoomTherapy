@@ -329,8 +329,8 @@
                     <span th:text="${recentOrderSummary}">2026-10-22 18:05 주문 건 현재 접수 완료</span>
                     <span style="font-size: 10px; color: var(--gray);">&gt;</span>
                 </a>
-                <div class="user-status-text" th:unless="${recentOrderSummary != null}" th:text="${user.email != null ? user.email : '연동 완료'}">
-                    user@test.com
+                <div class="user-status-text" th:unless="${recentOrderSummary != null}">
+                    게임을 클리어해서 굿즈를 받아보세요!
                 </div>
             </div>
 

@@ -146,8 +146,14 @@ public class DeliveryOrderService {
         return deliveryOrderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
                 .findFirst()
                 .map(order -> {
-                    String formattedDate = order.getCreatedAt() != null
-                            ? order.getCreatedAt().format(SUMMARY_DATE_FORMATTER)
+                    // 발송/배송 완료는 판매자가 처리한 시각(updatedAt), 그 외에는 신청 시각(createdAt) 기준
+                    boolean shipped = order.getStatus() == DeliveryStatus.SHIPPED
+                            || order.getStatus() == DeliveryStatus.DELIVERED;
+                    java.time.LocalDateTime baseTime = (shipped && order.getUpdatedAt() != null)
+                            ? order.getUpdatedAt()
+                            : order.getCreatedAt();
+                    String formattedDate = baseTime != null
+                            ? baseTime.format(SUMMARY_DATE_FORMATTER)
                             : "";
                     return formattedDate + " 주문 건 현재 " + order.getStatus().getDescription();
                 });
