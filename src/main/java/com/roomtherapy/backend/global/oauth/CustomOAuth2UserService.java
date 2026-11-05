@@ -6,6 +6,7 @@ import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.oauth.dto.OAuthAttributes;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -24,11 +26,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private final UserRepository userRepository;
 
-    @org.springframework.beans.factory.annotation.Value("${admin.kakao-ids:}")
-    private java.util.List<String> adminKakaoIds;
+    @Value("${admin.kakao-ids:}")
+    private List<String> adminKakaoIds;
 
-    @org.springframework.beans.factory.annotation.Value("${seller.kakao-ids:}")
-    private java.util.List<String> sellerKakaoIds;
+    @Value("${seller.kakao-ids:}")
+    private List<String> sellerKakaoIds;
 
     @Override
     @Transactional

@@ -91,7 +91,7 @@ public class MyPageController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.nicknameForm", bindingResult);
+            redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "nicknameForm", bindingResult);
             redirectAttributes.addFlashAttribute("nicknameForm", form);
             return "redirect:/mypage?tab=profile";
         }
@@ -117,7 +117,7 @@ public class MyPageController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.deliveryForm", bindingResult);
+            redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "deliveryForm", bindingResult);
             redirectAttributes.addFlashAttribute("deliveryForm", form);
             return "redirect:/mypage?tab=profile";
         }
