@@ -521,6 +521,105 @@
         .btn-add-obj3d:hover {
             background: #FFF5F5;
         }
+        .btn-submit:disabled {
+            background: #94A3B8;
+            cursor: not-allowed;
+            opacity: 0.85;
+        }
+
+        /* 실시간 업로드 진행률 모달 오버레이 */
+        .upload-progress-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .upload-progress-overlay.active {
+            display: flex;
+        }
+        .upload-progress-box {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 16px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+            text-align: center;
+        }
+        .upload-progress-icon {
+            font-size: 34px;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: pulseIcon 1.4s ease-in-out infinite;
+        }
+        @keyframes pulseIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+        .upload-progress-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 6px;
+            word-break: keep-all;
+        }
+        .upload-progress-sub {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 16px;
+            line-height: 1.45;
+            word-break: keep-all;
+        }
+        .upload-progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .upload-progress-percent {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--red);
+        }
+        .upload-progress-bytes {
+            font-size: 11.5px;
+            color: #475569;
+            font-weight: 700;
+        }
+        .upload-progress-track {
+            width: 100%;
+            height: 12px;
+            background: #E2E8F0;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        .upload-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #E60023 0%, #FF5A5F 50%, #E60023 100%);
+            background-size: 200% 100%;
+            border-radius: 999px;
+            transition: width 0.2s ease;
+            animation: progressShimmer 1.6s linear infinite;
+        }
+        @keyframes progressShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .upload-progress-warn {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #64748B;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -638,8 +737,25 @@
                     <span class="field-error" th:errors="*{authCodesInput}"></span>
                 </div>
 
-                <button type="submit" class="btn-submit">굿즈 등록 완료</button>
+                <button type="submit" id="goodsSubmitBtn" class="btn-submit">굿즈 등록 완료</button>
             </form>
+        </div>
+    </div>
+
+    <!-- 실시간 업로드 진행 상태 모달 -->
+    <div id="uploadProgressOverlay" class="upload-progress-overlay">
+        <div class="upload-progress-box">
+            <div id="uploadProgressIcon" class="upload-progress-icon">🚀</div>
+            <div id="uploadProgressTitle" class="upload-progress-title">3D 오브제 및 사진을 업로드하고 있습니다...</div>
+            <div id="uploadProgressSub" class="upload-progress-sub">네트워크를 통해 서버로 데이터를 전송 중입니다.</div>
+            <div class="upload-progress-stats">
+                <span id="uploadProgressPercent" class="upload-progress-percent">0%</span>
+                <span id="uploadProgressBytes" class="upload-progress-bytes">0.0 MB / 0.0 MB</span>
+            </div>
+            <div class="upload-progress-track">
+                <div id="uploadProgressFill" class="upload-progress-fill"></div>
+            </div>
+            <div class="upload-progress-warn">⚠️ 업로드 완료 전까지 창을 닫거나 새로고침하지 마세요.</div>
         </div>
     </div>
 
@@ -1234,11 +1350,25 @@
             modelFilesInput.files = dt.files;
         }
 
+        let isSubmittingForm = false;
         const createForm = document.getElementById('goodsCreateForm');
         if (createForm) {
             createForm.addEventListener('submit', function(e) {
+                if (isSubmittingForm) {
+                    e.preventDefault();
+                    return false;
+                }
                 syncFormData();
                 sync3dObjectsFormData();
+                if (imageItems.length === 0) {
+                    e.preventDefault();
+                    alert('굿즈 사진은 최소 1장 이상 등록되어야 합니다.');
+                    const dropzoneEl = document.getElementById('uploadDropzone');
+                    if (dropzoneEl) {
+                        dropzoneEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return false;
+                }
                 for (let i = 0; i < object3dItems.length; i++) {
                     const obj = object3dItems[i];
                     const hasName = obj.name && obj.name.trim().length > 0;
@@ -1255,7 +1385,150 @@
                         return false;
                     }
                 }
+
+                e.preventDefault();
+                submitFormWithProgress(createForm, '굿즈 등록 완료');
             });
+        }
+
+        function submitFormWithProgress(formEl, defaultBtnLabel) {
+            isSubmittingForm = true;
+            const submitBtn = document.getElementById('goodsSubmitBtn');
+            const overlay = document.getElementById('uploadProgressOverlay');
+            const iconEl = document.getElementById('uploadProgressIcon');
+            const titleEl = document.getElementById('uploadProgressTitle');
+            const subEl = document.getElementById('uploadProgressSub');
+            const percentEl = document.getElementById('uploadProgressPercent');
+            const bytesEl = document.getElementById('uploadProgressBytes');
+            const fillEl = document.getElementById('uploadProgressFill');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ 업로드 및 저장 중...';
+            }
+
+            const totalBytes = getTotalSelectedBytes(-1);
+            const totalMbStr = (totalBytes / (1024 * 1024)).toFixed(1);
+
+            if (overlay) {
+                iconEl.textContent = '🚀';
+                titleEl.textContent = '3D 오브제 및 사진을 서버로 전송하고 있습니다...';
+                subEl.textContent = totalBytes > 0
+                    ? '파일 용량에 따라 수 초~수십 초가 소요될 수 있습니다.'
+                    : '굿즈 정보를 서버에 등록하고 있습니다.';
+                percentEl.textContent = '0%';
+                bytesEl.textContent = totalBytes > 0 ? `0.0 MB / ${totalMbStr} MB` : '데이터 전송 중';
+                fillEl.style.width = '0%';
+                overlay.classList.add('active');
+            }
+
+            let s3StageTimer = null;
+            let currentPct = 0;
+
+            function stopS3Timer() {
+                if (s3StageTimer) {
+                    clearInterval(s3StageTimer);
+                    s3StageTimer = null;
+                }
+            }
+
+            function resetSubmitState() {
+                stopS3Timer();
+                isSubmittingForm = false;
+                if (overlay) overlay.classList.remove('active');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = defaultBtnLabel;
+                }
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', formEl.action, true);
+
+            xhr.upload.addEventListener('progress', function(evt) {
+                if (evt.lengthComputable && evt.total > 0) {
+                    // 네트워크 전송 단계는 0% ~ 90% 구간으로 표시
+                    const ratio = Math.min(1, evt.loaded / evt.total);
+                    currentPct = Math.min(90, Math.round(ratio * 90));
+                    const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
+                    const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
+                    if (percentEl) percentEl.textContent = `${currentPct}%`;
+                    if (bytesEl) bytesEl.textContent = `${loadedMb} MB / ${totalMb} MB 전송됨`;
+                    if (fillEl) fillEl.style.width = `${currentPct}%`;
+                }
+            });
+
+            xhr.upload.addEventListener('load', function() {
+                currentPct = Math.max(currentPct, 92);
+                if (iconEl) iconEl.textContent = '☁️';
+                if (titleEl) titleEl.textContent = '클라우드 스토리지(S3)에 병렬 저장하고 있습니다...';
+                if (subEl) subEl.textContent = '서버 전송이 완료되었으며 S3 버킷에 3D 모델 및 사진을 등록 중입니다.';
+                if (percentEl) percentEl.textContent = `${currentPct}%`;
+                if (bytesEl) bytesEl.textContent = 'S3 클라우드 저장 중...';
+                if (fillEl) fillEl.style.width = `${currentPct}%`;
+
+                let elapsedSec = 0;
+                stopS3Timer();
+                s3StageTimer = setInterval(function() {
+                    elapsedSec++;
+                    if (currentPct < 99) {
+                        currentPct++;
+                        if (percentEl) percentEl.textContent = `${currentPct}%`;
+                        if (fillEl) fillEl.style.width = `${currentPct}%`;
+                    }
+                    if (bytesEl) {
+                        bytesEl.textContent = `S3 클라우드 병렬 저장 중 (${elapsedSec}초 경과)`;
+                    }
+                }, 700);
+            });
+
+            xhr.onload = function() {
+                stopS3Timer();
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    let finalPath = '';
+                    try {
+                        finalPath = xhr.responseURL ? new URL(xhr.responseURL, window.location.origin).pathname : '';
+                    } catch (err) {
+                        finalPath = '';
+                    }
+
+                    // 서버 검증 실패 등으로 여전히 등록/수정 폼 화면이 반환된 경우 에러 메시지 추출
+                    if (finalPath && finalPath.indexOf('/seller/goods') === 0) {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(xhr.responseText, 'text/html');
+                        const alertErr = doc.querySelector('.alert-error');
+                        const fieldErr = doc.querySelector('.field-error');
+                        const errMsg = (alertErr && alertErr.textContent.trim())
+                            || (fieldErr && fieldErr.textContent.trim())
+                            || '입력값을 다시 확인해주세요.';
+                        resetSubmitState();
+                        alert('⚠️ ' + errMsg);
+                        return;
+                    }
+
+                    if (iconEl) iconEl.textContent = '✅';
+                    if (titleEl) titleEl.textContent = '업로드 및 저장 완료!';
+                    if (subEl) subEl.textContent = '굿즈 목록 페이지로 이동합니다...';
+                    if (percentEl) percentEl.textContent = '100%';
+                    if (bytesEl) bytesEl.textContent = '완료';
+                    if (fillEl) fillEl.style.width = '100%';
+
+                    window.location.href = xhr.responseURL || '/goods';
+                } else if (xhr.status === 413) {
+                    resetSubmitState();
+                    alert('⚠️ 업로드 파일 용량이 서버 허용 한도를 초과했습니다 (413 Payload Too Large).');
+                } else {
+                    resetSubmitState();
+                    alert(`⚠️ 업로드 중 서버 오류가 발생했습니다 (HTTP ${xhr.status}). 잠시 후 다시 시도해주세요.`);
+                }
+            };
+
+            xhr.onerror = function() {
+                resetSubmitState();
+                alert('⚠️ 네트워크 연결 오류로 업로드에 실패했습니다. 인터넷 연결 또는 파일 용량을 확인해주세요.');
+            };
+
+            xhr.send(new FormData(formEl));
         }
 
         render3dObjectsList();
