@@ -56,6 +56,9 @@ class GoodsManagementIntegrationTest {
     private GoodsAuthCodeRepository goodsAuthCodeRepository;
 
     @Autowired
+    private com.roomtherapy.backend.domain.goods.repository.Goods3dObjectRepository goods3dObjectRepository;
+
+    @Autowired
     private DeliveryOrderRepository deliveryOrderRepository;
 
     @Autowired
@@ -87,6 +90,7 @@ class GoodsManagementIntegrationTest {
                 .build();
 
         deliveryOrderRepository.deleteAll();
+        goods3dObjectRepository.deleteAll();
         goodsAuthCodeRepository.deleteAll();
         goodsRepository.deleteAll();
         userRepository.deleteAll();
@@ -614,6 +618,127 @@ class GoodsManagementIntegrationTest {
         assertThat(html).contains("data-index=\"1\"");
         assertThat(html).contains("data-index=\"2\"");
         assertThat(html).contains("data-src=\"https://s3/img3.png\"");
+        assertThat(html).contains("3D 전시관");
+    }
+
+    @Test
+    @DisplayName("MVC: 굿즈 등록 시 다양한 확장자(.glb, .fbx, .obj, .usdz)의 3D 오브제를 함께 등록하고 전시관 페이지에서 조회할 수 있다")
+    void createGoods_withMultiFormat3dObjects_persistsAndRendersInExhibition() throws Exception {
+        MockMultipartFile glbFile = new MockMultipartFile("objectModelFiles", "lamp.glb", "model/gltf-binary", "glb-data".getBytes());
+        MockMultipartFile fbxFile = new MockMultipartFile("objectModelFiles", "desk.fbx", "application/octet-stream", "fbx-data".getBytes());
+        MockMultipartFile objFile = new MockMultipartFile("objectModelFiles", "chair.obj", "text/plain", "v 0 0 0".getBytes());
+        MockMultipartFile usdzFile = new MockMultipartFile("objectModelFiles", "plant.usdz", "model/vnd.usdz+zip", "usdz-data".getBytes());
+
+        mockMvc.perform(multipart("/seller/goods")
+                        .file(glbFile)
+                        .file(fbxFile)
+                        .file(objFile)
+                        .file(usdzFile)
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "스테이지 1 룸테라피 패키지")
+                        .param("description", "스테이지 1 클리어 리워드")
+                        .param("stockQuantity", "20")
+                        .param("imageUrl", "https://s3/stage1.png")
+                        .param("authCodesInput", "RT-STAGE101")
+                        .param("objectIds", "", "", "", "")
+                        .param("objectNames", "아늑한 무드등", "원목 책상", "패브릭 의자", "미니 화분")
+                        .param("objectDescriptions", "따뜻한 조명의 무드등", "정리정돈용 원목 책상", "편안한 의자", "책상 위 작은 화분")
+                        .param("objectModelUrls", "__NEW_MODEL_0__", "__NEW_MODEL_1__", "__NEW_MODEL_2__", "__NEW_MODEL_3__"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        Goods savedGoods = goodsRepository.findAll().get(0);
+        var savedObjects = goods3dObjectRepository.findByGoodsIdOrderByDisplayOrderAscIdAsc(savedGoods.getId());
+        assertThat(savedObjects).hasSize(4);
+        assertThat(savedObjects.get(0).getName()).isEqualTo("아늑한 무드등");
+        assertThat(savedObjects.get(0).getModelUrl()).endsWith(".glb");
+        assertThat(savedObjects.get(1).getName()).isEqualTo("원목 책상");
+        assertThat(savedObjects.get(1).getModelUrl()).endsWith(".fbx");
+        assertThat(savedObjects.get(2).getName()).isEqualTo("패브릭 의자");
+        assertThat(savedObjects.get(2).getModelUrl()).endsWith(".obj");
+        assertThat(savedObjects.get(3).getName()).isEqualTo("미니 화분");
+        assertThat(savedObjects.get(3).getModelUrl()).endsWith(".usdz");
+
+        // 전시관 페이지(/goods/{id}/exhibition) 렌더링 확인
+        String exhibitionHtml = mockMvc.perform(get("/goods/" + savedGoods.getId() + "/exhibition"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("goods/exhibition"))
+                .andExpect(model().attributeExists("goods", "objects3d"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(exhibitionHtml).contains("아늑한 무드등");
+        assertThat(exhibitionHtml).contains("원목 책상");
+        assertThat(exhibitionHtml).contains("패브릭 의자");
+        assertThat(exhibitionHtml).contains("미니 화분");
+        assertThat(exhibitionHtml).contains("GLB");
+        assertThat(exhibitionHtml).contains("FBX");
+        assertThat(exhibitionHtml).contains("OBJ");
+        assertThat(exhibitionHtml).contains("USDZ");
+    }
+
+    @Test
+    @DisplayName("MVC: 굿즈 수정 화면에서 기존 3D 오브제를 수정·삭제·추가할 수 있고, 개별 삭제 엔드포인트도 정상 동작한다")
+    void updateGoods_canModifyDeleteAndAdd3dObjects_andDeleteSingleObjectDirectly() throws Exception {
+        GoodsResponseDto created = goodsService.registerGoods(
+                seller1.getId(),
+                new GoodsCreateRequestDto("스테이지 2 리워드", "설명", 0, "https://s3/stage2.png", 15, "RT-STG201"),
+                List.of(
+                        new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(null, "오브제 A", "설명 A", "/uploads/goods-3d/a.glb", 0),
+                        new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(null, "오브제 B", "설명 B", "/uploads/goods-3d/b.fbx", 1)
+                )
+        );
+
+        var initialList = goods3dObjectRepository.findByGoodsIdOrderByDisplayOrderAscIdAsc(created.id());
+        assertThat(initialList).hasSize(2);
+        Long objAId = initialList.get(0).getId();
+
+        MockMultipartFile newUsdz = new MockMultipartFile("objectModelFiles", "updated_a.usdz", "model/vnd.usdz+zip", "usdz-content".getBytes());
+
+        // 오브제 A는 이름/설명/파일 수정, 오브제 B는 목록에서 제외(삭제), 오브제 C는 신규 추가
+        mockMvc.perform(multipart("/seller/goods/" + created.id() + "/edit")
+                        .file(newUsdz)
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "스테이지 2 리워드 수정")
+                        .param("description", "설명 수정")
+                        .param("stockQuantity", "15")
+                        .param("status", "ACTIVE")
+                        .param("imageUrl", "https://s3/stage2.png")
+                        .param("objects3dSubmitted", "true")
+                        .param("objectIds", String.valueOf(objAId), "")
+                        .param("objectNames", "오브제 A 수정됨", "오브제 C 신규")
+                        .param("objectDescriptions", "설명 A 수정됨", "설명 C 신규")
+                        .param("objectModelUrls", "__NEW_MODEL_0__", "/uploads/goods-3d/c.obj"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods"));
+
+        var updatedList = goods3dObjectRepository.findByGoodsIdOrderByDisplayOrderAscIdAsc(created.id());
+        assertThat(updatedList).hasSize(2);
+        // 오브제 A는 기존 ID를 유지한 채 이름/설명/모델 URL이 수정됨
+        assertThat(updatedList.get(0).getId()).isEqualTo(objAId);
+        assertThat(updatedList.get(0).getName()).isEqualTo("오브제 A 수정됨");
+        assertThat(updatedList.get(0).getDescription()).isEqualTo("설명 A 수정됨");
+        assertThat(updatedList.get(0).getModelUrl()).endsWith(".usdz");
+
+        // 오브제 B는 삭제되고 오브제 C가 2번째로 등록됨
+        assertThat(updatedList.get(1).getName()).isEqualTo("오브제 C 신규");
+        assertThat(updatedList.get(1).getModelUrl()).isEqualTo("/uploads/goods-3d/c.obj");
+        Long objCId = updatedList.get(1).getId();
+
+        // 타 판매자(seller2)가 개별 3D 오브제 삭제 시도 시 403 Forbidden 차단
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/objects/" + objCId + "/delete")
+                        .cookie(new Cookie("accessToken", seller2Token)))
+                .andExpect(status().isForbidden());
+
+        // 판매자 본인(seller1)이 개별 3D 오브제 삭제 호출 시 정상 삭제
+        mockMvc.perform(post("/seller/goods/" + created.id() + "/objects/" + objCId + "/delete")
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("redirect", "/goods/" + created.id() + "/exhibition"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/goods/" + created.id() + "/exhibition"));
+
+        var finalList = goods3dObjectRepository.findByGoodsIdOrderByDisplayOrderAscIdAsc(created.id());
+        assertThat(finalList).hasSize(1);
+        assertThat(finalList.get(0).getName()).isEqualTo("오브제 A 수정됨");
     }
 }
 
