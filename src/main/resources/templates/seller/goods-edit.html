@@ -185,7 +185,8 @@
         .image-manager-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 8px;
             margin-bottom: 6px;
         }
         .image-count-badge {
@@ -193,8 +194,10 @@
             font-weight: 700;
             color: var(--red);
             background: #FFEBEB;
-            padding: 2px 7px;
+            padding: 2px 8px;
             border-radius: 10px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .image-grid {
             display: flex;
@@ -702,8 +705,9 @@
                         <div id="uploadDropzone" class="upload-dropzone">
                             <div class="upload-dropzone-icon">📷</div>
                             <div class="upload-dropzone-text">+ 클릭하거나 사진 파일을 여기로 드래그하여 추가</div>
-                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 장당 최대 70MB)</div>
+                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: 70MB, 총 허용용량: 600MB)</div>
                         </div>
+                        <div id="imageSizeErrorNotice" style="display:none; margin-bottom: 8px; font-size: 11.5px; font-weight: 800; color: var(--red);"></div>
                         <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" style="display: none;">
 
                         <!-- 직접 URL 입력 (접을 수 있는 상세 메뉴) -->
@@ -727,13 +731,12 @@
                         <div>
                             <label class="form-label" style="margin-bottom: 2px;">🧊 스테이지 3D 오브제 관리 (추가 · 수정 · 삭제)</label>
                             <div class="form-label-desc" style="margin-bottom: 0;">
-                                등록된 3D 오브제의 <strong>이름, 설명, 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 수정하거나 <strong>[삭제]</strong> 및 <strong>[+ 3D 오브제 추가]</strong>를 수행할 수 있습니다.
+                                등록된 3D 오브제의 <strong>이름, 설명, 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 수정하거나 <strong>[삭제]</strong> 및 <strong>[+ 3D 오브제 추가]</strong>를 수행할 수 있습니다.<br>
+                                <span style="color: var(--gray); font-weight: 700;">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 600MB</span>
                             </div>
+                            <a th:href="@{'/goods/' + ${goods.id} + '/exhibition'}" class="btn-gen" style="margin-top: 8px; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;">전시관 미리보기 &gt;</a>
                         </div>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                            <a th:href="@{'/goods/' + ${goods.id} + '/exhibition'}" class="btn-gen" style="text-decoration:none;display:inline-flex;align-items:center;">전시관 미리보기 &gt;</a>
-                            <span id="obj3dCountBadge" class="image-count-badge">0개</span>
-                        </div>
+                        <span id="obj3dCountBadge" class="image-count-badge">0개</span>
                     </div>
 
                     <div id="obj3dList" class="obj3d-list">
@@ -980,16 +983,26 @@
             renderImageGrid();
         }
 
-        const MAX_FILE_SIZE = 70 * 1024 * 1024; // 70MB
+        const MAX_IMAGE_MB = 70;
+        const MAX_FILE_SIZE = MAX_IMAGE_MB * 1024 * 1024; // 70MB
 
         // 파일 추가 처리
         function addFiles(fileList) {
             if (!fileList || fileList.length === 0) return;
+            const errEl = document.getElementById('imageSizeErrorNotice');
+            let errorMsg = '';
             for (let i = 0; i < fileList.length; i++) {
                 const file = fileList[i];
                 if (!file.type.startsWith('image/')) continue;
+                const fileMb = (file.size / (1024 * 1024)).toFixed(1);
+                const totalWithFile = getTotalSelectedBytes(-1) + file.size;
+                const totalMb = (totalWithFile / (1024 * 1024)).toFixed(1);
                 if (file.size > MAX_FILE_SIZE) {
-                    alert(`사진 '${file.name}'의 용량이 70MB를 초과하여 등록할 수 없습니다.\n(현재 용량: ${(file.size / (1024 * 1024)).toFixed(1)}MB / 최대 허용: 70MB)\n70MB 이하의 사진을 선택해주세요.`);
+                    errorMsg = `⚠️ 용량이 큽니다 (${file.name}: ${fileMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 600MB`;
+                    continue;
+                }
+                if (totalWithFile > 600 * 1024 * 1024) {
+                    errorMsg = `⚠️ 용량이 큽니다 (전체 합산 ${totalMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 600MB`;
                     continue;
                 }
                 imageItems.push({
@@ -997,6 +1010,15 @@
                     file: file,
                     previewUrl: URL.createObjectURL(file)
                 });
+            }
+            if (errEl) {
+                if (errorMsg) {
+                    errEl.textContent = errorMsg;
+                    errEl.style.display = 'block';
+                } else {
+                    errEl.textContent = '';
+                    errEl.style.display = 'none';
+                }
             }
             renderImageGrid();
         }
@@ -1075,6 +1097,10 @@
         // 스테이지 3D 오브제 관리 매니저 (기존 항목 로드, 추가, 수정, 삭제, 순서 변경)
         // ============================================================
         const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
+        const MAX_OBJECT_FILE_MB = 300;
+        const MAX_TOTAL_UPLOAD_MB = 600;
+        const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024;
+        const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024;
         /*<![CDATA[*/
         const initialObjects3d = /*[[${objects3d}]]*/ [];
         /*]]>*/
@@ -1086,8 +1112,20 @@
                 name: obj.name || '',
                 description: obj.description || '',
                 modelUrl: obj.modelUrl || '',
-                file: null
+                file: null,
+                sizeError: ''
             }));
+        }
+
+        function getTotalSelectedBytes(excludeIdx = -1) {
+            let total = 0;
+            imageItems.forEach(img => {
+                if (img.type === 'new' && img.file) total += img.file.size;
+            });
+            object3dItems.forEach((obj, i) => {
+                if (i !== excludeIdx && obj.file) total += obj.file.size;
+            });
+            return total;
         }
 
         function extractModelExt(filenameOrUrl) {
@@ -1103,7 +1141,8 @@
                 name: '',
                 description: '',
                 modelUrl: '',
-                file: null
+                file: null,
+                sizeError: ''
             });
             render3dObjectsList();
         }
@@ -1226,7 +1265,7 @@
                 modelRow.className = 'obj3d-field-row';
                 const modelLabel = document.createElement('label');
                 modelLabel.className = 'obj3d-sub-label';
-                modelLabel.innerHTML = '3. 오브제 3D 모델 파일 (.glb, .gltf, .fbx, .obj, .usdz) <span style="color:var(--red);">*</span>';
+                modelLabel.innerHTML = `3. 오브제 3D 모델 파일 (.glb, .gltf, .fbx, .obj, .usdz / <span style="color:var(--gray);font-weight:600;">오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB, 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB</span>) <span style="color:var(--red);">*</span>`;
 
                 const fileWrap = document.createElement('div');
                 fileWrap.className = 'obj3d-file-row';
@@ -1244,13 +1283,17 @@
 
                 const fileStatus = document.createElement('span');
                 fileStatus.className = 'obj3d-file-status';
-                if (item.file) {
-                    fileStatus.textContent = `새 파일 선택됨: ${item.file.name} (${(item.file.size / (1024 * 1024)).toFixed(2)}MB)`;
+                if (item.sizeError) {
+                    fileStatus.textContent = item.sizeError;
+                    fileStatus.style.color = 'var(--red)';
+                    fileStatus.style.fontWeight = '800';
+                } else if (item.file) {
+                    fileStatus.textContent = `새 파일 선택됨: ${item.file.name} (${(item.file.size / (1024 * 1024)).toFixed(2)}MB) — 오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB / 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB`;
                     fileStatus.style.color = '#16A34A';
                 } else if (item.modelUrl) {
-                    fileStatus.textContent = `현재 모델: ${item.modelUrl}`;
+                    fileStatus.textContent = `현재 모델: ${item.modelUrl} (오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB, 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB)`;
                 } else {
-                    fileStatus.textContent = '선택된 3D 모델 파일이 없습니다.';
+                    fileStatus.textContent = `선택된 3D 모델 파일 없음 (오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB, 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB)`;
                     fileStatus.style.color = 'var(--gray)';
                 }
 
@@ -1259,13 +1302,27 @@
                     const chosen = e.target.files[0];
                     const chosenExt = extractModelExt(chosen.name);
                     if (!ALLOWED_3D_EXTS.includes(chosenExt)) {
-                        alert(`지원하지 않는 3D 파일 확장자입니다 (${chosenExt || '없음'}).\n지원 포맷: .glb, .gltf, .fbx, .obj, .usdz`);
+                        item.sizeError = `⚠️ 지원하지 않는 확장자입니다 (${chosenExt || '없음'}) — .glb, .gltf, .fbx, .obj, .usdz만 가능`;
+                        render3dObjectsList();
                         return;
                     }
-                    if (chosen.size > MAX_FILE_SIZE) {
-                        alert(`3D 모델 파일 '${chosen.name}'의 용량이 70MB를 초과합니다.`);
+                    const chosenMb = (chosen.size / (1024 * 1024)).toFixed(1);
+                    const totalWithChosen = getTotalSelectedBytes(idx) + chosen.size;
+                    const totalMb = (totalWithChosen / (1024 * 1024)).toFixed(1);
+
+                    if (chosen.size > MAX_MODEL_FILE_SIZE) {
+                        item.file = null;
+                        item.sizeError = `⚠️ 용량이 큽니다 (${chosenMb}MB) — 오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB / 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB`;
+                        render3dObjectsList();
                         return;
                     }
+                    if (totalWithChosen > MAX_TOTAL_REQUEST_SIZE) {
+                        item.file = null;
+                        item.sizeError = `⚠️ 용량이 큽니다 (전체 합산 ${totalMb}MB) — 오브제별 최대용량: ${MAX_OBJECT_FILE_MB}MB / 총 허용용량: ${MAX_TOTAL_UPLOAD_MB}MB`;
+                        render3dObjectsList();
+                        return;
+                    }
+                    item.sizeError = '';
                     item.file = chosen;
                     render3dObjectsList();
                 });

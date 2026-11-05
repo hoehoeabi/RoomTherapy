@@ -38,7 +38,7 @@ public enum ErrorCode {
     DUPLICATE_GOODS_CLAIM(HttpStatus.CONFLICT, "GOODS_409_01", "이미 배송 신청을 완료하신 굿즈입니다. (동일 굿즈는 1인 1회만 신청 가능)"),
 
     // 413 Payload Too Large
-    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_413_01", "업로드 파일 크기가 허용 한도(개별 최대 70MB, 전체 최대 150MB)를 초과했습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_413_01", "업로드 파일 크기가 허용 한도(개별 최대 300MB, 전체 최대 600MB)를 초과했습니다."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "500", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
