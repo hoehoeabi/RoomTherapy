@@ -7,13 +7,19 @@ public record Goods3dObjectDto(
         String name,
         String description,
         String modelUrl,
+        String thumbnailUrl,
         int displayOrder
 ) {
     public Goods3dObjectDto {
         name = name != null ? name.trim() : "";
         description = description != null ? description.trim() : "";
         modelUrl = modelUrl != null ? modelUrl.trim() : "";
+        thumbnailUrl = thumbnailUrl != null ? thumbnailUrl.trim() : "";
         displayOrder = Math.max(0, displayOrder);
+    }
+
+    public Goods3dObjectDto(Long id, String name, String description, String modelUrl, int displayOrder) {
+        this(id, name, description, modelUrl, "", displayOrder);
     }
 
     public static Goods3dObjectDto from(Goods3dObject entity) {
@@ -22,6 +28,7 @@ public record Goods3dObjectDto(
                 entity.getName(),
                 entity.getDescription(),
                 entity.getModelUrl(),
+                entity.getThumbnailUrl(),
                 entity.getDisplayOrder()
         );
     }

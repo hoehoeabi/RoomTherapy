@@ -44,25 +44,32 @@ public class Goods3dObject extends BaseTimeEntity {
     @Column(nullable = false, length = 1000)
     private String modelUrl;
 
+    @Column(length = 1000)
+    private String thumbnailUrl;
+
     @Column(nullable = false)
     private int displayOrder;
 
     @Builder
-    public Goods3dObject(Goods goods, String name, String description, String modelUrl, int displayOrder) {
+    public Goods3dObject(Goods goods, String name, String description, String modelUrl, String thumbnailUrl, int displayOrder) {
         this.goods = goods;
         this.name = name != null ? name.trim() : "";
         this.description = description != null ? description.trim() : "";
         this.modelUrl = modelUrl != null ? modelUrl.trim() : "";
+        this.thumbnailUrl = thumbnailUrl != null ? thumbnailUrl.trim() : "";
         this.displayOrder = Math.max(0, displayOrder);
     }
 
-    public void update(String name, String description, String modelUrl, int displayOrder) {
+    public void update(String name, String description, String modelUrl, String thumbnailUrl, int displayOrder) {
         if (name != null && !name.isBlank()) {
             this.name = name.trim();
         }
         this.description = description != null ? description.trim() : "";
         if (modelUrl != null && !modelUrl.isBlank()) {
             this.modelUrl = modelUrl.trim();
+        }
+        if (thumbnailUrl != null) {
+            this.thumbnailUrl = thumbnailUrl.trim();
         }
         this.displayOrder = Math.max(0, displayOrder);
     }
