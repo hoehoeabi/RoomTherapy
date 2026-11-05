@@ -846,6 +846,8 @@
 
                     <!-- 신규 업로드된 3D 모델 파일들을 담는 멀티 파일 인풋 -->
                     <input type="file" id="objectModelFiles" name="objectModelFiles" multiple accept=".glb,.gltf,.fbx,.obj,.usdz" style="display: none;">
+                    <!-- 신규 업로드된 3D 오브제 썸네일 이미지 파일들을 담는 멀티 파일 인풋 -->
+                    <input type="file" id="objectThumbnailFiles" name="objectThumbnailFiles" multiple accept="image/*" style="display: none;">
                     <!-- 서버로 전송할 3D 오브제 메타데이터 히든 필드 컨테이너 -->
                     <div id="objects3dHiddenInputs"></div>
                 </div>
@@ -1242,7 +1244,9 @@
                 name: obj.name || '',
                 description: obj.description || '',
                 modelUrl: obj.modelUrl || '',
+                thumbnailUrl: obj.thumbnailUrl || '',
                 file: null,
+                thumbFile: null,
                 sizeError: ''
             }));
         }
@@ -1254,6 +1258,7 @@
             });
             object3dItems.forEach((obj, i) => {
                 if (i !== excludeIdx && obj.file) total += obj.file.size;
+                if (obj.thumbFile) total += obj.thumbFile.size;
             });
             return total;
         }
@@ -1271,7 +1276,9 @@
                 name: '',
                 description: '',
                 modelUrl: '',
+                thumbnailUrl: '',
                 file: null,
+                thumbFile: null,
                 sizeError: ''
             });
             render3dObjectsList();
@@ -1479,9 +1486,73 @@
                     }
                     sync3dObjectsFormData();
                 });
-                modelRow.appendChild(urlInput);
+                // 4. 오브제 썸네일 이미지 (선택)
+                const thumbRow = document.createElement('div');
+                thumbRow.className = 'obj3d-field-row';
+                const thumbLabel = document.createElement('label');
+                thumbLabel.className = 'obj3d-sub-label';
+                thumbLabel.innerHTML = '4. 오브제 썸네일 이미지 (전시관 카드 썸네일용 / 선택)';
+
+                const thumbWrap = document.createElement('div');
+                thumbWrap.className = 'obj3d-file-row';
+
+                const singleThumbInput = document.createElement('input');
+                singleThumbInput.type = 'file';
+                singleThumbInput.accept = 'image/*';
+                singleThumbInput.style.display = 'none';
+
+                const thumbBtn = document.createElement('button');
+                thumbBtn.type = 'button';
+                thumbBtn.className = 'btn-obj3d-file';
+                thumbBtn.textContent = item.thumbFile || item.thumbnailUrl ? '🖼️ 썸네일 변경' : '🖼️ 썸네일 이미지 선택';
+                thumbBtn.onclick = () => singleThumbInput.click();
+
+                const thumbStatus = document.createElement('span');
+                thumbStatus.className = 'obj3d-file-status';
+                if (item.thumbFile) {
+                    const mb = (item.thumbFile.size / (1024 * 1024)).toFixed(2);
+                    thumbStatus.textContent = `새 파일 선택됨: ${item.thumbFile.name} (${mb}MB)`;
+                    thumbStatus.style.color = '#15803D';
+                } else if (item.thumbnailUrl) {
+                    thumbStatus.textContent = `현재 썸네일: ${item.thumbnailUrl}`;
+                    thumbStatus.style.color = 'var(--text-light)';
+                } else {
+                    thumbStatus.textContent = '선택된 이미지 없음';
+                    thumbStatus.style.color = 'var(--gray)';
+                }
+
+                singleThumbInput.addEventListener('change', (e) => {
+                    const chosen = e.target.files && e.target.files[0];
+                    if (!chosen) return;
+                    item.thumbFile = chosen;
+                    render3dObjectsList();
+                });
+
+                thumbWrap.appendChild(thumbBtn);
+                thumbWrap.appendChild(thumbStatus);
+                thumbWrap.appendChild(singleThumbInput);
+                thumbRow.appendChild(thumbLabel);
+                thumbRow.appendChild(thumbWrap);
+
+                const thumbUrlInput = document.createElement('input');
+                thumbUrlInput.type = 'text';
+                thumbUrlInput.className = 'input-text';
+                thumbUrlInput.style.marginTop = '6px';
+                thumbUrlInput.style.height = '34px';
+                thumbUrlInput.style.fontSize = '11.5px';
+                thumbUrlInput.placeholder = '또는 썸네일 이미지 URL 직접 입력·수정 (선택)';
+                thumbUrlInput.value = item.thumbFile ? '' : (item.thumbnailUrl || '');
+                thumbUrlInput.addEventListener('input', (e) => {
+                    item.thumbnailUrl = e.target.value.trim();
+                    if (item.thumbnailUrl) {
+                        item.thumbFile = null;
+                    }
+                    sync3dObjectsFormData();
+                });
+                thumbRow.appendChild(thumbUrlInput);
 
                 card.appendChild(modelRow);
+                card.appendChild(thumbRow);
                 listEl.appendChild(card);
             });
 
@@ -1491,11 +1562,14 @@
         function sync3dObjectsFormData() {
             const hiddenContainer = document.getElementById('objects3dHiddenInputs');
             const modelFilesInput = document.getElementById('objectModelFiles');
+            const thumbFilesInput = document.getElementById('objectThumbnailFiles');
             if (!hiddenContainer || !modelFilesInput) return;
 
             hiddenContainer.innerHTML = '';
-            const dt = new DataTransfer();
+            const dtModel = new DataTransfer();
+            const dtThumb = new DataTransfer();
             let modelFileIdx = 0;
+            let thumbFileIdx = 0;
 
             const submittedInput = document.createElement('input');
             submittedInput.type = 'hidden';
@@ -1506,8 +1580,14 @@
             object3dItems.forEach((item) => {
                 let resolvedModelToken = item.modelUrl || '';
                 if (item.file) {
-                    dt.items.add(item.file);
+                    dtModel.items.add(item.file);
                     resolvedModelToken = `__NEW_MODEL_${modelFileIdx++}__`;
+                }
+
+                let resolvedThumbToken = item.thumbnailUrl || '';
+                if (item.thumbFile) {
+                    dtThumb.items.add(item.thumbFile);
+                    resolvedThumbToken = `__NEW_THUMB_${thumbFileIdx++}__`;
                 }
 
                 const idHidden = document.createElement('input');
@@ -1533,9 +1613,18 @@
                 urlHidden.name = 'objectModelUrls';
                 urlHidden.value = resolvedModelToken;
                 hiddenContainer.appendChild(urlHidden);
+
+                const thumbHidden = document.createElement('input');
+                thumbHidden.type = 'hidden';
+                thumbHidden.name = 'objectThumbnailUrls';
+                thumbHidden.value = resolvedThumbToken;
+                hiddenContainer.appendChild(thumbHidden);
             });
 
-            modelFilesInput.files = dt.files;
+            modelFilesInput.files = dtModel.files;
+            if (thumbFilesInput) {
+                thumbFilesInput.files = dtThumb.files;
+            }
         }
 
         render3dObjectsList();

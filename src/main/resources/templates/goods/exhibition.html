@@ -469,12 +469,17 @@
                      onclick="openSpatialViewer(Number(this.getAttribute('data-index')))">
                     <div class="gallery-frame-mat">
                         <span class="frame-index-tag" th:text="${#numbers.formatInteger(stat.count, 2)}">01</span>
-                        <span class="frame-format-tag" th:text="${obj.modelFormat()}" style="position:absolute;right:10px;top:10px;font-size:10px;color:#9A9A9A;font-weight:600;">GLB</span>
                         <div class="frame-thumb-canvas-wrap">
-                            <img class="frame-thumb-img" th:id="'frameThumbImg-' + ${stat.index}" th:alt="${obj.name}">
-                            <div class="frame-thumb-placeholder" th:id="'frameThumbPlaceholder-' + ${stat.index}">
-                                <span class="frame-cube-icon">🧊</span>
-                                <span class="frame-loading-text">3D 프리뷰 생성 중...</span>
+                            <img class="frame-thumb-img"
+                                 th:id="'frameThumbImg-' + ${stat.index}"
+                                 th:src="${obj.thumbnailUrl != null and !obj.thumbnailUrl.isBlank() ? obj.thumbnailUrl : ''}"
+                                 th:style="${obj.thumbnailUrl != null and !obj.thumbnailUrl.isBlank() ? 'display:block;' : 'display:none;'}"
+                                 th:alt="${obj.name}">
+                            <div class="frame-thumb-placeholder"
+                                 th:id="'frameThumbPlaceholder-' + ${stat.index}"
+                                 th:style="${obj.thumbnailUrl != null and !obj.thumbnailUrl.isBlank() ? 'display:none;' : 'display:flex;'}">
+                                <span class="frame-cube-icon" style="font-size: 26px; opacity: 0.25;">🏛️</span>
+                                <span class="frame-loading-text" th:text="${obj.name != null and !obj.name.isBlank() ? obj.name : '3D 오브제'}">3D 오브제</span>
                             </div>
                         </div>
                     </div>
@@ -739,71 +744,22 @@
             });
         }
 
-        async function generateGalleryThumbnails() {
+        // 썸네일 이미지 로드 실패 시 대체 플레이스홀더 처리
+        function setupThumbnailFallbacks() {
             if (!objects || objects.length === 0) return;
-
-            let offRenderer;
-            try {
-                offRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-                offRenderer.setSize(320, 320);
-                offRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-                offRenderer.outputColorSpace = THREE.SRGBColorSpace;
-            } catch (e) {
-                return;
-            }
-
-            const thumbScene = new THREE.Scene();
-            const thumbCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-            thumbCamera.position.set(2.1, 1.5, 2.8);
-            thumbCamera.lookAt(0, 0, 0);
-
-            const amb = new THREE.AmbientLight(0xffffff, 1.35);
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x475569, 0.9);
-            const dir = new THREE.DirectionalLight(0xffffff, 1.8);
-            dir.position.set(4, 6, 5);
-            thumbScene.add(amb, hemi, dir);
-
             for (let i = 0; i < objects.length; i++) {
-                const item = objects[i];
                 const imgEl = document.getElementById(`frameThumbImg-${i}`);
                 const phEl = document.getElementById(`frameThumbPlaceholder-${i}`);
-                if (!item || !item.modelUrl) continue;
-
-                const txtEl = phEl ? phEl.querySelector('.frame-loading-text') : null;
-
-                try {
-                    const modelPivot = await loadNormalized3dModel(item, (evt) => {
-                        if (!txtEl) return;
-                        if (evt && evt.lengthComputable && evt.total > 0) {
-                            const pct = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
-                            txtEl.textContent = `3D 프리뷰 로딩 중... (${pct}%)`;
-                        } else if (evt && evt.loaded > 0) {
-                            const mb = (evt.loaded / (1024 * 1024)).toFixed(1);
-                            txtEl.textContent = `3D 프리뷰 로딩 중... (${mb}MB)`;
-                        }
+                if (imgEl && phEl) {
+                    imgEl.addEventListener('error', () => {
+                        imgEl.style.display = 'none';
+                        phEl.style.display = 'flex';
                     });
-                    modelPivot.rotation.y = -0.35;
-                    thumbScene.add(modelPivot);
-                    offRenderer.render(thumbScene, thumbCamera);
-                    const dataUrl = offRenderer.domElement.toDataURL('image/png');
-                    thumbScene.remove(modelPivot);
-
-                    if (imgEl && dataUrl) {
-                        imgEl.src = dataUrl;
-                        imgEl.style.display = 'block';
-                        if (phEl) phEl.style.display = 'none';
-                    }
-                } catch (err) {
-                    if (txtEl) {
-                        txtEl.textContent = (item.name || '3D OBJECT') + ' (클릭하여 보기)';
-                    }
                 }
             }
-
-            offRenderer.dispose();
         }
 
-        generateGalleryThumbnails();
+        setupThumbnailFallbacks();
 
         // =========================================================
         // 2. 스페이셜 상세 3D 뷰어 (Three.js + OrbitControls)

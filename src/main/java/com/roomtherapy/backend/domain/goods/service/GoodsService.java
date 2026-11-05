@@ -380,9 +380,10 @@ public class GoodsService {
                     throw new IllegalArgumentException("3D 오브제 '" + name + "'의 3D 모델 파일을 업로드하거나 URL을 입력해주세요.");
                 }
 
+                String thumbnailUrl = dto.thumbnailUrl() != null ? dto.thumbnailUrl().trim() : "";
                 if (dto.id() != null && existingMap.containsKey(dto.id())) {
                     Goods3dObject existing = existingMap.get(dto.id());
-                    existing.update(name, description, modelUrl, orderIndex++);
+                    existing.update(name, description, modelUrl, thumbnailUrl, orderIndex++);
                     retainedIds.add(existing.getId());
                     toSave.add(existing);
                 } else {
@@ -391,6 +392,7 @@ public class GoodsService {
                             .name(name)
                             .description(description)
                             .modelUrl(modelUrl)
+                            .thumbnailUrl(thumbnailUrl)
                             .displayOrder(orderIndex++)
                             .build();
                     toSave.add(created);

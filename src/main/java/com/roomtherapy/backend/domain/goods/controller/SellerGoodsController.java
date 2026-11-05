@@ -1,14 +1,23 @@
 package com.roomtherapy.backend.domain.goods.controller;
 
+import com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsCreateRequestDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsExcelImportResult;
 import com.roomtherapy.backend.domain.goods.dto.GoodsResponseDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsUpdateRequestDto;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
+import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
+import com.roomtherapy.backend.domain.goods.service.GoodsExcelService;
 import com.roomtherapy.backend.domain.goods.service.GoodsService;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
+import com.roomtherapy.backend.global.storage.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -19,7 +28,20 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -29,8 +51,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class SellerGoodsController {
 
     private final GoodsService goodsService;
-    private final com.roomtherapy.backend.global.storage.StorageService storageService;
-    private final com.roomtherapy.backend.domain.goods.service.GoodsExcelService goodsExcelService;
+    private final StorageService storageService;
+    private final GoodsExcelService goodsExcelService;
 
     /**
      * 판매자 굿즈 및 인증코드 등록 폼 화면
@@ -49,19 +71,21 @@ public class SellerGoodsController {
     }
 
     /**
-     * 판매자 굿즈 및 인증코드 등록 제출 처리 (다중 이미지 및 3D 오브제 업로드 지원)
+     * 판매자 굿즈 및 인증코드 등록 제출 처리 (다중 이미지 및 3D 오브제/썸네일 업로드 지원)
      */
     @PostMapping
     public String createGoods(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute("form") GoodsCreateRequestDto form,
             BindingResult bindingResult,
-            @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectIds", required = false) java.util.List<String> objectIds,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectNames", required = false) java.util.List<String> objectNames,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectDescriptions", required = false) java.util.List<String> objectDescriptions,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelUrls", required = false) java.util.List<String> objectModelUrls,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles,
+            @RequestParam(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
+            @RequestParam(name = "objectIds", required = false) List<String> objectIds,
+            @RequestParam(name = "objectNames", required = false) List<String> objectNames,
+            @RequestParam(name = "objectDescriptions", required = false) List<String> objectDescriptions,
+            @RequestParam(name = "objectModelUrls", required = false) List<String> objectModelUrls,
+            @RequestParam(name = "objectModelFiles", required = false) List<MultipartFile> objectModelFiles,
+            @RequestParam(name = "objectThumbnailUrls", required = false) List<String> objectThumbnailUrls,
+            @RequestParam(name = "objectThumbnailFiles", required = false) List<MultipartFile> objectThumbnailFiles,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -93,11 +117,11 @@ public class SellerGoodsController {
             GoodsCreateRequestDto targetForm = form;
             // 다중 이미지 파일이 업로드된 경우 스토리지 저장 후 URL 결합
             if (imageFiles != null && !imageFiles.isEmpty()) {
-                java.util.List<org.springframework.web.multipart.MultipartFile> validFiles = imageFiles.stream()
+                List<MultipartFile> validFiles = imageFiles.stream()
                         .filter(f -> f != null && !f.isEmpty())
                         .toList();
                 if (!validFiles.isEmpty()) {
-                    java.util.List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
+                    List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
                     String combinedUrls = resolveCombinedImageUrls(form.imageUrl(), uploadedUrls);
                     targetForm = form.withImageUrl(combinedUrls);
                 } else {
@@ -107,8 +131,8 @@ public class SellerGoodsController {
                 targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
             }
 
-            java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> objects3d =
-                    resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles);
+            List<Goods3dObjectDto> objects3d =
+                    resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles, objectThumbnailUrls, objectThumbnailFiles);
 
             GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), targetForm, objects3d);
             redirectAttributes.addFlashAttribute("successMessage",
@@ -129,8 +153,8 @@ public class SellerGoodsController {
      */
     @GetMapping("/codes")
     public String viewAllAuthCodes(
-            @org.springframework.web.bind.annotation.RequestParam(name = "goodsId", required = false) Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam(name = "view", defaultValue = "grouped") String viewMode,
+            @RequestParam(name = "goodsId", required = false) Long goodsId,
+            @RequestParam(name = "view", defaultValue = "grouped") String viewMode,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         if (userDetails == null) {
@@ -150,7 +174,7 @@ public class SellerGoodsController {
     @GetMapping("/{goodsId}/codes")
     public String viewAuthCodes(
             @PathVariable Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam(name = "view", defaultValue = "grouped") String viewMode,
+            @RequestParam(name = "view", defaultValue = "grouped") String viewMode,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         populateAuthCodesModel(goodsId, viewMode, userDetails, model);
@@ -165,23 +189,22 @@ public class SellerGoodsController {
         Long userId = userDetails != null ? userDetails.getUserId() : null;
         boolean isAdmin = userDetails != null && userDetails.isAdmin();
 
-        java.util.List<Goods> manageableGoods = goodsService.getManageableGoodsList(userId, isAdmin);
-        java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> allAuthCodeItems =
+        List<Goods> manageableGoods = goodsService.getManageableGoodsList(userId, isAdmin);
+        List<GoodsAuthCodeItemDto> allAuthCodeItems =
                 goodsService.getAuthCodeItems(null, userId, isAdmin);
 
-        java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> filteredAuthCodeItems =
+        List<GoodsAuthCodeItemDto> filteredAuthCodeItems =
                 selectedGoodsId != null
                         ? allAuthCodeItems.stream().filter(item -> selectedGoodsId.equals(item.goodsId())).toList()
                         : allAuthCodeItems;
 
-        java.util.Map<Long, java.util.List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto>> codesByGoodsId =
-                new java.util.LinkedHashMap<>();
+        Map<Long, List<GoodsAuthCodeItemDto>> codesByGoodsId = new LinkedHashMap<>();
         for (Goods g : manageableGoods) {
-            codesByGoodsId.put(g.getId(), new java.util.ArrayList<>());
+            codesByGoodsId.put(g.getId(), new ArrayList<>());
         }
-        for (com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto item : allAuthCodeItems) {
+        for (GoodsAuthCodeItemDto item : allAuthCodeItems) {
             if (item.goodsId() != null) {
-                codesByGoodsId.computeIfAbsent(item.goodsId(), k -> new java.util.ArrayList<>()).add(item);
+                codesByGoodsId.computeIfAbsent(item.goodsId(), k -> new ArrayList<>()).add(item);
             }
         }
 
@@ -209,8 +232,8 @@ public class SellerGoodsController {
     @PostMapping("/{goodsId}/codes")
     public String addAuthCodes(
             @PathVariable Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam("authCodesInput") String authCodesInput,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam("authCodesInput") String authCodesInput,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -242,7 +265,7 @@ public class SellerGoodsController {
     public String deleteAuthCode(
             @PathVariable Long goodsId,
             @PathVariable Long codeId,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -294,13 +317,15 @@ public class SellerGoodsController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute("form") GoodsUpdateRequestDto form,
             BindingResult bindingResult,
-            @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objects3dSubmitted", required = false) Boolean objects3dSubmitted,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectIds", required = false) java.util.List<String> objectIds,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectNames", required = false) java.util.List<String> objectNames,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectDescriptions", required = false) java.util.List<String> objectDescriptions,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelUrls", required = false) java.util.List<String> objectModelUrls,
-            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles,
+            @RequestParam(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
+            @RequestParam(name = "objects3dSubmitted", required = false) Boolean objects3dSubmitted,
+            @RequestParam(name = "objectIds", required = false) List<String> objectIds,
+            @RequestParam(name = "objectNames", required = false) List<String> objectNames,
+            @RequestParam(name = "objectDescriptions", required = false) List<String> objectDescriptions,
+            @RequestParam(name = "objectModelUrls", required = false) List<String> objectModelUrls,
+            @RequestParam(name = "objectModelFiles", required = false) List<MultipartFile> objectModelFiles,
+            @RequestParam(name = "objectThumbnailUrls", required = false) List<String> objectThumbnailUrls,
+            @RequestParam(name = "objectThumbnailFiles", required = false) List<MultipartFile> objectThumbnailFiles,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -323,11 +348,11 @@ public class SellerGoodsController {
         try {
             GoodsUpdateRequestDto targetForm = form;
             if (imageFiles != null && !imageFiles.isEmpty()) {
-                java.util.List<org.springframework.web.multipart.MultipartFile> validFiles = imageFiles.stream()
+                List<MultipartFile> validFiles = imageFiles.stream()
                         .filter(f -> f != null && !f.isEmpty())
                         .toList();
                 if (!validFiles.isEmpty()) {
-                    java.util.List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
+                    List<String> uploadedUrls = storageService.uploadFiles(validFiles, "goods");
                     String combinedUrls = resolveCombinedImageUrls(form.imageUrl(), uploadedUrls);
                     targetForm = form.withImageUrl(combinedUrls);
                 } else {
@@ -348,9 +373,10 @@ public class SellerGoodsController {
             }
 
             boolean has3dParams = Boolean.TRUE.equals(objects3dSubmitted)
-                    || objectNames != null || objectModelUrls != null || objectModelFiles != null;
-            java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> objects3d = has3dParams
-                    ? resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles)
+                    || objectNames != null || objectModelUrls != null || objectModelFiles != null
+                    || objectThumbnailUrls != null || objectThumbnailFiles != null;
+            List<Goods3dObjectDto> objects3d = has3dParams
+                    ? resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles, objectThumbnailUrls, objectThumbnailFiles)
                     : null;
 
             goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm, objects3d);
@@ -376,7 +402,7 @@ public class SellerGoodsController {
     public String deleteGoods3dObject(
             @PathVariable Long goodsId,
             @PathVariable Long objectId,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -399,8 +425,8 @@ public class SellerGoodsController {
     @PostMapping("/{goodsId}/stock")
     public String updateStock(
             @PathVariable Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam("stockQuantity") int stockQuantity,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam("stockQuantity") int stockQuantity,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -418,8 +444,8 @@ public class SellerGoodsController {
     @PostMapping("/{goodsId}/status")
     public String updateStatus(
             @PathVariable Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam("status") com.roomtherapy.backend.domain.goods.entity.GoodsStatus status,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam("status") GoodsStatus status,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -437,7 +463,7 @@ public class SellerGoodsController {
     @PostMapping("/{goodsId}/delete")
     public String deleteGoods(
             @PathVariable Long goodsId,
-            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @RequestParam(name = "redirect", required = false) String redirect,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -458,7 +484,7 @@ public class SellerGoodsController {
     /**
      * 기존 이미지 URL 및 신규 업로드된 이미지 파일 URL들을 정렬 순서 및 플레이스홀더에 맞게 결합
      */
-    private String resolveCombinedImageUrls(String imageUrl, java.util.List<String> uploadedUrls) {
+    private String resolveCombinedImageUrls(String imageUrl, List<String> uploadedUrls) {
         if (uploadedUrls == null || uploadedUrls.isEmpty()) {
             return cleanImageUrls(imageUrl);
         }
@@ -468,7 +494,7 @@ public class SellerGoodsController {
         }
 
         String resolved = imageUrl.trim();
-        java.util.Set<Integer> replacedIndices = new java.util.HashSet<>();
+        Set<Integer> replacedIndices = new HashSet<>();
 
         for (int i = 0; i < uploadedUrls.size(); i++) {
             String placeholder = "__NEW_FILE_" + i + "__";
@@ -478,7 +504,7 @@ public class SellerGoodsController {
             }
         }
 
-        java.util.List<String> unplacedUrls = new java.util.ArrayList<>();
+        List<String> unplacedUrls = new ArrayList<>();
         for (int i = 0; i < uploadedUrls.size(); i++) {
             if (!replacedIndices.contains(i)) {
                 unplacedUrls.add(uploadedUrls.get(i));
@@ -500,29 +526,41 @@ public class SellerGoodsController {
         if (urls == null || urls.isBlank()) {
             return "";
         }
-        return java.util.Arrays.stream(urls.split(","))
+        return Arrays.stream(urls.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.startsWith("__NEW_FILE_"))
-                .collect(java.util.stream.Collectors.joining(","));
+                .collect(Collectors.joining(","));
     }
 
     /**
-     * 폼에서 전달된 3D 오브제(ID, 이름, 설명, 모델 URL/플레이스홀더)와 업로드된 3D 모델 파일을 결합하여 DTO 리스트 생성
+     * 폼에서 전달된 3D 오브제(ID, 이름, 설명, 모델 URL/플레이스홀더)와 업로드된 3D 모델 및 썸네일 파일을 결합하여 DTO 리스트 생성
      */
-    private java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> resolveGoods3dObjects(
-            java.util.List<String> objectIds,
-            java.util.List<String> objectNames,
-            java.util.List<String> objectDescriptions,
-            java.util.List<String> objectModelUrls,
-            java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles) {
+    private List<Goods3dObjectDto> resolveGoods3dObjects(
+            List<String> objectIds,
+            List<String> objectNames,
+            List<String> objectDescriptions,
+            List<String> objectModelUrls,
+            List<MultipartFile> objectModelFiles,
+            List<String> objectThumbnailUrls,
+            List<MultipartFile> objectThumbnailFiles) {
 
-        java.util.List<String> uploadedModelUrls = java.util.List.of();
+        List<String> uploadedModelUrls = List.of();
         if (objectModelFiles != null && !objectModelFiles.isEmpty()) {
-            java.util.List<org.springframework.web.multipart.MultipartFile> validModelFiles = objectModelFiles.stream()
+            List<MultipartFile> validModelFiles = objectModelFiles.stream()
                     .filter(f -> f != null && !f.isEmpty())
                     .toList();
             if (!validModelFiles.isEmpty()) {
                 uploadedModelUrls = storageService.uploadFiles(validModelFiles, "goods-3d");
+            }
+        }
+
+        List<String> uploadedThumbnailUrls = List.of();
+        if (objectThumbnailFiles != null && !objectThumbnailFiles.isEmpty()) {
+            List<MultipartFile> validThumbFiles = objectThumbnailFiles.stream()
+                    .filter(f -> f != null && !f.isEmpty())
+                    .toList();
+            if (!validThumbFiles.isEmpty()) {
+                uploadedThumbnailUrls = storageService.uploadFiles(validThumbFiles, "goods-3d-thumb");
             }
         }
 
@@ -531,9 +569,11 @@ public class SellerGoodsController {
         if (objectModelUrls != null) count = Math.max(count, objectModelUrls.size());
         if (objectDescriptions != null) count = Math.max(count, objectDescriptions.size());
         if (objectIds != null) count = Math.max(count, objectIds.size());
+        if (objectThumbnailUrls != null) count = Math.max(count, objectThumbnailUrls.size());
 
-        java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> result = new java.util.ArrayList<>();
+        List<Goods3dObjectDto> result = new ArrayList<>();
         int fallbackFileIdx = 0;
+        int fallbackThumbFileIdx = 0;
 
         for (int i = 0; i < count; i++) {
             Long id = null;
@@ -549,6 +589,8 @@ public class SellerGoodsController {
                     ? objectDescriptions.get(i).trim() : "";
             String rawModelUrl = (objectModelUrls != null && i < objectModelUrls.size() && objectModelUrls.get(i) != null)
                     ? objectModelUrls.get(i).trim() : "";
+            String rawThumbnailUrl = (objectThumbnailUrls != null && i < objectThumbnailUrls.size() && objectThumbnailUrls.get(i) != null)
+                    ? objectThumbnailUrls.get(i).trim() : "";
 
             if (rawModelUrl.startsWith("__NEW_MODEL_") && rawModelUrl.endsWith("__")) {
                 String idxStr = rawModelUrl.substring("__NEW_MODEL_".length(), rawModelUrl.length() - 2);
@@ -563,10 +605,23 @@ public class SellerGoodsController {
                 rawModelUrl = uploadedModelUrls.get(fallbackFileIdx++);
             }
 
+            if (rawThumbnailUrl.startsWith("__NEW_THUMB_") && rawThumbnailUrl.endsWith("__")) {
+                String idxStr = rawThumbnailUrl.substring("__NEW_THUMB_".length(), rawThumbnailUrl.length() - 2);
+                try {
+                    int thumbIdx = Integer.parseInt(idxStr);
+                    if (thumbIdx >= 0 && thumbIdx < uploadedThumbnailUrls.size()) {
+                        rawThumbnailUrl = uploadedThumbnailUrls.get(thumbIdx);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            } else if (rawThumbnailUrl.isEmpty() && fallbackThumbFileIdx < uploadedThumbnailUrls.size()) {
+                rawThumbnailUrl = uploadedThumbnailUrls.get(fallbackThumbFileIdx++);
+            }
+
             if (name.isEmpty() && rawModelUrl.isEmpty()) {
                 continue;
             }
-            result.add(new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(id, name, desc, rawModelUrl, result.size()));
+            result.add(new Goods3dObjectDto(id, name, desc, rawModelUrl, rawThumbnailUrl, result.size()));
         }
 
         return result;
@@ -576,14 +631,14 @@ public class SellerGoodsController {
      * 굿즈 일괄 등록용 엑셀 표준 템플릿 다운로드
      */
     @GetMapping("/template/excel")
-    public org.springframework.http.ResponseEntity<byte[]> downloadTemplate() {
+    public ResponseEntity<byte[]> downloadTemplate() {
         log.info("굿즈 일괄 등록 엑셀 양식 다운로드 요청");
         byte[] templateBytes = goodsExcelService.generateTemplateWorkbook();
 
-        String filename = java.net.URLEncoder.encode("굿즈_일괄등록_양식.xlsx", java.nio.charset.StandardCharsets.UTF_8).replaceAll("\\+", "%20");
-        return org.springframework.http.ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename)
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        String filename = URLEncoder.encode("굿즈_일괄등록_양식.xlsx", StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(templateBytes);
     }
 
@@ -592,7 +647,7 @@ public class SellerGoodsController {
      */
     @PostMapping("/import/excel")
     public String importGoodsExcel(
-            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         if (userDetails == null) {
@@ -603,7 +658,7 @@ public class SellerGoodsController {
                 userDetails.getUserId(), userDetails.isAdmin(), file != null ? file.getOriginalFilename() : "null");
 
         try {
-            com.roomtherapy.backend.domain.goods.dto.GoodsExcelImportResult result =
+            GoodsExcelImportResult result =
                     goodsExcelService.importGoods(file, userDetails.getUserId(), userDetails.isAdmin());
             redirectAttributes.addFlashAttribute("importResult", result);
             if (!result.hasErrors() && result.successCount() > 0) {

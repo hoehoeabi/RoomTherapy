@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -69,8 +71,8 @@ public class WebExceptionHandler {
     /**
      * 접근 권한 거부 예외 처리 (403 Forbidden - @PreAuthorize 등)
      */
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ModelAndView handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ModelAndView handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[Web Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
         return createErrorView(response, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED.getCode(), ErrorCode.ACCESS_DENIED.getMessage());
     }
@@ -78,8 +80,8 @@ public class WebExceptionHandler {
     /**
      * 파일 업로드 허용 용량 초과 예외 처리 (413 Payload Too Large)
      */
-    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
-    public ModelAndView handleMaxUploadSizeExceededException(org.springframework.web.multipart.MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ModelAndView handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[Web File Upload Size Exceeded] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
         return createErrorView(response, ErrorCode.FILE_SIZE_EXCEEDED.getStatus(), ErrorCode.FILE_SIZE_EXCEEDED.getCode(), ErrorCode.FILE_SIZE_EXCEEDED.getMessage());
     }

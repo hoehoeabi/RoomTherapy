@@ -7,12 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * 유니티(C#) 및 외부 클라이언트 REST API (@RestController) 전용 전역 예외 처리기
@@ -63,8 +65,8 @@ public class ApiExceptionHandler {
     /**
      * 파일 업로드 허용 용량 초과 예외 처리 (413 Payload Too Large)
      */
-    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
-    public ApiResponse<Void> handleMaxUploadSizeExceededException(org.springframework.web.multipart.MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ApiResponse<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[REST API File Upload Size Exceeded] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
         response.setStatus(ErrorCode.FILE_SIZE_EXCEEDED.getStatus().value());
         return ApiResponse.error(ErrorCode.FILE_SIZE_EXCEEDED);
@@ -83,8 +85,8 @@ public class ApiExceptionHandler {
     /**
      * 접근 권한 거부 예외 처리 (403 Forbidden - @PreAuthorize 등)
      */
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ApiResponse<Void> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ApiResponse<Void> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request, HttpServletResponse response) {
         log.warn("[REST API Access Denied] URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
         response.setStatus(HttpStatus.FORBIDDEN.value());
         return ApiResponse.error(HttpStatus.FORBIDDEN.value(), ErrorCode.ACCESS_DENIED.getCode(), ErrorCode.ACCESS_DENIED.getMessage());

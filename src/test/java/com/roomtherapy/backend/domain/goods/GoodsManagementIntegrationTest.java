@@ -1,11 +1,15 @@
 package com.roomtherapy.backend.domain.goods;
 
+import com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder;
 import com.roomtherapy.backend.domain.delivery.repository.DeliveryOrderRepository;
+import com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto;
+import com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsCreateRequestDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsResponseDto;
 import com.roomtherapy.backend.domain.goods.dto.GoodsUpdateRequestDto;
 import com.roomtherapy.backend.domain.goods.entity.Goods;
 import com.roomtherapy.backend.domain.goods.entity.GoodsStatus;
+import com.roomtherapy.backend.domain.goods.repository.Goods3dObjectRepository;
 import com.roomtherapy.backend.domain.goods.repository.GoodsAuthCodeRepository;
 import com.roomtherapy.backend.domain.goods.repository.GoodsRepository;
 import com.roomtherapy.backend.domain.goods.service.GoodsService;
@@ -19,8 +23,13 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +44,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import org.springframework.mock.web.MockMultipartFile;
 
 @ActiveProfiles("local")
 @SpringBootTest
@@ -56,7 +64,7 @@ class GoodsManagementIntegrationTest {
     private GoodsAuthCodeRepository goodsAuthCodeRepository;
 
     @Autowired
-    private com.roomtherapy.backend.domain.goods.repository.Goods3dObjectRepository goods3dObjectRepository;
+    private Goods3dObjectRepository goods3dObjectRepository;
 
     @Autowired
     private DeliveryOrderRepository deliveryOrderRepository;
@@ -67,11 +75,11 @@ class GoodsManagementIntegrationTest {
     @Autowired
     private JwtProvider jwtProvider;
 
-    @org.springframework.boot.test.context.TestConfiguration
+    @TestConfiguration
     static class TestConfig {
-        @org.springframework.context.annotation.Bean
-        public org.springframework.security.oauth2.client.registration.ClientRegistrationRepository clientRegistrationRepository() {
-            return org.mockito.Mockito.mock(org.springframework.security.oauth2.client.registration.ClientRegistrationRepository.class);
+        @Bean
+        public ClientRegistrationRepository clientRegistrationRepository() {
+            return Mockito.mock(ClientRegistrationRepository.class);
         }
     }
 
@@ -458,8 +466,8 @@ class GoodsManagementIntegrationTest {
                 .build());
 
         // 해당 굿즈로 배송 주문 1건 생성
-        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder order = deliveryOrderRepository.save(
-                com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder.builder()
+        DeliveryOrder order = deliveryOrderRepository.save(
+                DeliveryOrder.builder()
                         .user(seller1)
                         .goods(goods)
                         .stageCode("ew-unlink-test")
@@ -480,7 +488,7 @@ class GoodsManagementIntegrationTest {
         assertThat(goodsRepository.existsById(goods.getId())).isFalse();
 
         // 배송 주문은 보존되며, goods_id는 null로 해제되고 기존 굿즈명은 유지됨
-        com.roomtherapy.backend.domain.delivery.entity.DeliveryOrder updatedOrder =
+        DeliveryOrder updatedOrder =
                 deliveryOrderRepository.findById(order.getId()).orElseThrow();
         assertThat(updatedOrder.getGoods()).isNull();
         assertThat(updatedOrder.isGoodsDeleted()).isTrue();
@@ -628,12 +636,14 @@ class GoodsManagementIntegrationTest {
         MockMultipartFile fbxFile = new MockMultipartFile("objectModelFiles", "desk.fbx", "application/octet-stream", "fbx-data".getBytes());
         MockMultipartFile objFile = new MockMultipartFile("objectModelFiles", "chair.obj", "text/plain", "v 0 0 0".getBytes());
         MockMultipartFile usdzFile = new MockMultipartFile("objectModelFiles", "plant.usdz", "model/vnd.usdz+zip", "usdz-data".getBytes());
+        MockMultipartFile thumbFile0 = new MockMultipartFile("objectThumbnailFiles", "lamp_thumb.png", "image/png", "png-data".getBytes());
 
         mockMvc.perform(multipart("/seller/goods")
                         .file(glbFile)
                         .file(fbxFile)
                         .file(objFile)
                         .file(usdzFile)
+                        .file(thumbFile0)
                         .cookie(new Cookie("accessToken", seller1Token))
                         .param("name", "스테이지 1 룸테라피 패키지")
                         .param("description", "스테이지 1 클리어 리워드")
@@ -643,7 +653,8 @@ class GoodsManagementIntegrationTest {
                         .param("objectIds", "", "", "", "")
                         .param("objectNames", "아늑한 무드등", "원목 책상", "패브릭 의자", "미니 화분")
                         .param("objectDescriptions", "따뜻한 조명의 무드등", "정리정돈용 원목 책상", "편안한 의자", "책상 위 작은 화분")
-                        .param("objectModelUrls", "__NEW_MODEL_0__", "__NEW_MODEL_1__", "__NEW_MODEL_2__", "__NEW_MODEL_3__"))
+                        .param("objectModelUrls", "__NEW_MODEL_0__", "__NEW_MODEL_1__", "__NEW_MODEL_2__", "__NEW_MODEL_3__")
+                        .param("objectThumbnailUrls", "__NEW_THUMB_0__", "", "", ""))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/goods"));
 
@@ -652,6 +663,7 @@ class GoodsManagementIntegrationTest {
         assertThat(savedObjects).hasSize(4);
         assertThat(savedObjects.get(0).getName()).isEqualTo("아늑한 무드등");
         assertThat(savedObjects.get(0).getModelUrl()).endsWith(".glb");
+        assertThat(savedObjects.get(0).getThumbnailUrl()).endsWith(".png");
         assertThat(savedObjects.get(1).getName()).isEqualTo("원목 책상");
         assertThat(savedObjects.get(1).getModelUrl()).endsWith(".fbx");
         assertThat(savedObjects.get(2).getName()).isEqualTo("패브릭 의자");
@@ -683,8 +695,8 @@ class GoodsManagementIntegrationTest {
                 seller1.getId(),
                 new GoodsCreateRequestDto("스테이지 2 리워드", "설명", 0, "https://s3/stage2.png", 15, "RT-STG201"),
                 List.of(
-                        new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(null, "오브제 A", "설명 A", "/uploads/goods-3d/a.glb", 0),
-                        new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(null, "오브제 B", "설명 B", "/uploads/goods-3d/b.fbx", 1)
+                        new Goods3dObjectDto(null, "오브제 A", "설명 A", "/uploads/goods-3d/a.glb", 0),
+                        new Goods3dObjectDto(null, "오브제 B", "설명 B", "/uploads/goods-3d/b.fbx", 1)
                 )
         );
 
@@ -759,10 +771,10 @@ class GoodsManagementIntegrationTest {
                 .andExpect(model().attributeExists("manageableGoods", "allAuthCodeItems", "codesByGoodsId"))
                 .andExpect(result -> {
                     @SuppressWarnings("unchecked")
-                    List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto> items =
-                            (List<com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto>) result.getModelAndView().getModel().get("allAuthCodeItems");
+                    List<GoodsAuthCodeItemDto> items =
+                            (List<GoodsAuthCodeItemDto>) result.getModelAndView().getModel().get("allAuthCodeItems");
                     assertThat(items).hasSize(3);
-                    assertThat(items).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::goodsName)
+                    assertThat(items).extracting(GoodsAuthCodeItemDto::goodsName)
                             .containsExactlyInAnyOrder("스테이지1 무드등", "스테이지1 무드등", "스테이지2 협탁");
                 });
 
@@ -782,7 +794,7 @@ class GoodsManagementIntegrationTest {
 
         var codesAfterAdd = goodsService.getAuthCodeItems(goodsA.id(), seller1.getId(), false);
         assertThat(codesAfterAdd).hasSize(4);
-        assertThat(codesAfterAdd).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::code)
+        assertThat(codesAfterAdd).extracting(GoodsAuthCodeItemDto::code)
                 .containsExactly("RT-A01", "RT-A02", "RT-A03", "RT-A04");
 
         Long codeToDeleteId = codesAfterAdd.stream()
@@ -805,7 +817,7 @@ class GoodsManagementIntegrationTest {
 
         var codesAfterDelete = goodsService.getAuthCodeItems(goodsA.id(), seller1.getId(), false);
         assertThat(codesAfterDelete).hasSize(3);
-        assertThat(codesAfterDelete).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::code)
+        assertThat(codesAfterDelete).extracting(GoodsAuthCodeItemDto::code)
                 .containsExactly("RT-A01", "RT-A03", "RT-A04");
     }
 
