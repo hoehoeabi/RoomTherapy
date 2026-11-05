@@ -23,33 +23,34 @@
             -webkit-tap-highlight-color: transparent;
         }
         body {
-            background-color: #EFEFEF;
+            background-color: #E1DED7;
             color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
+            padding: max(20px, env(safe-area-inset-top)) 14px 48px;
         }
         .app-container {
             width: 100%;
             max-width: 390px;
-            min-height: 100vh;
             background: #FFFFFF;
-            padding: max(56px, calc(env(safe-area-inset-top) + 24px)) 20px 40px;
+            border-radius: 28px;
+            padding: 46px 22px 38px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.05);
             position: relative;
         }
         @media (max-width: 440px) {
             body {
-                background-color: #FFFFFF;
+                background-color: #E1DED7;
+                padding: max(16px, env(safe-area-inset-top)) 12px 42px;
             }
             .app-container {
-                box-shadow: none;
-                min-height: 100dvh;
-                padding: max(52px, calc(env(safe-area-inset-top) + 20px)) 18px 36px;
+                border-radius: 26px;
+                padding: 42px 20px 34px;
             }
         }
         .brand-badge {
@@ -59,14 +60,14 @@
             font-weight: 700;
             font-size: 11px;
             letter-spacing: 0.5px;
-            padding: 4px 14px;
+            padding: 5px 16px;
             border-radius: 9999px;
-            margin-bottom: 14px;
+            margin-bottom: 18px;
         }
         .logo-wrap {
-            width: 202px;
+            width: 204px;
             height: auto;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -78,18 +79,18 @@
         }
         .main-sub {
             color: var(--gray);
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 500;
             letter-spacing: -0.3px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             text-align: center;
         }
         .user-card {
             width: 100%;
-            background: var(--bg-light);
+            background: #F7F7F7;
             border-radius: 14px;
             padding: 16px 18px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             text-align: left;
         }
         .user-card-header {
@@ -100,16 +101,13 @@
         }
         .user-card-label {
             font-size: 11px;
-            color: var(--gray);
+            color: #B0B0B0;
             font-weight: 500;
         }
         .badge-roommate {
-            background: #FFEBEB;
-            color: var(--red);
-            font-size: 10.5px;
+            color: var(--gray);
+            font-size: 11px;
             font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 9999px;
         }
         .badge-admin {
             background: #EEF2FF;
@@ -129,9 +127,9 @@
         }
         .user-name {
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--title);
-            margin-bottom: 4px;
+            margin-bottom: 5px;
             letter-spacing: -0.4px;
         }
         .user-status-text {
@@ -147,10 +145,10 @@
         }
         .btn-card {
             width: 100%;
-            height: 42px;
+            height: 46px;
             background: #FFFFFF;
-            border: 1px solid var(--border-light);
-            border-radius: 10px;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -158,7 +156,7 @@
             text-decoration: none;
             color: var(--title);
             font-size: 13.5px;
-            font-weight: 600;
+            font-weight: 700;
             transition: background 0.15s ease, border-color 0.15s ease;
         }
         .btn-card:active {
@@ -166,14 +164,14 @@
         }
         .btn-card-sub {
             font-size: 12px;
-            color: var(--gray);
-            font-weight: 400;
+            color: #8E8E8E;
+            font-weight: 500;
         }
         .btn-cta {
             width: 100%;
-            height: 44px;
+            height: 46px;
             background: var(--red);
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -182,7 +180,7 @@
             color: #FFFFFF;
             font-size: 14px;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.24);
             transition: opacity 0.15s ease, transform 0.1s ease;
         }
         .btn-cta:active {
@@ -190,33 +188,43 @@
             transform: scale(0.99);
         }
         .btn-cta-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             object-fit: contain;
+        }
+        .role-manage-space {
+            width: 100%;
+            min-height: 44px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
         }
         .logout-form {
             width: 100%;
-            margin-top: 14px;
+            margin-top: 6px;
             text-align: center;
         }
         .btn-logout {
             background: none;
             border: none;
-            color: var(--gray);
+            color: #AEAEAE;
             font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
-            padding: 8px;
+            padding: 8px 16px;
         }
         .btn-logout:hover {
             color: var(--text);
         }
         .btn-kakao {
             width: 100%;
-            height: 44px;
+            height: 46px;
             background: #FEE500;
             color: #191919;
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -228,10 +236,10 @@
         }
         .btn-game {
             width: 100%;
-            height: 44px;
-            background: #1E293B;
+            height: 46px;
+            background: #000000;
             color: #FFFFFF;
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -239,29 +247,28 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.18);
             transition: opacity 0.15s ease, transform 0.1s ease;
             margin-bottom: 10px;
         }
         .btn-game:active {
-            opacity: 0.92;
+            opacity: 0.9;
             transform: scale(0.99);
         }
         .admin-link {
             font-size: 12px;
             color: #4F46E5;
             text-decoration: none;
-            margin-top: 6px;
             font-weight: 600;
             text-align: center;
+            padding: 6px 0;
         }
         .seller-link {
             font-size: 12px;
             color: #2563EB;
             text-decoration: none;
-            margin-top: 6px;
             font-weight: 600;
             text-align: center;
+            padding: 6px 0;
         }
     </style>
 </head>
@@ -279,8 +286,7 @@
         <!-- 비로그인 상태 -->
         <div th:if="${user == null}" style="width: 100%;">
             <a href="https://link.inpock.co.kr/roomtheraphy" target="_blank" rel="noopener noreferrer" class="btn-game">
-                <img src="/images/coin_logo.png" alt="게임" class="btn-cta-icon">
-                <span>방정리 게임하러 가기</span>
+                <span>룸테라피 게임 바로가기</span>
             </a>
 
             <a href="/oauth2/authorization/kakao" class="btn-kakao">
@@ -323,21 +329,20 @@
                     <span th:text="${recentOrderSummary}">2026-10-22 18:05 주문 건 현재 접수 완료</span>
                     <span style="font-size: 10px; color: var(--gray);">&gt;</span>
                 </a>
-                <div class="user-status-text" th:unless="${recentOrderSummary != null}" th:text="${user.email != null ? user.email : '연동 완료'}">
-                    user@test.com
+                <div class="user-status-text" th:unless="${recentOrderSummary != null}">
+                    게임을 클리어해서 굿즈를 받아보세요!
                 </div>
             </div>
 
             <!-- 네비게이션 액션 버튼 -->
             <div class="actions-wrap">
                 <a href="https://link.inpock.co.kr/roomtheraphy" target="_blank" rel="noopener noreferrer" class="btn-game" style="margin-bottom: 0;">
-                    <img src="/images/coin_logo.png" alt="게임" class="btn-cta-icon">
-                    <span>방정리 게임하러 가기</span>
+                    <span>룸테라피 게임 바로가기</span>
                 </a>
 
                 <a href="/mypage" class="btn-card">
                     <span>마이페이지</span>
-                    <span class="btn-card-sub">배송 신청내역 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 프로필</span>
+                    <span class="btn-card-sub">프로필 &nbsp;|&nbsp; 배송지 &nbsp;|&nbsp; 신청내역</span>
                 </a>
 
                 <a href="/goods" class="btn-card">
@@ -346,9 +351,12 @@
 
                 <a href="/delivery" class="btn-cta">
                     <img src="/images/coin_logo.png" alt="코인" class="btn-cta-icon">
-                    <span>굿즈 배송 신청하러 가기</span>
+                    <span>굿즈 배송 신청하기</span>
                 </a>
+            </div>
 
+            <!-- 판매자/관리자 전용 바로가기 여백 영역 (일반 유저일 때는 빈 여백으로 유지되어 로그아웃이 하단에 여유 있게 배치됨) -->
+            <div class="role-manage-space">
                 <!-- 관리자 전용 바로가기 -->
                 <a th:if="${user.authorities != null and user.authorities.?[authority == 'ROLE_ADMIN'].size() > 0}" 
                    href="/admin/deliveries" class="admin-link">
