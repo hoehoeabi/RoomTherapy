@@ -808,6 +808,44 @@ class GoodsManagementIntegrationTest {
         assertThat(codesAfterDelete).extracting(com.roomtherapy.backend.domain.goods.dto.GoodsAuthCodeItemDto::code)
                 .containsExactly("RT-A01", "RT-A03", "RT-A04");
     }
+
+    @Test
+    @DisplayName("MVC: 전시관 3D 오브제 동일 출처(Same-Origin) 스트리밍 엔드포인트가 모델 바이너리와 CORS·버퍼링 방지 헤더를 정상 반환한다")
+    void streamObject3dModel_SameOriginEndpoint_StreamsBinaryWithHeaders() throws Exception {
+        MockMultipartFile glbFile = new MockMultipartFile(
+                "objectModelFiles", "exhibition_lamp.glb", "model/gltf-binary", "glb-binary-payload-123".getBytes());
+
+        mockMvc.perform(multipart("/seller/goods")
+                        .file(glbFile)
+                        .cookie(new Cookie("accessToken", seller1Token))
+                        .param("name", "스트리밍 테스트 굿즈")
+                        .param("description", "3D 스트리밍 검증")
+                        .param("stockQuantity", "10")
+                        .param("imageUrl", "https://s3/lamp.png")
+                        .param("authCodesInput", "RT-STREAM01")
+                        .param("objects3dSubmitted", "true")
+                        .param("objectIds", "")
+                        .param("objectNames", "아늑한 램프")
+                        .param("objectDescriptions", "램프 설명")
+                        .param("objectModelUrls", "__NEW_MODEL_0__"))
+                .andExpect(status().is3xxRedirection());
+
+        Goods savedGoods = goodsRepository.findAll().stream()
+                .filter(g -> "스트리밍 테스트 굿즈".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
+
+        var objects = goods3dObjectRepository.findByGoodsIdOrderByDisplayOrderAscIdAsc(savedGoods.getId());
+        assertThat(objects).hasSize(1);
+        Long objId = objects.get(0).getId();
+
+        mockMvc.perform(get("/goods/" + savedGoods.getId() + "/objects/" + objId + "/model/object.glb"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "model/gltf-binary"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "*"))
+                .andExpect(header().string("X-Accel-Buffering", "no"))
+                .andExpect(content().bytes("glb-binary-payload-123".getBytes()));
+    }
 }
 
 

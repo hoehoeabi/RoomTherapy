@@ -616,7 +616,7 @@
             cursor: grabbing;
         }
 
-        /* 3D 모델 로딩 오버레이 (참조 이미지 3의 "Loading 3D model...") */
+        /* 3D 모델 로딩 오버레이 (실시간 다운로드 퍼센트 및 에러/재시도 표시) */
         .model-loading-state {
             position: absolute;
             inset: 0;
@@ -624,16 +624,19 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            background: rgba(15, 18, 26, 0.32);
-            pointer-events: none;
+            gap: 10px;
+            background: rgba(15, 18, 26, 0.42);
+            pointer-events: auto;
             z-index: 5;
             transition: opacity 0.2s ease;
+            padding: 20px;
+            text-align: center;
         }
 
         .model-loading-state.hidden {
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
         }
 
         .model-spinner {
@@ -652,8 +655,48 @@
         .model-loading-label {
             font-size: 13px;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.92);
+            color: rgba(255, 255, 255, 0.94);
             letter-spacing: 0.2px;
+        }
+
+        .model-loading-sub {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: rgba(203, 213, 225, 0.88);
+        }
+
+        .model-progress-track {
+            width: min(220px, 75%);
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            overflow: hidden;
+        }
+
+        .model-progress-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #38BDF8, #818CF8);
+            transition: width 0.15s ease;
+        }
+
+        .btn-model-retry {
+            display: none;
+            margin-top: 4px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-model-retry:hover {
+            background: rgba(255, 255, 255, 0.28);
         }
 
         /* 우측 상단 닫기(X) 버튼 */
@@ -926,8 +969,13 @@
                 <button type="button" class="btn-stage-close" onclick="closeSpatialViewer()" title="닫기 (ESC)">&times;</button>
 
                 <div id="modelLoadingState" class="model-loading-state">
-                    <div class="model-spinner"></div>
-                    <div class="model-loading-label" id="modelLoadingText">Loading 3D model...</div>
+                    <div id="modelSpinner" class="model-spinner"></div>
+                    <div class="model-loading-label" id="modelLoadingText">3D 모델을 불러오는 중입니다...</div>
+                    <div class="model-loading-sub" id="modelLoadingSub">잠시만 기다려주세요</div>
+                    <div id="modelProgressTrack" class="model-progress-track">
+                        <div id="modelProgressFill" class="model-progress-fill"></div>
+                    </div>
+                    <button type="button" id="btnModelRetry" class="btn-model-retry" onclick="retryCurrentStageObject()">↻ 다시 불러오기</button>
                 </div>
 
                 <div id="threeCanvasContainer"></div>
@@ -971,12 +1019,15 @@
 
         // 로더 인스턴스 구성
         const gltfLoader = new GLTFLoader();
+        gltfLoader.setCrossOrigin('anonymous');
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
         gltfLoader.setDRACOLoader(dracoLoader);
 
         const fbxLoader = new FBXLoader();
+        fbxLoader.setCrossOrigin('anonymous');
         const objLoader = new OBJLoader();
+        objLoader.setCrossOrigin('anonymous');
         const usdzLoader = new USDZLoader();
 
         function getExtension(url) {
@@ -986,67 +1037,140 @@
             return idx >= 0 ? clean.substring(idx) : '';
         }
 
-        // 확장자별 3D 모델 비동기 로드 및 크기·중심점 정규화
-        function loadNormalized3dModel(modelUrl) {
-            return new Promise((resolve, reject) => {
-                const ext = getExtension(modelUrl);
+        // 외부 S3 URL(Cross-Origin)인 경우 브라우저 CORS 차단을 우회하기 위해 백엔드 동일 출처(Same-Origin) 스트리밍 엔드포인트로 변환
+        function resolveSameOriginModelUrl(item) {
+            if (!item || !item.modelUrl) return '';
+            const rawUrl = item.modelUrl.trim();
+            const ext = getExtension(rawUrl) || '.glb';
+            if ((rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && item.id != null && goodsId) {
+                return `/goods/${goodsId}/objects/${item.id}/model/object${ext}`;
+            }
+            return rawUrl;
+        }
 
-                const onLoaded = (rawRoot) => {
-                    try {
-                        const pivot = new THREE.Group();
-                        // 재질 보정 (텍스처/메시 그림자 및 기본 재질 보완)
-                        rawRoot.traverse((child) => {
-                            if (child.isMesh) {
-                                if (!child.material) {
-                                    child.material = new THREE.MeshStandardMaterial({
-                                        color: 0xd8dee9,
-                                        roughness: 0.45,
-                                        metalness: 0.1
-                                    });
-                                }
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                            }
+        // 인메모리 3D 모델 템플릿 캐시 및 진행 중인 다운로드 요청 통합(Deduplication)
+        const modelTemplateCache = new Map(); // key -> THREE.Group (normalized template)
+        const inflightLoads = new Map();      // key -> { promise: Promise<THREE.Group>, listeners: Set<Function> }
+
+        function getModelCacheKey(item) {
+            if (!item) return '';
+            return item.id != null ? `id:${item.id}:${item.modelUrl || ''}` : `url:${item.modelUrl || ''}`;
+        }
+
+        function normalizeRaw3dRoot(rawRoot) {
+            const pivot = new THREE.Group();
+            rawRoot.traverse((child) => {
+                if (child.isMesh) {
+                    if (!child.material) {
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0xd8dee9,
+                            roughness: 0.45,
+                            metalness: 0.1
                         });
+                    }
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
 
-                        const box = new THREE.Box3().setFromObject(rawRoot);
-                        const size = new THREE.Vector3();
-                        const center = new THREE.Vector3();
-                        box.getSize(size);
-                        box.getCenter(center);
+            const box = new THREE.Box3().setFromObject(rawRoot);
+            const size = new THREE.Vector3();
+            const center = new THREE.Vector3();
+            box.getSize(size);
+            box.getCenter(center);
 
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const targetSpan = 2.2;
-                        const scale = maxDim > 0.0001 ? (targetSpan / maxDim) : 1;
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const targetSpan = 2.2;
+            const scale = maxDim > 0.0001 ? (targetSpan / maxDim) : 1;
 
-                        rawRoot.scale.multiplyScalar(scale);
+            rawRoot.scale.multiplyScalar(scale);
 
-                        // 스케일 적용 후 다시 중심점 정렬
-                        const scaledBox = new THREE.Box3().setFromObject(rawRoot);
-                        const scaledCenter = new THREE.Vector3();
-                        scaledBox.getCenter(scaledCenter);
-                        rawRoot.position.sub(scaledCenter);
+            const scaledBox = new THREE.Box3().setFromObject(rawRoot);
+            const scaledCenter = new THREE.Vector3();
+            scaledBox.getCenter(scaledCenter);
+            rawRoot.position.sub(scaledCenter);
 
-                        pivot.add(rawRoot);
-                        resolve(pivot);
+            pivot.add(rawRoot);
+            return pivot;
+        }
+
+        function loadFromSingleUrl(targetUrl, ext, onProgress) {
+            return new Promise((resolve, reject) => {
+                const handleLoaded = (rawRoot) => {
+                    try {
+                        resolve(normalizeRaw3dRoot(rawRoot));
                     } catch (err) {
                         reject(err);
                     }
                 };
 
                 if (ext === '.glb' || ext === '.gltf') {
-                    gltfLoader.load(modelUrl, (gltf) => onLoaded(gltf.scene || gltf.scenes[0]), undefined, reject);
+                    gltfLoader.load(targetUrl, (gltf) => handleLoaded(gltf.scene || gltf.scenes[0]), onProgress, reject);
                 } else if (ext === '.fbx') {
-                    fbxLoader.load(modelUrl, (group) => onLoaded(group), undefined, reject);
+                    fbxLoader.load(targetUrl, (group) => handleLoaded(group), onProgress, reject);
                 } else if (ext === '.obj') {
-                    objLoader.load(modelUrl, (group) => onLoaded(group), undefined, reject);
+                    objLoader.load(targetUrl, (group) => handleLoaded(group), onProgress, reject);
                 } else if (ext === '.usdz') {
-                    usdzLoader.load(modelUrl, (group) => onLoaded(group), undefined, reject);
+                    usdzLoader.load(targetUrl, (group) => handleLoaded(group), onProgress, reject);
                 } else {
-                    // 기본 GLTF 시도
-                    gltfLoader.load(modelUrl, (gltf) => onLoaded(gltf.scene || gltf.scenes[0]), undefined, reject);
+                    gltfLoader.load(targetUrl, (gltf) => handleLoaded(gltf.scene || gltf.scenes[0]), onProgress, reject);
                 }
             });
+        }
+
+        // 캐시 및 중복 다운로드 방지(In-Flight Deduplication)가 적용된 3D 모델 로더
+        async function loadNormalized3dModel(item, onProgressCallback) {
+            const cacheKey = getModelCacheKey(item);
+            if (modelTemplateCache.has(cacheKey)) {
+                return modelTemplateCache.get(cacheKey).clone(true);
+            }
+
+            if (inflightLoads.has(cacheKey)) {
+                const entry = inflightLoads.get(cacheKey);
+                if (typeof onProgressCallback === 'function') {
+                    entry.listeners.add(onProgressCallback);
+                }
+                const templatePivot = await entry.promise;
+                return templatePivot.clone(true);
+            }
+
+            const listeners = new Set();
+            if (typeof onProgressCallback === 'function') {
+                listeners.add(onProgressCallback);
+            }
+
+            const notifyProgress = (xhrEvt) => {
+                listeners.forEach((fn) => {
+                    try {
+                        fn(xhrEvt);
+                    } catch (ignore) {}
+                });
+            };
+
+            const primaryUrl = resolveSameOriginModelUrl(item);
+            const fallbackUrl = item.modelUrl ? item.modelUrl.trim() : '';
+            const ext = getExtension(fallbackUrl || primaryUrl);
+
+            const loadPromise = (async () => {
+                try {
+                    const pivot = await loadFromSingleUrl(primaryUrl, ext, notifyProgress);
+                    modelTemplateCache.set(cacheKey, pivot);
+                    return pivot;
+                } catch (primaryErr) {
+                    if (fallbackUrl && fallbackUrl !== primaryUrl) {
+                        const pivot = await loadFromSingleUrl(fallbackUrl, ext, notifyProgress);
+                        modelTemplateCache.set(cacheKey, pivot);
+                        return pivot;
+                    }
+                    throw primaryErr;
+                } finally {
+                    inflightLoads.delete(cacheKey);
+                }
+            })();
+
+            inflightLoads.set(cacheKey, { promise: loadPromise, listeners });
+            const resolvedTemplate = await loadPromise;
+            return resolvedTemplate.clone(true);
         }
 
         // =========================================================
@@ -1096,8 +1220,19 @@
                 const phEl = document.getElementById(`frameThumbPlaceholder-${i}`);
                 if (!item || !item.modelUrl) continue;
 
+                const txtEl = phEl ? phEl.querySelector('.frame-loading-text') : null;
+
                 try {
-                    const modelPivot = await loadNormalized3dModel(item.modelUrl);
+                    const modelPivot = await loadNormalized3dModel(item, (evt) => {
+                        if (!txtEl) return;
+                        if (evt && evt.lengthComputable && evt.total > 0) {
+                            const pct = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
+                            txtEl.textContent = `3D 프리뷰 로딩 중... (${pct}%)`;
+                        } else if (evt && evt.loaded > 0) {
+                            const mb = (evt.loaded / (1024 * 1024)).toFixed(1);
+                            txtEl.textContent = `3D 프리뷰 로딩 중... (${mb}MB)`;
+                        }
+                    });
                     modelPivot.rotation.y = -0.35;
                     thumbScene.add(modelPivot);
                     offRenderer.render(thumbScene, thumbCamera);
@@ -1110,9 +1245,8 @@
                         if (phEl) phEl.style.display = 'none';
                     }
                 } catch (err) {
-                    if (phEl) {
-                        const txt = phEl.querySelector('.frame-loading-text');
-                        if (txt) txt.textContent = (item.name || '3D OBJECT');
+                    if (txtEl) {
+                        txtEl.textContent = (item.name || '3D OBJECT') + ' (클릭하여 보기)';
                     }
                 }
             }
@@ -1230,7 +1364,7 @@
             }
             if (arLink) {
                 if (ext === '.usdz' && item.modelUrl) {
-                    arLink.href = item.modelUrl;
+                    arLink.href = resolveSameOriginModelUrl(item);
                     arLink.style.display = 'inline-flex';
                 } else {
                     arLink.style.display = 'none';
@@ -1253,25 +1387,68 @@
             }
 
             const loadingEl = document.getElementById('modelLoadingState');
+            const spinnerEl = document.getElementById('modelSpinner');
             const loadingTextEl = document.getElementById('modelLoadingText');
+            const loadingSubEl = document.getElementById('modelLoadingSub');
+            const progressTrackEl = document.getElementById('modelProgressTrack');
+            const progressFillEl = document.getElementById('modelProgressFill');
+            const retryBtnEl = document.getElementById('btnModelRetry');
+
             if (loadingEl) loadingEl.classList.remove('hidden');
-            if (loadingTextEl) loadingTextEl.textContent = 'Loading 3D model...';
+            if (spinnerEl) spinnerEl.style.display = 'block';
+            if (loadingTextEl) loadingTextEl.textContent = '3D 모델을 불러오는 중입니다...';
+            if (loadingSubEl) loadingSubEl.textContent = '데이터 스트리밍 준비 중...';
+            if (progressTrackEl) progressTrackEl.style.display = 'block';
+            if (progressFillEl) progressFillEl.style.width = '0%';
+            if (retryBtnEl) retryBtnEl.style.display = 'none';
 
             resetStageCamera();
 
             try {
-                const loadedPivot = await loadNormalized3dModel(item.modelUrl);
+                const loadedPivot = await loadNormalized3dModel(item, (evt) => {
+                    if (mySeq !== loadSeq) return;
+                    if (evt && evt.lengthComputable && evt.total > 0) {
+                        const pct = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
+                        const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
+                        if (loadingTextEl) loadingTextEl.textContent = `3D 모델 불러오는 중... ${pct}%`;
+                        if (loadingSubEl) loadingSubEl.textContent = `${loadedMb} MB / ${totalMb} MB 수신 완료`;
+                        if (progressFillEl) progressFillEl.style.width = `${pct}%`;
+                    } else if (evt && evt.loaded > 0) {
+                        const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
+                        if (loadingTextEl) loadingTextEl.textContent = `3D 모델 불러오는 중...`;
+                        if (loadingSubEl) loadingSubEl.textContent = `${loadedMb} MB 수신 중`;
+                        if (progressFillEl) progressFillEl.style.width = '65%';
+                    }
+                });
                 if (mySeq !== loadSeq) return;
                 activeModel = loadedPivot;
                 scene.add(activeModel);
                 if (loadingEl) loadingEl.classList.add('hidden');
             } catch (err) {
                 if (mySeq !== loadSeq) return;
+                if (spinnerEl) spinnerEl.style.display = 'none';
+                if (progressTrackEl) progressTrackEl.style.display = 'none';
                 if (loadingTextEl) {
-                    loadingTextEl.textContent = `3D 모델을 불러올 수 없습니다 (${fmt})`;
+                    loadingTextEl.textContent = `⚠️ 3D 모델을 불러올 수 없습니다 (${fmt})`;
+                }
+                if (loadingSubEl) {
+                    loadingSubEl.textContent = '네트워크 상태를 확인하거나 아래 버튼을 눌러 다시 시도해주세요.';
+                }
+                if (retryBtnEl) {
+                    retryBtnEl.style.display = 'inline-block';
                 }
             }
         }
+
+        window.retryCurrentStageObject = function() {
+            if (!objects || objects.length === 0) return;
+            const item = objects[currentIndex];
+            const cacheKey = getModelCacheKey(item);
+            modelTemplateCache.delete(cacheKey);
+            inflightLoads.delete(cacheKey);
+            loadObjectIntoStage(currentIndex);
+        };
 
         window.openSpatialViewer = function(index) {
             const overlay = document.getElementById('spatialDetailOverlay');
