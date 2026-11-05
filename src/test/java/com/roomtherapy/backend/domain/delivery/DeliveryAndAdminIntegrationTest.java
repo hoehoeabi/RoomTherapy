@@ -13,6 +13,7 @@ import com.roomtherapy.backend.domain.goods.service.RedisGoodsStockService;
 import com.roomtherapy.backend.domain.user.entity.Role;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
+import com.roomtherapy.backend.global.error.ErrorCode;
 import com.roomtherapy.backend.global.security.jwt.JwtProvider;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -539,7 +540,7 @@ class DeliveryAndAdminIntegrationTest {
                 .description("설명")
                 .price(0)
                 .stockQuantity(10)
-                .status(com.roomtherapy.backend.domain.goods.entity.GoodsStatus.ACTIVE)
+                .status(GoodsStatus.ACTIVE)
                 .build());
 
         DeliveryOrder orderA = deliveryOrderRepository.save(DeliveryOrder.builder()
@@ -679,7 +680,7 @@ class DeliveryAndAdminIntegrationTest {
                 .andExpect(model().attributeExists("errorMessage"))
                 .andDo(result -> {
                     String errorMsg = (String) result.getModelAndView().getModel().get("errorMessage");
-                    assertThat(errorMsg).isEqualTo(com.roomtherapy.backend.global.error.ErrorCode.GOODS_OUT_OF_STOCK.getMessage());
+                    assertThat(errorMsg).isEqualTo(ErrorCode.GOODS_OUT_OF_STOCK.getMessage());
                 });
     }
 }

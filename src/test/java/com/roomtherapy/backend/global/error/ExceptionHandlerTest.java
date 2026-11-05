@@ -1,17 +1,22 @@
 package com.roomtherapy.backend.global.error;
 
+import com.roomtherapy.backend.global.common.ApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.ModelAndView;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -24,7 +29,7 @@ class ExceptionHandlerTest {
     private WebApplicationContext context;
 
     @Test
-    @org.springframework.security.test.context.support.WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("HTML 요청 중 BusinessException 발생 시 error.html 뷰 및 메시지/상태코드 정상 반환")
     void htmlRequest_businessException_rendersErrorPage() throws Exception {
         MockMvc mockMvc = MockMvcBuilders
@@ -62,37 +67,37 @@ class ExceptionHandlerTest {
     @DisplayName("파일 업로드 한도 초과 시 WebExceptionHandler에서 413 상태코드와 error.html 뷰 반환")
     void handleMaxUploadSizeExceededException_web() {
         WebExceptionHandler handler = new WebExceptionHandler();
-        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/seller/goods");
-        org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
-        org.springframework.web.multipart.MaxUploadSizeExceededException exception = new org.springframework.web.multipart.MaxUploadSizeExceededException(70 * 1024 * 1024);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MaxUploadSizeExceededException exception = new MaxUploadSizeExceededException(70 * 1024 * 1024);
 
-        org.springframework.web.servlet.ModelAndView mav = handler.handleMaxUploadSizeExceededException(exception, request, response);
+        ModelAndView mav = handler.handleMaxUploadSizeExceededException(exception, request, response);
 
-        org.assertj.core.api.Assertions.assertThat(mav.getViewName()).isEqualTo("error");
-        org.assertj.core.api.Assertions.assertThat(mav.getModel().get("status")).isEqualTo(413);
-        org.assertj.core.api.Assertions.assertThat(mav.getModel().get("code")).isEqualTo("FILE_413_01");
-        org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(413);
+        assertThat(mav.getViewName()).isEqualTo("error");
+        assertThat(mav.getModel().get("status")).isEqualTo(413);
+        assertThat(mav.getModel().get("code")).isEqualTo("FILE_413_01");
+        assertThat(response.getStatus()).isEqualTo(413);
     }
 
     @Test
     @DisplayName("파일 업로드 한도 초과 시 ApiExceptionHandler에서 413 상태코드와 ApiResponse JSON 반환")
     void handleMaxUploadSizeExceededException_api() {
         ApiExceptionHandler handler = new ApiExceptionHandler();
-        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/api/goods/import");
-        org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
-        org.springframework.web.multipart.MaxUploadSizeExceededException exception = new org.springframework.web.multipart.MaxUploadSizeExceededException(70 * 1024 * 1024);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MaxUploadSizeExceededException exception = new MaxUploadSizeExceededException(70 * 1024 * 1024);
 
-        com.roomtherapy.backend.global.common.ApiResponse<Void> apiResponse = handler.handleMaxUploadSizeExceededException(exception, request, response);
+        ApiResponse<Void> apiResponse = handler.handleMaxUploadSizeExceededException(exception, request, response);
 
-        org.assertj.core.api.Assertions.assertThat(apiResponse.getStatus()).isEqualTo(413);
-        org.assertj.core.api.Assertions.assertThat(apiResponse.getCode()).isEqualTo("FILE_413_01");
-        org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(413);
+        assertThat(apiResponse.getStatus()).isEqualTo(413);
+        assertThat(apiResponse.getCode()).isEqualTo("FILE_413_01");
+        assertThat(response.getStatus()).isEqualTo(413);
     }
 
     @Test
-    @org.springframework.security.test.context.support.WithMockUser(roles = "USER")
+    @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자가 관리자/판매자 페이지 접근 시(403) 시큐리티 필터에서 에러 속성과 함께 /error 포워딩")
     void securityFilter_accessDenied_forwardsToErrorPage() throws Exception {
         MockMvc mockMvc = MockMvcBuilders
@@ -175,7 +180,7 @@ class ExceptionHandlerTest {
     }
 
     @Test
-    @org.springframework.security.test.context.support.WithMockUser(roles = "USER")
+    @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자가 API 권한 부족 요청 시(403) 일관된 JSON ApiResponse 반환")
     void securityFilter_apiAccessDenied_returnsJson() throws Exception {
         MockMvc mockMvc = MockMvcBuilders
