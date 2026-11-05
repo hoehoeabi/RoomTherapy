@@ -628,12 +628,14 @@ class GoodsManagementIntegrationTest {
         MockMultipartFile fbxFile = new MockMultipartFile("objectModelFiles", "desk.fbx", "application/octet-stream", "fbx-data".getBytes());
         MockMultipartFile objFile = new MockMultipartFile("objectModelFiles", "chair.obj", "text/plain", "v 0 0 0".getBytes());
         MockMultipartFile usdzFile = new MockMultipartFile("objectModelFiles", "plant.usdz", "model/vnd.usdz+zip", "usdz-data".getBytes());
+        MockMultipartFile thumbFile0 = new MockMultipartFile("objectThumbnailFiles", "lamp_thumb.png", "image/png", "png-data".getBytes());
 
         mockMvc.perform(multipart("/seller/goods")
                         .file(glbFile)
                         .file(fbxFile)
                         .file(objFile)
                         .file(usdzFile)
+                        .file(thumbFile0)
                         .cookie(new Cookie("accessToken", seller1Token))
                         .param("name", "스테이지 1 룸테라피 패키지")
                         .param("description", "스테이지 1 클리어 리워드")
@@ -643,7 +645,8 @@ class GoodsManagementIntegrationTest {
                         .param("objectIds", "", "", "", "")
                         .param("objectNames", "아늑한 무드등", "원목 책상", "패브릭 의자", "미니 화분")
                         .param("objectDescriptions", "따뜻한 조명의 무드등", "정리정돈용 원목 책상", "편안한 의자", "책상 위 작은 화분")
-                        .param("objectModelUrls", "__NEW_MODEL_0__", "__NEW_MODEL_1__", "__NEW_MODEL_2__", "__NEW_MODEL_3__"))
+                        .param("objectModelUrls", "__NEW_MODEL_0__", "__NEW_MODEL_1__", "__NEW_MODEL_2__", "__NEW_MODEL_3__")
+                        .param("objectThumbnailUrls", "__NEW_THUMB_0__", "", "", ""))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/goods"));
 
@@ -652,6 +655,7 @@ class GoodsManagementIntegrationTest {
         assertThat(savedObjects).hasSize(4);
         assertThat(savedObjects.get(0).getName()).isEqualTo("아늑한 무드등");
         assertThat(savedObjects.get(0).getModelUrl()).endsWith(".glb");
+        assertThat(savedObjects.get(0).getThumbnailUrl()).endsWith(".png");
         assertThat(savedObjects.get(1).getName()).isEqualTo("원목 책상");
         assertThat(savedObjects.get(1).getModelUrl()).endsWith(".fbx");
         assertThat(savedObjects.get(2).getName()).isEqualTo("패브릭 의자");
