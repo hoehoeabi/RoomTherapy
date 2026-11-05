@@ -1,5 +1,6 @@
 package com.roomtherapy.backend.global.storage;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CORSConfiguration;
+import software.amazon.awssdk.services.s3.model.CORSRule;
+import software.amazon.awssdk.services.s3.model.PutBucketCorsRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -48,6 +52,38 @@ public class S3StorageService implements StorageService {
 
     @Value("${cloud.aws.region.static:ap-northeast-2}")
     private String region;
+
+    /**
+     * 서버 기동 시 S3 버킷에 3D 오브제(Three.js fetch/XHR) 로드를 위한 CORS 규칙 자동 적용 시도.
+     * IAM 권한(s3:PutBucketCors)이 없더라도 기동이 중단되지 않도록 안전하게 예외를 처리합니다.
+     */
+    @PostConstruct
+    public void ensureBucketCorsConfigured() {
+        if (bucketName == null || bucketName.isBlank()) {
+            return;
+        }
+        try {
+            CORSRule corsRule = CORSRule.builder()
+                    .allowedOrigins("https://www.roomtherapy.kr", "https://roomtherapy.kr", "http://localhost:8080", "*")
+                    .allowedMethods("GET", "HEAD")
+                    .allowedHeaders("*")
+                    .exposeHeaders("Content-Length", "Content-Type", "ETag")
+                    .maxAgeSeconds(86400)
+                    .build();
+
+            CORSConfiguration corsConfig = CORSConfiguration.builder()
+                    .corsRules(corsRule)
+                    .build();
+
+            s3Client.putBucketCors(PutBucketCorsRequest.builder()
+                    .bucket(bucketName)
+                    .corsConfiguration(corsConfig)
+                    .build());
+            log.info("AWS S3 버킷({}) CORS 정책 자동 설정 완료", bucketName);
+        } catch (Exception e) {
+            log.info("AWS S3 버킷({}) CORS 자동 설정 건너뜀 (백엔드 동일 출처 스트리밍 프록시로 동작): {}", bucketName, e.getMessage());
+        }
+    }
 
     @Override
     public String uploadFile(MultipartFile file, String directory) {

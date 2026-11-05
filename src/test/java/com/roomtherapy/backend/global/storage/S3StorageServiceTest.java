@@ -8,6 +8,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutBucketCorsRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
@@ -15,8 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,6 +36,17 @@ class S3StorageServiceTest {
         s3StorageService = new S3StorageService(s3Client);
         ReflectionTestUtils.setField(s3StorageService, "bucketName", "roomtherapy-test-bucket");
         ReflectionTestUtils.setField(s3StorageService, "region", "ap-northeast-2");
+    }
+
+    @Test
+    @DisplayName("S3 버킷 CORS 자동 설정 메서드가 호출되면 GET/HEAD 허용 규칙을 포함한 PutBucketCorsRequest를 전송한다")
+    void ensureBucketCorsConfigured_CallsPutBucketCors_AndIgnoresPermissionErrorGracefully() {
+        s3StorageService.ensureBucketCorsConfigured();
+        verify(s3Client, times(1)).putBucketCors(any(PutBucketCorsRequest.class));
+
+        // IAM 권한 부족 등으로 예외가 발생하더라도 서버 기동을 중단시키지 않고 안전하게 무시하는지 검증
+        doThrow(new RuntimeException("AccessDenied: s3:PutBucketCors")).when(s3Client).putBucketCors(any(PutBucketCorsRequest.class));
+        assertThatCode(() -> s3StorageService.ensureBucketCorsConfigured()).doesNotThrowAnyException();
     }
 
     @Test
