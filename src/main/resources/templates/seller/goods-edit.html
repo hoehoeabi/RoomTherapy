@@ -705,7 +705,7 @@
                         <div id="uploadDropzone" class="upload-dropzone">
                             <div class="upload-dropzone-icon">📷</div>
                             <div class="upload-dropzone-text">+ 클릭하거나 사진 파일을 여기로 드래그하여 추가</div>
-                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: 70MB, 총 허용용량: 600MB)</div>
+                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: 70MB, 총 허용용량: 3000MB)</div>
                         </div>
                         <div id="imageSizeErrorNotice" style="display:none; margin-bottom: 8px; font-size: 11.5px; font-weight: 800; color: var(--red);"></div>
                         <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" style="display: none;">
@@ -732,7 +732,7 @@
                             <label class="form-label" style="margin-bottom: 2px;">🧊 스테이지 3D 오브제 관리 (추가 · 수정 · 삭제)</label>
                             <div class="form-label-desc" style="margin-bottom: 0;">
                                 등록된 3D 오브제의 <strong>이름, 설명, 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 수정하거나 <strong>[삭제]</strong> 및 <strong>[+ 3D 오브제 추가]</strong>를 수행할 수 있습니다.<br>
-                                <span style="color: var(--gray); font-weight: 700;">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 600MB</span>
+                                <span style="color: var(--gray); font-weight: 700;">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
                             </div>
                             <a th:href="@{'/goods/' + ${goods.id} + '/exhibition'}" class="btn-gen" style="margin-top: 8px; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;">전시관 미리보기 &gt;</a>
                         </div>
@@ -998,11 +998,11 @@
                 const totalWithFile = getTotalSelectedBytes(-1) + file.size;
                 const totalMb = (totalWithFile / (1024 * 1024)).toFixed(1);
                 if (file.size > MAX_FILE_SIZE) {
-                    errorMsg = `⚠️ 용량이 큽니다 (${file.name}: ${fileMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 600MB`;
+                    errorMsg = `⚠️ 용량이 큽니다 (${file.name}: ${fileMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 3000MB`;
                     continue;
                 }
-                if (totalWithFile > 600 * 1024 * 1024) {
-                    errorMsg = `⚠️ 용량이 큽니다 (전체 합산 ${totalMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 600MB`;
+                if (totalWithFile > 3000 * 1024 * 1024) {
+                    errorMsg = `⚠️ 용량이 큽니다 (전체 합산 ${totalMb}MB) — 사진별 최대용량: ${MAX_IMAGE_MB}MB / 총 허용용량: 3000MB`;
                     continue;
                 }
                 imageItems.push({
@@ -1098,7 +1098,7 @@
         // ============================================================
         const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
         const MAX_OBJECT_FILE_MB = 300;
-        const MAX_TOTAL_UPLOAD_MB = 600;
+        const MAX_TOTAL_UPLOAD_MB = 3000;
         const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024;
         const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024;
         /*<![CDATA[*/
