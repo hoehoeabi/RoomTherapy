@@ -25,7 +25,8 @@ import java.util.UUID;
 public class S3StorageService implements StorageService {
 
     private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
-            ".png", ".jpg", ".jpeg", ".webp", ".gif", ".glb"
+            ".png", ".jpg", ".jpeg", ".webp", ".gif",
+            ".glb", ".gltf", ".fbx", ".obj", ".usdz"
     );
 
     private final S3Client s3Client;

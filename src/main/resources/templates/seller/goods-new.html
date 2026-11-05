@@ -374,6 +374,150 @@
             border-color: var(--red);
             color: var(--red);
         }
+        /* 스테이지 3D 오브제 매니저 스타일 */
+        .obj3d-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+        .obj3d-card {
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-light);
+            border-radius: 10px;
+            padding: 12px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .obj3d-card:hover {
+            border-color: #FFD0D1;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+        }
+        .obj3d-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #F2F2F2;
+        }
+        .obj3d-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .obj3d-index-badge {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+            background: #2C2C35;
+            padding: 2px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.4px;
+        }
+        .obj3d-format-badge {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--red);
+            background: #FFEBEB;
+            padding: 2px 6px;
+            border-radius: 5px;
+        }
+        .obj3d-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-obj3d-ctrl {
+            background: #F4F4F6;
+            border: 1px solid #E2E2E6;
+            color: var(--text);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-obj3d-ctrl:hover:not(:disabled) {
+            background: #E8E8EC;
+        }
+        .btn-obj3d-ctrl:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .btn-obj3d-delete {
+            background: #FFF0F0;
+            border: 1px solid #FFD6D6;
+            color: var(--red);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-obj3d-delete:hover {
+            background: var(--red);
+            color: #FFFFFF;
+            border-color: var(--red);
+        }
+        .obj3d-field-row {
+            margin-bottom: 8px;
+        }
+        .obj3d-field-row:last-child {
+            margin-bottom: 0;
+        }
+        .obj3d-sub-label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--title);
+            margin-bottom: 4px;
+        }
+        .obj3d-file-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-obj3d-file {
+            padding: 7px 12px;
+            background: #2C2C35;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 7px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            white-space: nowrap;
+        }
+        .btn-obj3d-file:hover {
+            background: var(--red);
+        }
+        .obj3d-file-status {
+            font-size: 11.5px;
+            color: var(--text);
+            font-weight: 600;
+            word-break: break-all;
+            flex: 1;
+        }
+        .btn-add-obj3d {
+            width: 100%;
+            padding: 10px 12px;
+            background: #FFFFFF;
+            border: 1.5px dashed var(--red);
+            border-radius: 8px;
+            color: var(--red);
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-add-obj3d:hover {
+            background: #FFF5F5;
+        }
     </style>
 </head>
 <body>
@@ -390,7 +534,7 @@
         <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
 
         <div class="card">
-            <form th:action="@{/seller/goods}" th:object="${form}" method="post" enctype="multipart/form-data">
+            <form id="goodsCreateForm" th:action="@{/seller/goods}" th:object="${form}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label" for="name">굿즈 명칭 <span style="color: var(--red);">*</span></label>
                     <input type="text" id="name" th:field="*{name}" class="input-text" placeholder="예: 룸테라피 아늑한 무드등 (스테이지 1 리워드)" required>
@@ -443,6 +587,31 @@
                         <input type="hidden" id="imageUrl" th:field="*{imageUrl}">
                         <span class="field-error" th:errors="*{imageUrl}"></span>
                     </div>
+                </div>
+
+                <!-- 스테이지 3D 오브제 등록 영역 (다중 등록/수정/삭제 지원) -->
+                <div id="section-3d-objects" class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
+                    <div class="image-manager-header">
+                        <div>
+                            <label class="form-label" style="margin-bottom: 2px;">🧊 스테이지 3D 오브제 등록 (선택)</label>
+                            <div class="form-label-desc" style="margin-bottom: 0;">
+                                해당 스테이지(굿즈)의 <strong>3D 전시관</strong>에 전시할 오브제들을 등록하세요.<br>
+                                각 오브제마다 <strong>1. 오브제 이름 / 2. 오브제 설명 / 3. 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 설정할 수 있습니다.
+                            </div>
+                        </div>
+                        <span id="obj3dCountBadge" class="image-count-badge">0개</span>
+                    </div>
+
+                    <div id="obj3dList" class="obj3d-list">
+                        <!-- 자바스크립트로 렌더링 -->
+                    </div>
+
+                    <button type="button" class="btn-add-obj3d" onclick="add3dObjectItem()">+ 3D 오브제 추가</button>
+
+                    <!-- 신규 업로드된 3D 모델 파일들을 담는 멀티 파일 인풋 -->
+                    <input type="file" id="objectModelFiles" name="objectModelFiles" multiple accept=".glb,.gltf,.fbx,.obj,.usdz" style="display: none;">
+                    <!-- 서버로 전송할 3D 오브제 메타데이터 히든 필드 컨테이너 -->
+                    <div id="objects3dHiddenInputs"></div>
                 </div>
 
                 <div class="form-group">
@@ -739,6 +908,299 @@
 
         // 초기 렌더링 실행
         renderImageGrid();
+
+        // ============================================================
+        // 스테이지 3D 오브제 관리 매니저 (이름, 설명, 3D 모델 파일/URL)
+        // ============================================================
+        const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
+        let object3dItems = []; // { id: null, name: '', description: '', modelUrl: '', file: File|null }
+
+        function extractModelExt(filenameOrUrl) {
+            if (!filenameOrUrl) return '';
+            const clean = filenameOrUrl.split('?')[0].trim().toLowerCase();
+            const dotIdx = clean.lastIndexOf('.');
+            return dotIdx >= 0 ? clean.substring(dotIdx) : '';
+        }
+
+        function add3dObjectItem() {
+            object3dItems.push({
+                id: null,
+                name: '',
+                description: '',
+                modelUrl: '',
+                file: null
+            });
+            render3dObjectsList();
+        }
+
+        function move3dObjectItem(fromIdx, toIdx) {
+            if (toIdx < 0 || toIdx >= object3dItems.length) return;
+            const moved = object3dItems.splice(fromIdx, 1)[0];
+            object3dItems.splice(toIdx, 0, moved);
+            render3dObjectsList();
+        }
+
+        function delete3dObjectItem(index) {
+            object3dItems.splice(index, 1);
+            render3dObjectsList();
+        }
+
+        function render3dObjectsList() {
+            const listEl = document.getElementById('obj3dList');
+            const badgeEl = document.getElementById('obj3dCountBadge');
+            if (!listEl || !badgeEl) return;
+
+            listEl.innerHTML = '';
+            badgeEl.textContent = `${object3dItems.length}개`;
+
+            if (object3dItems.length === 0) {
+                listEl.innerHTML = '<div class="image-empty-notice" style="background:#FFFFFF;border:1px dashed var(--border-light);border-radius:8px;">등록된 3D 오브제가 없습니다. 아래 <strong>[+ 3D 오브제 추가]</strong> 버튼을 눌러 스테이지 오브제를 등록할 수 있습니다.</div>';
+                sync3dObjectsFormData();
+                return;
+            }
+
+            object3dItems.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'obj3d-card';
+
+                const numStr = String(idx + 1).padStart(2, '0');
+                const ext = item.file ? extractModelExt(item.file.name) : extractModelExt(item.modelUrl);
+                const extLabel = ext ? ext.replace('.', '').toUpperCase() : '미선택';
+
+                // 헤더 (순번 뱃지, 포맷 뱃지, 순서 이동 및 삭제 버튼)
+                const header = document.createElement('div');
+                header.className = 'obj3d-card-header';
+
+                const badgeGroup = document.createElement('div');
+                badgeGroup.className = 'obj3d-badge-group';
+                badgeGroup.innerHTML = `<span class="obj3d-index-badge">OBJECT ${numStr}</span><span class="obj3d-format-badge">${extLabel}</span>`;
+
+                const actions = document.createElement('div');
+                actions.className = 'obj3d-actions';
+
+                const upBtn = document.createElement('button');
+                upBtn.type = 'button';
+                upBtn.className = 'btn-obj3d-ctrl';
+                upBtn.textContent = '▲';
+                upBtn.title = '위로 이동';
+                upBtn.disabled = (idx === 0);
+                upBtn.onclick = () => move3dObjectItem(idx, idx - 1);
+
+                const downBtn = document.createElement('button');
+                downBtn.type = 'button';
+                downBtn.className = 'btn-obj3d-ctrl';
+                downBtn.textContent = '▼';
+                downBtn.title = '아래로 이동';
+                downBtn.disabled = (idx === object3dItems.length - 1);
+                downBtn.onclick = () => move3dObjectItem(idx, idx + 1);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'btn-obj3d-delete';
+                delBtn.textContent = '삭제';
+                delBtn.onclick = () => delete3dObjectItem(idx);
+
+                actions.appendChild(upBtn);
+                actions.appendChild(downBtn);
+                actions.appendChild(delBtn);
+
+                header.appendChild(badgeGroup);
+                header.appendChild(actions);
+                card.appendChild(header);
+
+                // 1. 오브제 이름
+                const nameRow = document.createElement('div');
+                nameRow.className = 'obj3d-field-row';
+                const nameLabel = document.createElement('label');
+                nameLabel.className = 'obj3d-sub-label';
+                nameLabel.innerHTML = '1. 오브제 이름 <span style="color:var(--red);">*</span>';
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'input-text';
+                nameInput.placeholder = '예: 따뜻한 원목 협탁 / 아늑한 무드등';
+                nameInput.value = item.name || '';
+                nameInput.addEventListener('input', (e) => {
+                    item.name = e.target.value;
+                    sync3dObjectsFormData();
+                });
+                nameRow.appendChild(nameLabel);
+                nameRow.appendChild(nameInput);
+                card.appendChild(nameRow);
+
+                // 2. 오브제 설명
+                const descRow = document.createElement('div');
+                descRow.className = 'obj3d-field-row';
+                const descLabel = document.createElement('label');
+                descLabel.className = 'obj3d-sub-label';
+                descLabel.textContent = '2. 오브제 설명';
+                const descInput = document.createElement('textarea');
+                descInput.className = 'input-text';
+                descInput.style.minHeight = '52px';
+                descInput.placeholder = '전시관 상세 뷰에서 오브제와 함께 표시될 설명을 입력하세요.';
+                descInput.value = item.description || '';
+                descInput.addEventListener('input', (e) => {
+                    item.description = e.target.value;
+                    sync3dObjectsFormData();
+                });
+                descRow.appendChild(descLabel);
+                descRow.appendChild(descInput);
+                card.appendChild(descRow);
+
+                // 3. 오브제 3D 모델 파일 또는 URL
+                const modelRow = document.createElement('div');
+                modelRow.className = 'obj3d-field-row';
+                const modelLabel = document.createElement('label');
+                modelLabel.className = 'obj3d-sub-label';
+                modelLabel.innerHTML = '3. 오브제 3D 모델 파일 (.glb, .gltf, .fbx, .obj, .usdz) <span style="color:var(--red);">*</span>';
+
+                const fileWrap = document.createElement('div');
+                fileWrap.className = 'obj3d-file-row';
+
+                const singleFileInput = document.createElement('input');
+                singleFileInput.type = 'file';
+                singleFileInput.accept = '.glb,.gltf,.fbx,.obj,.usdz';
+                singleFileInput.style.display = 'none';
+
+                const fileBtn = document.createElement('button');
+                fileBtn.type = 'button';
+                fileBtn.className = 'btn-obj3d-file';
+                fileBtn.textContent = item.file || item.modelUrl ? '📂 3D 파일 변경' : '📂 3D 파일 선택';
+                fileBtn.onclick = () => singleFileInput.click();
+
+                const fileStatus = document.createElement('span');
+                fileStatus.className = 'obj3d-file-status';
+                if (item.file) {
+                    fileStatus.textContent = `선택됨: ${item.file.name} (${(item.file.size / (1024 * 1024)).toFixed(2)}MB)`;
+                    fileStatus.style.color = '#16A34A';
+                } else if (item.modelUrl) {
+                    fileStatus.textContent = `현재 모델: ${item.modelUrl}`;
+                } else {
+                    fileStatus.textContent = '선택된 3D 모델 파일이 없습니다.';
+                    fileStatus.style.color = 'var(--gray)';
+                }
+
+                singleFileInput.addEventListener('change', (e) => {
+                    if (!e.target.files || e.target.files.length === 0) return;
+                    const chosen = e.target.files[0];
+                    const chosenExt = extractModelExt(chosen.name);
+                    if (!ALLOWED_3D_EXTS.includes(chosenExt)) {
+                        alert(`지원하지 않는 3D 파일 확장자입니다 (${chosenExt || '없음'}).\n지원 포맷: .glb, .gltf, .fbx, .obj, .usdz`);
+                        return;
+                    }
+                    if (chosen.size > MAX_FILE_SIZE) {
+                        alert(`3D 모델 파일 '${chosen.name}'의 용량이 70MB를 초과합니다.`);
+                        return;
+                    }
+                    item.file = chosen;
+                    render3dObjectsList();
+                });
+
+                fileWrap.appendChild(fileBtn);
+                fileWrap.appendChild(fileStatus);
+                fileWrap.appendChild(singleFileInput);
+                modelRow.appendChild(modelLabel);
+                modelRow.appendChild(fileWrap);
+
+                // 직접 URL 입력/수정 옵션
+                const urlInput = document.createElement('input');
+                urlInput.type = 'text';
+                urlInput.className = 'input-text';
+                urlInput.style.marginTop = '6px';
+                urlInput.style.height = '34px';
+                urlInput.style.fontSize = '11.5px';
+                urlInput.placeholder = '또는 외부/기존 3D 모델 URL 직접 입력 (예: /uploads/goods-3d/sample.glb)';
+                urlInput.value = item.file ? '' : (item.modelUrl || '');
+                urlInput.addEventListener('input', (e) => {
+                    item.modelUrl = e.target.value.trim();
+                    if (item.modelUrl) {
+                        item.file = null;
+                    }
+                    sync3dObjectsFormData();
+                });
+                modelRow.appendChild(urlInput);
+
+                card.appendChild(modelRow);
+                listEl.appendChild(card);
+            });
+
+            sync3dObjectsFormData();
+        }
+
+        function sync3dObjectsFormData() {
+            const hiddenContainer = document.getElementById('objects3dHiddenInputs');
+            const modelFilesInput = document.getElementById('objectModelFiles');
+            if (!hiddenContainer || !modelFilesInput) return;
+
+            hiddenContainer.innerHTML = '';
+            const dt = new DataTransfer();
+            let modelFileIdx = 0;
+
+            const submittedInput = document.createElement('input');
+            submittedInput.type = 'hidden';
+            submittedInput.name = 'objects3dSubmitted';
+            submittedInput.value = 'true';
+            hiddenContainer.appendChild(submittedInput);
+
+            object3dItems.forEach((item) => {
+                let resolvedModelToken = item.modelUrl || '';
+                if (item.file) {
+                    dt.items.add(item.file);
+                    resolvedModelToken = `__NEW_MODEL_${modelFileIdx++}__`;
+                }
+
+                const idHidden = document.createElement('input');
+                idHidden.type = 'hidden';
+                idHidden.name = 'objectIds';
+                idHidden.value = item.id != null ? String(item.id) : '';
+                hiddenContainer.appendChild(idHidden);
+
+                const nameHidden = document.createElement('input');
+                nameHidden.type = 'hidden';
+                nameHidden.name = 'objectNames';
+                nameHidden.value = item.name || '';
+                hiddenContainer.appendChild(nameHidden);
+
+                const descHidden = document.createElement('input');
+                descHidden.type = 'hidden';
+                descHidden.name = 'objectDescriptions';
+                descHidden.value = item.description || '';
+                hiddenContainer.appendChild(descHidden);
+
+                const urlHidden = document.createElement('input');
+                urlHidden.type = 'hidden';
+                urlHidden.name = 'objectModelUrls';
+                urlHidden.value = resolvedModelToken;
+                hiddenContainer.appendChild(urlHidden);
+            });
+
+            modelFilesInput.files = dt.files;
+        }
+
+        const createForm = document.getElementById('goodsCreateForm');
+        if (createForm) {
+            createForm.addEventListener('submit', function(e) {
+                syncFormData();
+                sync3dObjectsFormData();
+                for (let i = 0; i < object3dItems.length; i++) {
+                    const obj = object3dItems[i];
+                    const hasName = obj.name && obj.name.trim().length > 0;
+                    const hasModel = (obj.file != null) || (obj.modelUrl && obj.modelUrl.trim().length > 0);
+                    if (!hasName && !hasModel) continue;
+                    if (!hasName) {
+                        e.preventDefault();
+                        alert(`OBJECT ${String(i + 1).padStart(2, '0')}의 오브제 이름을 입력해주세요.`);
+                        return false;
+                    }
+                    if (!hasModel) {
+                        e.preventDefault();
+                        alert(`OBJECT ${String(i + 1).padStart(2, '0')} (${obj.name})의 3D 모델 파일을 선택하거나 URL을 입력해주세요.`);
+                        return false;
+                    }
+                }
+            });
+        }
+
+        render3dObjectsList();
     </script>
 </body>
 </html>

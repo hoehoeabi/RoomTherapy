@@ -49,7 +49,7 @@ public class SellerGoodsController {
     }
 
     /**
-     * 판매자 굿즈 및 인증코드 등록 제출 처리 (다중 이미지 업로드 지원)
+     * 판매자 굿즈 및 인증코드 등록 제출 처리 (다중 이미지 및 3D 오브제 업로드 지원)
      */
     @PostMapping
     public String createGoods(
@@ -57,6 +57,11 @@ public class SellerGoodsController {
             @Valid @ModelAttribute("form") GoodsCreateRequestDto form,
             BindingResult bindingResult,
             @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectIds", required = false) java.util.List<String> objectIds,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectNames", required = false) java.util.List<String> objectNames,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectDescriptions", required = false) java.util.List<String> objectDescriptions,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelUrls", required = false) java.util.List<String> objectModelUrls,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -102,7 +107,10 @@ public class SellerGoodsController {
                 targetForm = form.withImageUrl(cleanImageUrls(form.imageUrl()));
             }
 
-            GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), targetForm);
+            java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> objects3d =
+                    resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles);
+
+            GoodsResponseDto response = goodsService.registerGoods(userDetails.getUserId(), targetForm, objects3d);
             redirectAttributes.addFlashAttribute("successMessage",
                     String.format("굿즈 '%s'(재고: %d개, 인증코드: %d개)가 성공적으로 등록되었습니다.",
                             response.name(), response.stockQuantity(), response.authCodeCount()));
@@ -148,12 +156,13 @@ public class SellerGoodsController {
             model.addAttribute("form", GoodsUpdateRequestDto.from(goods));
         }
         model.addAttribute("goods", goods);
+        model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
         model.addAttribute("user", userDetails);
         return "seller/goods-edit";
     }
 
     /**
-     * 굿즈 수정 제출 처리 (다중 이미지 추가 업로드 지원)
+     * 굿즈 수정 제출 처리 (다중 이미지 및 3D 오브제 추가/수정/삭제 지원)
      */
     @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
     @PostMapping("/{goodsId}/edit")
@@ -163,6 +172,12 @@ public class SellerGoodsController {
             @Valid @ModelAttribute("form") GoodsUpdateRequestDto form,
             BindingResult bindingResult,
             @org.springframework.web.bind.annotation.RequestParam(name = "imageFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> imageFiles,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objects3dSubmitted", required = false) Boolean objects3dSubmitted,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectIds", required = false) java.util.List<String> objectIds,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectNames", required = false) java.util.List<String> objectNames,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectDescriptions", required = false) java.util.List<String> objectDescriptions,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelUrls", required = false) java.util.List<String> objectModelUrls,
+            @org.springframework.web.bind.annotation.RequestParam(name = "objectModelFiles", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -176,6 +191,7 @@ public class SellerGoodsController {
             model.addAttribute("errorMessage", firstError);
             Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
             model.addAttribute("goods", goods);
+            model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
             model.addAttribute("user", userDetails);
             return "seller/goods-edit";
         }
@@ -201,11 +217,18 @@ public class SellerGoodsController {
                 model.addAttribute("errorMessage", "굿즈 사진은 최소 1장 이상 등록되어야 합니다.");
                 Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
                 model.addAttribute("goods", goods);
+                model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
                 model.addAttribute("user", userDetails);
                 return "seller/goods-edit";
             }
 
-            goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm);
+            boolean has3dParams = Boolean.TRUE.equals(objects3dSubmitted)
+                    || objectNames != null || objectModelUrls != null || objectModelFiles != null;
+            java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> objects3d = has3dParams
+                    ? resolveGoods3dObjects(objectIds, objectNames, objectDescriptions, objectModelUrls, objectModelFiles)
+                    : null;
+
+            goodsService.updateGoods(goodsId, userDetails.getUserId(), userDetails.isAdmin(), targetForm, objects3d);
             redirectAttributes.addFlashAttribute("successMessage", "굿즈 정보가 성공적으로 수정되었습니다.");
             return "redirect:/goods";
         } catch (Exception e) {
@@ -213,9 +236,34 @@ public class SellerGoodsController {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "굿즈 수정 중 오류가 발생했습니다.");
             Goods goods = goodsService.getGoodsForManagement(goodsId, userDetails.getUserId(), userDetails.isAdmin());
             model.addAttribute("goods", goods);
+            model.addAttribute("objects3d", goodsService.getGoods3dObjects(goodsId));
             model.addAttribute("user", userDetails);
             return "seller/goods-edit";
         }
+    }
+
+    /**
+     * 개별 3D 오브제 삭제 처리 (판매자 본인 또는 관리자)
+     */
+    @PreAuthorize("hasRole('ADMIN') or @goodsService.isOwner(#goodsId, principal)")
+    @PostMapping("/{goodsId}/objects/{objectId}/delete")
+    public String deleteGoods3dObject(
+            @PathVariable Long goodsId,
+            @PathVariable Long objectId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "redirect", required = false) String redirect,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        try {
+            goodsService.deleteGoods3dObject(goodsId, objectId, userDetails.getUserId(), userDetails.isAdmin());
+            redirectAttributes.addFlashAttribute("successMessage", "선택한 3D 오브제가 삭제되었습니다.");
+        } catch (Exception e) {
+            log.error("3D 오브제 개별 삭제 실패", e);
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "3D 오브제 삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:" + resolveSafeRedirect(redirect, "/seller/goods/" + goodsId + "/edit");
     }
 
     /**
@@ -330,6 +378,72 @@ public class SellerGoodsController {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.startsWith("__NEW_FILE_"))
                 .collect(java.util.stream.Collectors.joining(","));
+    }
+
+    /**
+     * 폼에서 전달된 3D 오브제(ID, 이름, 설명, 모델 URL/플레이스홀더)와 업로드된 3D 모델 파일을 결합하여 DTO 리스트 생성
+     */
+    private java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> resolveGoods3dObjects(
+            java.util.List<String> objectIds,
+            java.util.List<String> objectNames,
+            java.util.List<String> objectDescriptions,
+            java.util.List<String> objectModelUrls,
+            java.util.List<org.springframework.web.multipart.MultipartFile> objectModelFiles) {
+
+        java.util.List<String> uploadedModelUrls = java.util.List.of();
+        if (objectModelFiles != null && !objectModelFiles.isEmpty()) {
+            java.util.List<org.springframework.web.multipart.MultipartFile> validModelFiles = objectModelFiles.stream()
+                    .filter(f -> f != null && !f.isEmpty())
+                    .toList();
+            if (!validModelFiles.isEmpty()) {
+                uploadedModelUrls = storageService.uploadFiles(validModelFiles, "goods-3d");
+            }
+        }
+
+        int count = 0;
+        if (objectNames != null) count = Math.max(count, objectNames.size());
+        if (objectModelUrls != null) count = Math.max(count, objectModelUrls.size());
+        if (objectDescriptions != null) count = Math.max(count, objectDescriptions.size());
+        if (objectIds != null) count = Math.max(count, objectIds.size());
+
+        java.util.List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> result = new java.util.ArrayList<>();
+        int fallbackFileIdx = 0;
+
+        for (int i = 0; i < count; i++) {
+            Long id = null;
+            if (objectIds != null && i < objectIds.size() && objectIds.get(i) != null && !objectIds.get(i).isBlank()) {
+                try {
+                    id = Long.parseLong(objectIds.get(i).trim());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            String name = (objectNames != null && i < objectNames.size() && objectNames.get(i) != null)
+                    ? objectNames.get(i).trim() : "";
+            String desc = (objectDescriptions != null && i < objectDescriptions.size() && objectDescriptions.get(i) != null)
+                    ? objectDescriptions.get(i).trim() : "";
+            String rawModelUrl = (objectModelUrls != null && i < objectModelUrls.size() && objectModelUrls.get(i) != null)
+                    ? objectModelUrls.get(i).trim() : "";
+
+            if (rawModelUrl.startsWith("__NEW_MODEL_") && rawModelUrl.endsWith("__")) {
+                String idxStr = rawModelUrl.substring("__NEW_MODEL_".length(), rawModelUrl.length() - 2);
+                try {
+                    int fileIdx = Integer.parseInt(idxStr);
+                    if (fileIdx >= 0 && fileIdx < uploadedModelUrls.size()) {
+                        rawModelUrl = uploadedModelUrls.get(fileIdx);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            } else if (rawModelUrl.isEmpty() && fallbackFileIdx < uploadedModelUrls.size()) {
+                rawModelUrl = uploadedModelUrls.get(fallbackFileIdx++);
+            }
+
+            if (name.isEmpty() && rawModelUrl.isEmpty()) {
+                continue;
+            }
+            result.add(new com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto(id, name, desc, rawModelUrl, result.size()));
+        }
+
+        return result;
     }
 
     /**

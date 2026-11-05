@@ -20,6 +20,7 @@ import java.util.List;
 public class GoodsController {
 
     private final GoodsRepository goodsRepository;
+    private final com.roomtherapy.backend.domain.goods.service.GoodsService goodsService;
 
     /**
      * 굿즈 리워드 상품 목록 페이지 (전체 또는 내가 등록한 굿즈 필터링 지원)
@@ -70,5 +71,27 @@ public class GoodsController {
         model.addAttribute("user", userDetails);
         model.addAttribute("statuses", GoodsStatus.values());
         return "goods/list";
+    }
+
+    /**
+     * 스테이지(굿즈)별 스페이셜 3D 오브제 전시관 페이지
+     */
+    @GetMapping("/{goodsId}/exhibition")
+    public String viewExhibition(
+            @org.springframework.web.bind.annotation.PathVariable Long goodsId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Model model) {
+        boolean isAdmin = userDetails != null && userDetails.isAdmin();
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+
+        Goods goods = goodsService.getGoodsForExhibition(goodsId, currentUserId, isAdmin);
+        List<com.roomtherapy.backend.domain.goods.dto.Goods3dObjectDto> objects3d = goodsService.getGoods3dObjects(goodsId);
+        boolean canManage = goods.isManageableBy(currentUserId, isAdmin);
+
+        model.addAttribute("goods", goods);
+        model.addAttribute("objects3d", objects3d);
+        model.addAttribute("canManage", canManage);
+        model.addAttribute("user", userDetails);
+        return "goods/exhibition";
     }
 }

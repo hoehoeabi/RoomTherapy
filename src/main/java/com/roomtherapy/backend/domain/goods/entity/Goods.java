@@ -55,6 +55,10 @@ public class Goods extends BaseTimeEntity {
     @jakarta.persistence.OneToMany(mappedBy = "goods", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     private java.util.List<GoodsAuthCode> authCodes = new java.util.ArrayList<>();
 
+    @jakarta.persistence.OneToMany(mappedBy = "goods", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @jakarta.persistence.OrderBy("displayOrder ASC, id ASC")
+    private java.util.List<Goods3dObject> objects3d = new java.util.ArrayList<>();
+
     @Builder
     public Goods(String name, String description, int price, String imageUrl,
                  int stockQuantity, GoodsStatus status, User seller) {
