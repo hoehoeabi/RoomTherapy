@@ -883,6 +883,7 @@
                 <a href="/goods?filter=inactive" class="filter-tab" th:classappend="${currentFilter == 'inactive' ? ' active' : ''}">🔒 숨김</a>
             </div>
             <div class="toolbar-actions">
+                <a href="/seller/goods/codes" class="btn-bulk-template" title="굿즈별 인증코드 조회·추가·삭제">🔑 인증코드</a>
                 <a th:href="@{/seller/goods/template/excel}" class="btn-bulk-template" title="엑셀 표준 양식 다운로드">📥 양식</a>
                 <button type="button" class="btn-bulk-import" onclick="openGoodsImportModal()" title="엑셀/ZIP 일괄 등록">📤 일괄등록</button>
                 <a href="/seller/goods/new" class="admin-register-btn">+ 굿즈 등록</a>
