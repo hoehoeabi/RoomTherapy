@@ -141,8 +141,6 @@ function initSellerGoodsForm(options) {
         imageItems.forEach(img => {
             if (img.type === 'new' && img.file) {
                 total += img.file.size;
-            } else if (img.type === 'existing' && typeof img.existingBytes === 'number') {
-                total += img.existingBytes;
             }
         });
         return total;
@@ -210,17 +208,7 @@ function initSellerGoodsForm(options) {
     }
 
     function loadInitialExistingFileSizes() {
-        // 기존 사진들 HEAD 조회
-        imageItems.forEach(img => {
-            if (img.type === 'existing' && img.url && img.existingBytes === undefined) {
-                fetchFileSize(img.url, (bytes) => {
-                    img.existingBytes = bytes;
-                    updateAllUploadSizeIndicators();
-                });
-            }
-        });
-
-        // 기존 3D 오브제 모델 및 썸네일 HEAD 조회
+        // 기존 3D 오브제 모델 및 썸네일 HEAD 조회 (3D 오브제 카드별 용량 뱃지 표시용)
         object3dItems.forEach(obj => {
             if (obj.modelUrl && obj.existingModelBytes === null) {
                 fetchFileSize(obj.modelUrl, (bytes) => {
