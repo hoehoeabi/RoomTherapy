@@ -758,7 +758,7 @@
                         </div>
                         <div class="header-badge-col">
                             <span id="imageCountBadge" class="image-count-badge">0장</span>
-                            <span id="imageSizeBadge" class="size-indicator-badge">0.0 MB / 3000 MB</span>
+                            <span id="imageSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
                         </div>
                     </div>
 
@@ -772,7 +772,7 @@
                         <div id="uploadDropzone" class="upload-dropzone">
                             <div class="upload-dropzone-icon">📷</div>
                             <div class="upload-dropzone-text">+ 클릭하거나 사진 파일을 여기로 드래그하여 등록</div>
-                            <div class="upload-dropzone-sub">스마트폰 앨범 또는 PC에서 여러 장 선택 가능 (사진별 최대용량: 70MB, 총 허용용량: 3000MB, 최소 1장 필수)</div>
+                            <div class="upload-dropzone-sub" th:text="|스마트폰 앨범 또는 PC에서 여러 장 선택 가능 (사진별 최대용량: ${uploadConfig != null ? uploadConfig.maxImageMb : 70}MB, 총 허용용량: ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB, 최소 1장 필수)|">스마트폰 앨범 또는 PC에서 여러 장 선택 가능 (사진별 최대용량: 70MB, 총 허용용량: 3000MB, 최소 1장 필수)</div>
                         </div>
                         <div id="imageSizeErrorNotice" style="display:none; margin-bottom: 8px; font-size: 11.5px; font-weight: 800; color: var(--red);"></div>
                         <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" style="display: none;">
@@ -800,12 +800,12 @@
                             <div class="form-label-desc" style="margin-bottom: 0;">
                                 해당 스테이지(굿즈)의 <strong>3D 전시관</strong>에 전시할 오브제들을 등록하세요.<br>
                                 각 오브제마다 <strong>1. 오브제 이름 / 2. 오브제 설명 / 3. 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 설정할 수 있습니다.<br>
-                                <span style="color: var(--gray); font-weight: 700;">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
+                                <span style="color: var(--gray); font-weight: 700;" th:text="|※ 허용 용량: 오브제별 최대용량 ${uploadConfig != null ? uploadConfig.maxObjectMb : 300}MB, 총 허용용량 ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB|">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
                             </div>
                         </div>
                         <div class="header-badge-col">
                             <span id="obj3dCountBadge" class="image-count-badge">0개</span>
-                            <span id="obj3dSizeBadge" class="size-indicator-badge">0.0 MB / 3000 MB</span>
+                            <span id="obj3dSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
                         </div>
                     </div>
 
@@ -846,7 +846,7 @@
                 <div id="uploadSummaryContainer" class="upload-summary-container">
                     <div class="upload-summary-header">
                         <span class="upload-summary-title">📁 총 업로드 예정 용량</span>
-                        <span id="totalUploadSizeBadge" class="upload-summary-total">0.0 MB / 3000 MB</span>
+                        <span id="totalUploadSizeBadge" class="upload-summary-total" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
                     </div>
                     <div class="upload-summary-details">
                         <span>사진: <strong id="summaryImageSize">0.0 MB</strong></span>
@@ -909,12 +909,14 @@
         let object3dItems = []; // { id: null, name: '', description: '', modelUrl: '', file: File|null, thumbFile: File|null, thumbnailUrl: '', sizeError: '' }
 
         const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
-        const MAX_IMAGE_MB = 70;
-        const MAX_OBJECT_FILE_MB = 300;
-        const MAX_TOTAL_UPLOAD_MB = 3000;
-        const MAX_FILE_SIZE = MAX_IMAGE_MB * 1024 * 1024; // 70MB
-        const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024; // 300MB
-        const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024; // 3000MB
+        /*<![CDATA[*/
+        const MAX_IMAGE_MB = /*[[${uploadConfig != null ? uploadConfig.maxImageMb : 70}]]*/ 70;
+        const MAX_OBJECT_FILE_MB = /*[[${uploadConfig != null ? uploadConfig.maxObjectMb : 300}]]*/ 300;
+        const MAX_TOTAL_UPLOAD_MB = /*[[${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}]]*/ 3000;
+        /*]]>*/
+        const MAX_FILE_SIZE = MAX_IMAGE_MB * 1024 * 1024;
+        const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024;
+        const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024;
 
         function getImageUploadBytes() {
             let total = 0;
