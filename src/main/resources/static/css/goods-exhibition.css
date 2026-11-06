@@ -1,0 +1,435 @@
+/**
+ * ==============================================================================
+ * RoomTherapy 3D Stage Object Exhibition - CSS
+ * ==============================================================================
+ * [용도 및 쓰이는 곳]
+ * - 3D 스테이지 오브제 전시관 화면: /goods/{id}/exhibition (templates/goods/exhibition.html)
+ *
+ * [주요 섹션 구성]
+ * 1. 기본 레이아웃 & 갤러리 상단 바 (.spatial-room, .exh-topbar 등)
+ * 2. 3열 오브제 카드 그리드 (.gallery-wall-grid, .gallery-frame-card 등)
+ * 3. 빈 전시관 상태 뷰 (.empty-exhibition-box, .empty-monkey 등)
+ * 4. 3D 오브제 상세 뷰어 오버레이 (.spatial-detail-overlay, .spatial-detail-layout 등)
+ * 5. Three.js 3D 뷰어 스테이지 & 카메라 줌 컨트롤 (.spatial-stage-panel, .stage-zoom-controls 등)
+ * 6. 오브제 상세 메타 정보 패널 (.spatial-info-panel, .info-object-title 등)
+ * ==============================================================================
+ */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background: #F7F7F7;
+            color: #1F1F1F;
+            overflow-x: hidden;
+        }
+
+        .spatial-room {
+            position: relative;
+            width: 100%;
+            max-width: 560px;
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: max(22px, env(safe-area-inset-top)) 20px 48px;
+        }
+
+        /* 상단 바 */
+        .exh-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 26px;
+        }
+        .btn-back {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #6B6B6B;
+            text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-back:hover { color: #1F1F1F; }
+        .btn-manage-objects {
+            font-size: 12px;
+            font-weight: 700;
+            color: #FF4B4E;
+            text-decoration: none;
+            background: #FFEBEB;
+            padding: 6px 12px;
+            border-radius: 999px;
+        }
+
+        .flash-banner {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .flash-banner.success { background: #EBFBEE; color: #2B8A3E; }
+        .flash-banner.error { background: #FFEAEA; color: #DC2626; }
+
+        .gallery-intro-title {
+            font-size: 24px;
+            line-height: 1.3;
+            font-weight: 800;
+            color: #111;
+            letter-spacing: -0.8px;
+            margin-bottom: 8px;
+            word-break: keep-all;
+        }
+        .gallery-intro-desc {
+            font-size: 12.5px;
+            color: #7A7A7A;
+            font-weight: 500;
+            margin-bottom: 26px;
+            letter-spacing: -0.2px;
+        }
+
+        /* 3열 오브제 카드 그리드 */
+        .gallery-wall-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            transform: none !important;
+        }
+        .gallery-frame-card {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: #FFFFFF;
+            border-radius: 16px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .gallery-frame-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+        }
+        .gallery-frame-mat { width: 100%; height: 100%; position: relative; }
+        .frame-index-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            background: #FFEBEB;
+            color: #FF4B4E;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+        .frame-thumb-canvas-wrap {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+        .frame-thumb-img {
+            display: none;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .frame-thumb-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-align: center;
+            color: #B0B0B0;
+        }
+        .frame-cube-icon { font-size: 22px; opacity: 0.6; }
+        .frame-loading-text {
+            font-size: 10px;
+            font-weight: 600;
+            color: #A8A8A8;
+            line-height: 1.3;
+            word-break: keep-all;
+        }
+
+        /* 빈 전시관 */
+        .empty-exhibition-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 56px 0 40px;
+        }
+        .empty-monkey {
+            width: 190px;
+            height: auto;
+            margin-bottom: 18px;
+        }
+        .empty-exhibition-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #BDBDBD;
+            line-height: 1.5;
+            letter-spacing: -0.3px;
+            margin-bottom: 18px;
+        }
+
+        /* 상세 뷰어 (라이트 풀스크린) */
+        .spatial-detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: #F7F7F7;
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+            z-index: 1500;
+        }
+        .spatial-detail-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .spatial-detail-layout {
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
+            padding: max(22px, env(safe-area-inset-top)) 20px 40px;
+        }
+        .detail-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .detail-topbar-left, .detail-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .btn-spatial-nav {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #6B6B6B;
+        }
+        .btn-spatial-nav.next { color: #FF4B4E; }
+
+        .spatial-stage-panel {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1.05;
+            background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #F3F3F3 100%);
+            border: 2px solid #D9D9D9;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+        #threeCanvasContainer {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            touch-action: none;
+        }
+        #threeCanvasContainer:active { cursor: grabbing; }
+
+        .model-loading-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.82);
+            z-index: 5;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.2s ease;
+        }
+        .model-loading-state.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .model-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #E3E3E3;
+            border-top-color: #FF4B4E;
+            border-radius: 50%;
+            animation: spin3d 0.85s linear infinite;
+        }
+        @keyframes spin3d { to { transform: rotate(360deg); } }
+        .model-loading-label { font-size: 13px; font-weight: 700; color: #333; }
+        .model-loading-sub { font-size: 11.5px; font-weight: 500; color: #8A8A8A; }
+        .model-progress-track {
+            width: min(220px, 75%);
+            height: 6px;
+            border-radius: 999px;
+            background: #E6E6E6;
+            overflow: hidden;
+        }
+        .model-progress-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: #FF4B4E;
+            transition: width 0.15s ease;
+        }
+        .btn-model-retry {
+            display: none;
+            margin-top: 4px;
+            padding: 7px 16px;
+            border-radius: 999px;
+            border: 1px solid #DDD;
+            background: #FFF;
+            color: #333;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .stage-zoom-controls {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        .btn-stage-ctrl {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            color: #555;
+            font-size: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .btn-ar-quicklook {
+            position: absolute;
+            left: 16px;
+            bottom: 16px;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            color: #333;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-decoration: none;
+            display: none;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .spatial-info-panel {
+            margin-top: 14px;
+            background: #FFFFFF;
+            border: 1px solid #E6E6E6;
+            border-radius: 24px;
+            padding: 26px 24px 20px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .info-top-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .info-artwork-label {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #7A7A7A;
+        }
+        .info-format-badge {
+            font-size: 10px;
+            font-weight: 800;
+            color: #8A8A8A;
+            background: #F1F1F1;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .info-object-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #111;
+            letter-spacing: -0.6px;
+            line-height: 1.3;
+            margin-bottom: 14px;
+            word-break: keep-all;
+        }
+        .info-object-desc {
+            font-size: 14px;
+            line-height: 1.65;
+            color: #7D7D7D;
+            font-weight: 500;
+            white-space: pre-line;
+            word-break: keep-all;
+        }
+        .info-bottom-area {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .info-seller-actions { display: flex; gap: 8px; }
+        .btn-detail-edit, .btn-detail-delete {
+            flex: 1;
+            height: 34px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-detail-edit {
+            background: #F3F3F3;
+            border: 1px solid #E3E3E3;
+            color: #333;
+        }
+        .btn-detail-delete {
+            background: #FFEAEA;
+            border: 1px solid #FFD2D2;
+            color: #DC3545;
+        }
+        .info-rotate-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #7A7A7A;
+        }
+
+        @media (max-width: 420px) {
+            .gallery-intro-title { font-size: 21px; }
+            .gallery-wall-grid { gap: 8px; }
+            .info-object-title { font-size: 21px; }
+        }
