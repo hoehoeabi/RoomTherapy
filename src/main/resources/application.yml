@@ -4,6 +4,8 @@ server:
   tomcat:
     max-http-form-post-size: 3000MB
     max-swallow-size: -1
+    max-part-count: 1000
+    max-part-header-size: 16KB
   servlet:
     session:
       cookie:

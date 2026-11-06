@@ -141,6 +141,8 @@ function initSellerGoodsForm(options) {
         imageItems.forEach(img => {
             if (img.type === 'new' && img.file) {
                 total += img.file.size;
+            } else if (img.type === 'existing' && typeof img.existingBytes === 'number') {
+                total += img.existingBytes;
             }
         });
         return total;
@@ -185,10 +187,11 @@ function initSellerGoodsForm(options) {
     }
 
     // 기존 등록된 URL의 파일 용량(bytes)을 HEAD 요청으로 가볍게 비동기 조회
+    // (브라우저 <img> 태그의 no-cors 디스크 캐시 오염으로 인한 CORS 차단 방지를 위해 cache: 'no-store' 적용)
     function fetchFileSize(url, callback) {
         if (!url || typeof url !== 'string' || !url.trim() || url.startsWith('data:')) return;
         try {
-            fetch(url.trim(), { method: 'HEAD' })
+            fetch(url.trim(), { method: 'HEAD', cache: 'no-store' })
                 .then(res => {
                     if (!res.ok) return null;
                     const len = res.headers.get('content-length');
@@ -200,7 +203,7 @@ function initSellerGoodsForm(options) {
                     }
                 })
                 .catch(() => {
-                    // CORS 또는 네트워크 제한 시 조용히 무시 (폴백)
+                    // 네트워크 제한 시 조용히 무시 (폴백)
                 });
         } catch (e) {
             // 예외 방어
@@ -208,6 +211,16 @@ function initSellerGoodsForm(options) {
     }
 
     function loadInitialExistingFileSizes() {
+        // 기존 사진들 HEAD 조회
+        imageItems.forEach(img => {
+            if (img.type === 'existing' && img.url && img.existingBytes === undefined) {
+                fetchFileSize(img.url, (bytes) => {
+                    img.existingBytes = bytes;
+                    updateAllUploadSizeIndicators();
+                });
+            }
+        });
+
         // 기존 3D 오브제 모델 및 썸네일 HEAD 조회 (3D 오브제 카드별 용량 뱃지 표시용)
         object3dItems.forEach(obj => {
             if (obj.modelUrl && obj.existingModelBytes === null) {
