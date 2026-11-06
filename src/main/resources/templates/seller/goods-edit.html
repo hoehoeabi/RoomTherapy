@@ -199,6 +199,31 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
+        .header-badge-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .size-indicator-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #475569;
+            background: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            padding: 2px 7px;
+            border-radius: 8px;
+            white-space: nowrap;
+            letter-spacing: -0.2px;
+            transition: all 0.2s ease;
+        }
+        .size-indicator-badge.warn {
+            color: var(--red);
+            background: #FFEBEB;
+            border-color: #FFB3B4;
+            font-weight: 800;
+        }
         .image-grid {
             display: flex;
             flex-wrap: wrap;
@@ -642,6 +667,78 @@
             cursor: not-allowed;
             opacity: 0.85;
         }
+        .btn-submit.btn-over-limit {
+            background: #94A3B8 !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            opacity: 0.75 !important;
+        }
+
+        /* 총 업로드 용량 요약 박스 */
+        .upload-summary-container {
+            background: #FFFFFF;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .upload-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+            font-weight: 800;
+            color: var(--title);
+        }
+        .upload-summary-total {
+            font-size: 13px;
+            font-weight: 800;
+            color: #1E293B;
+            background: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .upload-summary-total.warn {
+            color: var(--red);
+            background: #FFEBEB;
+            border-color: #FFB3B4;
+        }
+        .upload-summary-details {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--gray);
+            flex-wrap: wrap;
+        }
+        .upload-summary-details strong {
+            color: var(--text);
+        }
+        .summary-divider {
+            color: #CBD5E1;
+        }
+        .upload-limit-alert {
+            background: #FFEBEB;
+            border: 1px solid #FFCCD0;
+            color: var(--red);
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 7px 10px;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 4px;
+            animation: pulseWarn 1.5s infinite ease-in-out;
+        }
+        @keyframes pulseWarn {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
 
         /* 실시간 업로드 진행률 모달 오버레이 */
         .upload-progress-overlay {
@@ -791,7 +888,10 @@
                                 <strong>첫 번째(맨 앞) 사진이 대표 썸네일</strong>로 지정됩니다.
                             </div>
                         </div>
-                        <span id="imageCountBadge" class="image-count-badge">0장</span>
+                        <div class="header-badge-col">
+                            <span id="imageCountBadge" class="image-count-badge">0장</span>
+                            <span id="imageSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
+                        </div>
                     </div>
 
                     <div class="image-manager-wrap">
@@ -804,7 +904,7 @@
                         <div id="uploadDropzone" class="upload-dropzone">
                             <div class="upload-dropzone-icon">📷</div>
                             <div class="upload-dropzone-text">+ 클릭하거나 사진 파일을 여기로 드래그하여 추가</div>
-                            <div class="upload-dropzone-sub">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: 70MB, 총 허용용량: 3000MB)</div>
+                            <div class="upload-dropzone-sub" th:text="|여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: ${uploadConfig != null ? uploadConfig.maxImageMb : 70}MB, 총 허용용량: ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB)|">여러 장 동시 선택 가능 (JPG, PNG, GIF, WEBP / 사진별 최대용량: 70MB, 총 허용용량: 3000MB)</div>
                         </div>
                         <div id="imageSizeErrorNotice" style="display:none; margin-bottom: 8px; font-size: 11.5px; font-weight: 800; color: var(--red);"></div>
                         <input type="file" id="imageFiles" name="imageFiles" multiple accept="image/*" style="display: none;">
@@ -831,11 +931,14 @@
                             <label class="form-label" style="margin-bottom: 2px;">🧊 스테이지 3D 오브제 관리 (추가 · 수정 · 삭제)</label>
                             <div class="form-label-desc" style="margin-bottom: 0;">
                                 등록된 3D 오브제의 <strong>이름, 설명, 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 수정하거나 <strong>[삭제]</strong> 및 <strong>[+ 3D 오브제 추가]</strong>를 수행할 수 있습니다.<br>
-                                <span style="color: var(--gray); font-weight: 700;">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
+                                <span style="color: var(--gray); font-weight: 700;" th:text="|※ 허용 용량: 오브제별 최대용량 ${uploadConfig != null ? uploadConfig.maxObjectMb : 300}MB, 총 허용용량 ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB|">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
                             </div>
                             <a th:href="@{'/goods/' + ${goods.id} + '/exhibition'}" class="btn-gen" style="margin-top: 8px; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;">전시관 미리보기 &gt;</a>
                         </div>
-                        <span id="obj3dCountBadge" class="image-count-badge">0개</span>
+                        <div class="header-badge-col">
+                            <span id="obj3dCountBadge" class="image-count-badge">0개</span>
+                            <span id="obj3dSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
+                        </div>
                     </div>
 
                     <div id="obj3dList" class="obj3d-list">
@@ -880,6 +983,24 @@
                         추가로 발급할 인증코드가 있을 경우 줄바꿈(Enter)으로 구분해 입력하세요. 개별 코드 삭제는 상단 <strong>[🔑 코드 추가·삭제 관리 &gt;]</strong>에서 수행할 수 있습니다.
                     </div>
                     <textarea id="additionalAuthCodesInput" th:field="*{additionalAuthCodesInput}" class="input-text code-area" placeholder="RT-A8F2K9Z&#10;RT-Q7W1E5R"></textarea>
+                </div>
+
+                <!-- 전체 업로드 용량 요약 및 한도 초과 경고 -->
+                <div id="uploadSummaryContainer" class="upload-summary-container">
+                    <div class="upload-summary-header">
+                        <span class="upload-summary-title">📁 총 업로드 예정 용량</span>
+                        <span id="totalUploadSizeBadge" class="upload-summary-total" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
+                    </div>
+                    <div class="upload-summary-details">
+                        <span>사진: <strong id="summaryImageSize">0.0 MB</strong></span>
+                        <span class="summary-divider">•</span>
+                        <span>3D 모델: <strong id="summary3dModelSize">0.0 MB</strong></span>
+                        <span class="summary-divider">•</span>
+                        <span>썸네일: <strong id="summary3dThumbSize">0.0 MB</strong></span>
+                    </div>
+                    <div id="uploadOverLimitNotice" class="upload-limit-alert" style="display: none;">
+                        ⚠️ 파일 업로드 허용용량을 넘겼습니다.
+                    </div>
                 </div>
 
                 <button type="submit" id="goodsSubmitBtn" class="btn-submit">굿즈 수정 완료</button>
@@ -946,12 +1067,25 @@
         }
 
         // 굿즈 사진 드래그 앤 드롭 순서 변경 및 삭제 매니저
-        let imageItems = []; // { type: 'existing'|'new', url?: string, file?: File, previewUrl: string }
-        let draggedIndex = null;
-
         /*<![CDATA[*/
         const initialUrls = /*[[${goods.imageList}]]*/ [];
+        const initialObjects3d = /*[[${objects3d}]]*/ [];
         /*]]>*/
+
+        const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
+        /*<![CDATA[*/
+        const MAX_IMAGE_MB = /*[[${uploadConfig != null ? uploadConfig.maxImageMb : 70}]]*/ 70;
+        const MAX_OBJECT_FILE_MB = /*[[${uploadConfig != null ? uploadConfig.maxObjectMb : 300}]]*/ 300;
+        const MAX_TOTAL_UPLOAD_MB = /*[[${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}]]*/ 3000;
+        /*]]>*/
+        const MAX_FILE_SIZE = MAX_IMAGE_MB * 1024 * 1024;
+        const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024;
+        const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024;
+
+        // 굿즈 사진 및 3D 오브제 상태 관리
+        let imageItems = []; // { type: 'existing'|'new', url?: string, file?: File, previewUrl: string }
+        let draggedIndex = null;
+        let object3dItems = [];
 
         if (Array.isArray(initialUrls) && initialUrls.length > 0) {
             imageItems = initialUrls.map(url => ({
@@ -969,6 +1103,113 @@
             }
         }
 
+        if (Array.isArray(initialObjects3d) && initialObjects3d.length > 0) {
+            object3dItems = initialObjects3d.map(obj => ({
+                id: obj.id != null ? obj.id : null,
+                name: obj.name || '',
+                description: obj.description || '',
+                modelUrl: obj.modelUrl || '',
+                thumbnailUrl: obj.thumbnailUrl || '',
+                file: null,
+                thumbFile: null,
+                sizeError: ''
+            }));
+        }
+
+        function getImageUploadBytes() {
+            let total = 0;
+            imageItems.forEach(img => {
+                if (img.type === 'new' && img.file) total += img.file.size;
+            });
+            return total;
+        }
+
+        function get3dModelUploadBytes(excludeIdx = -1) {
+            let total = 0;
+            object3dItems.forEach((obj, i) => {
+                if (i !== excludeIdx && obj.file) total += obj.file.size;
+            });
+            return total;
+        }
+
+        function get3dThumbUploadBytes() {
+            let total = 0;
+            object3dItems.forEach(obj => {
+                if (obj.thumbFile) total += obj.thumbFile.size;
+            });
+            return total;
+        }
+
+        function get3dObjectUploadBytes(excludeIdx = -1) {
+            return get3dModelUploadBytes(excludeIdx) + get3dThumbUploadBytes();
+        }
+
+        function getTotalSelectedBytes(excludeIdx = -1) {
+            return getImageUploadBytes() + get3dObjectUploadBytes(excludeIdx);
+        }
+
+        function formatMb(bytes) {
+            return (bytes / (1024 * 1024)).toFixed(1);
+        }
+
+        function updateAllUploadSizeIndicators() {
+            const imageBytes = getImageUploadBytes();
+            const modelBytes = get3dModelUploadBytes(-1);
+            const thumbBytes = get3dThumbUploadBytes();
+            const obj3dBytes = modelBytes + thumbBytes;
+            const totalBytes = imageBytes + obj3dBytes;
+
+            const isOverLimit = totalBytes > MAX_TOTAL_REQUEST_SIZE;
+
+            // 1. 굿즈 사진 섹션 뱃지
+            const imageSizeBadge = document.getElementById('imageSizeBadge');
+            if (imageSizeBadge) {
+                imageSizeBadge.textContent = `${formatMb(imageBytes)} MB / ${MAX_TOTAL_UPLOAD_MB} MB`;
+                imageSizeBadge.classList.toggle('warn', imageBytes > MAX_TOTAL_REQUEST_SIZE);
+            }
+
+            // 2. 3D 오브제 섹션 뱃지
+            const obj3dSizeBadge = document.getElementById('obj3dSizeBadge');
+            if (obj3dSizeBadge) {
+                obj3dSizeBadge.textContent = `${formatMb(obj3dBytes)} MB / ${MAX_TOTAL_UPLOAD_MB} MB`;
+                obj3dSizeBadge.classList.toggle('warn', obj3dBytes > MAX_TOTAL_REQUEST_SIZE);
+            }
+
+            // 3. 제출 버튼 상단 총합 요약 박스
+            const totalBadge = document.getElementById('totalUploadSizeBadge');
+            if (totalBadge) {
+                totalBadge.textContent = `${formatMb(totalBytes)} MB / ${MAX_TOTAL_UPLOAD_MB} MB`;
+                totalBadge.classList.toggle('warn', isOverLimit);
+            }
+
+            const imgDetail = document.getElementById('summaryImageSize');
+            if (imgDetail) imgDetail.textContent = `${formatMb(imageBytes)} MB`;
+            const modelDetail = document.getElementById('summary3dModelSize');
+            if (modelDetail) modelDetail.textContent = `${formatMb(modelBytes)} MB`;
+            const thumbDetail = document.getElementById('summary3dThumbSize');
+            if (thumbDetail) thumbDetail.textContent = `${formatMb(thumbBytes)} MB`;
+
+            // 4. 허용용량 초과 경고 문구 및 제출 버튼 상태
+            const limitNotice = document.getElementById('uploadOverLimitNotice');
+            const submitBtn = document.getElementById('goodsSubmitBtn');
+
+            if (limitNotice) {
+                limitNotice.style.display = isOverLimit ? 'block' : 'none';
+            }
+
+            if (submitBtn && !isSubmittingForm) {
+                if (isOverLimit) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('btn-over-limit');
+                    submitBtn.title = '파일 업로드 허용용량을 넘겼습니다.';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('btn-over-limit');
+                    submitBtn.removeAttribute('title');
+                }
+            }
+        }
+
         function renderImageGrid() {
             const grid = document.getElementById('imageGrid');
             const badge = document.getElementById('imageCountBadge');
@@ -979,6 +1220,7 @@
             if (imageItems.length === 0) {
                 grid.innerHTML = '<div class="image-empty-notice">등록된 사진이 없습니다. 아래에서 사진을 추가해주세요.</div>';
                 syncFormData();
+                updateAllUploadSizeIndicators();
                 return;
             }
 
@@ -1056,6 +1298,7 @@
             });
 
             syncFormData();
+            updateAllUploadSizeIndicators();
         }
 
         // 드래그 이벤트 핸들러
@@ -1114,9 +1357,6 @@
             }
             renderImageGrid();
         }
-
-        const MAX_IMAGE_MB = 70;
-        const MAX_FILE_SIZE = MAX_IMAGE_MB * 1024 * 1024; // 70MB
 
         // 파일 추가 처리
         function addFiles(fileList) {
@@ -1228,41 +1468,6 @@
         // ============================================================
         // 스테이지 3D 오브제 관리 매니저 (기존 항목 로드, 추가, 수정, 삭제, 순서 변경)
         // ============================================================
-        const ALLOWED_3D_EXTS = ['.glb', '.gltf', '.fbx', '.obj', '.usdz'];
-        const MAX_OBJECT_FILE_MB = 300;
-        const MAX_TOTAL_UPLOAD_MB = 3000;
-        const MAX_MODEL_FILE_SIZE = MAX_OBJECT_FILE_MB * 1024 * 1024;
-        const MAX_TOTAL_REQUEST_SIZE = MAX_TOTAL_UPLOAD_MB * 1024 * 1024;
-        /*<![CDATA[*/
-        const initialObjects3d = /*[[${objects3d}]]*/ [];
-        /*]]>*/
-
-        let object3dItems = [];
-        if (Array.isArray(initialObjects3d) && initialObjects3d.length > 0) {
-            object3dItems = initialObjects3d.map(obj => ({
-                id: obj.id != null ? obj.id : null,
-                name: obj.name || '',
-                description: obj.description || '',
-                modelUrl: obj.modelUrl || '',
-                thumbnailUrl: obj.thumbnailUrl || '',
-                file: null,
-                thumbFile: null,
-                sizeError: ''
-            }));
-        }
-
-        function getTotalSelectedBytes(excludeIdx = -1) {
-            let total = 0;
-            imageItems.forEach(img => {
-                if (img.type === 'new' && img.file) total += img.file.size;
-            });
-            object3dItems.forEach((obj, i) => {
-                if (i !== excludeIdx && obj.file) total += obj.file.size;
-                if (obj.thumbFile) total += obj.thumbFile.size;
-            });
-            return total;
-        }
-
         function extractModelExt(filenameOrUrl) {
             if (!filenameOrUrl) return '';
             const clean = filenameOrUrl.split('?')[0].trim().toLowerCase();
@@ -1307,6 +1512,7 @@
             if (object3dItems.length === 0) {
                 listEl.innerHTML = '<div class="image-empty-notice" style="background:#FFFFFF;border:1px dashed var(--border-light);border-radius:8px;">등록된 3D 오브제가 없습니다. 아래 <strong>[+ 3D 오브제 추가]</strong> 버튼을 눌러 스테이지 오브제를 등록할 수 있습니다.</div>';
                 sync3dObjectsFormData();
+                updateAllUploadSizeIndicators();
                 return;
             }
 
@@ -1557,6 +1763,7 @@
             });
 
             sync3dObjectsFormData();
+            updateAllUploadSizeIndicators();
         }
 
         function sync3dObjectsFormData() {
@@ -1664,6 +1871,12 @@
                         alert(`OBJECT ${String(i + 1).padStart(2, '0')} (${obj.name})의 3D 모델 파일을 선택하거나 URL을 입력해주세요.`);
                         return false;
                     }
+                }
+
+                if (getTotalSelectedBytes(-1) > MAX_TOTAL_REQUEST_SIZE) {
+                    e.preventDefault();
+                    alert('파일 업로드 허용용량을 넘겼습니다.');
+                    return false;
                 }
 
                 e.preventDefault();

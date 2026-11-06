@@ -41,3 +41,11 @@ cloud:
     credentials:
       access-key: ${AWS_ACCESS_KEY_ID:}
       secret-key: ${AWS_SECRET_ACCESS_KEY:}
+
+# ==========================================
+# 파일 업로드 임시 디렉터리 (EC2 메인 디스크 /var/tmp 사용으로 tmpfs 455M 고갈 방지)
+# ==========================================
+app:
+  upload:
+    temp-dir: /var/tmp
+

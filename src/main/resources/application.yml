@@ -8,6 +8,13 @@ server:
         secure: false # 로컬 테스트 시 false, 추후 HTTPS 배포 시 true
         same-site: lax
 
+app:
+  upload:
+    max-image-mb: 70
+    max-object-mb: 300
+    max-total-mb: 3000
+    temp-dir: ${java.io.tmpdir}
+
 spring:
   application:
     name: roomtherapy
@@ -17,8 +24,9 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 300MB
-      max-request-size: 3000MB
+      max-file-size: ${app.upload.max-object-mb}MB
+      max-request-size: ${app.upload.max-total-mb}MB
+      location: ${app.upload.temp-dir}
 
   config:
     import:
