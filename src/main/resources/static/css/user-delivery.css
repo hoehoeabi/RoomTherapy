@@ -1,0 +1,477 @@
+/**
+ * ============================================================================
+ * user-delivery.css - 사용자 배송 신청/수정/완료 모바일 뷰 통합 스타일시트
+ * ============================================================================
+ *
+ * [적용 화면]
+ * - 배송 신청 화면: /delivery (src/main/resources/templates/delivery/apply.html)
+ * - 배송 정보 수정 화면: /delivery/edit/{id} (src/main/resources/templates/delivery/edit.html)
+ * - 배송 신청 완료 화면: /delivery/confirm/{id} (src/main/resources/templates/delivery/confirm.html)
+ *
+ * [주요 섹션 구성]
+ * 1. 테마 변수 & 글로벌 초기화 (:root, reset, body, .app-container)
+ * 2. 상단 뱃지 & 헤더 타이틀 (.badge-stage, h1, .sub-desc, .congrats-sub, .check-circle)
+ * 3. 리워드 선택 & 가로 썸네일 슬라이더 (.reward-card, .reward-select, .thumb-slider, .thumb-box)
+ * 4. 폼 그룹 & 입력 필드 (.form-group, .form-label, .input-text, .phone-row, .zip-row, .btn-find-addr)
+ * 5. 안내/알림 박스 (.notice-box, .notice-title, .notice-list, .alert-error, .field-error)
+ * 6. 완료 & 상세 내역 카드 (.details-card, .goods-name-title, .info-table, .info-row, .info-card)
+ * 7. 하단 액션 버튼 (.btn-submit, .btn-cta, .btn-outline, .btn-back-link, .link-home)
+ * ============================================================================
+ */
+
+        :root {
+            --red: #FF4B4E;
+            --title: #020202;
+            --text: #3C3C3C;
+            --gray: #838383;
+            --bg-light: #F7F8FA;
+            --border-light: #E5E7EB;
+            --input-radius: 8px;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #EFEFEF;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 390px;
+            min-height: 100vh;
+            background: #FFFFFF;
+            padding: 28px 20px 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 440px) {
+            body {
+                background-color: #FFFFFF;
+            }
+            .app-container {
+                box-shadow: none;
+                min-height: 100dvh;
+                padding: 22px 16px 36px;
+            }
+        }
+        .badge-stage {
+            display: inline-block;
+            background: #FFEBEB;
+            color: var(--red);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+        h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--title);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        p.sub-desc {
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 18px;
+            letter-spacing: -0.2px;
+        }
+        .reward-card {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 14px 12px;
+            margin-bottom: 18px;
+        }
+        .reward-card label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--title);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .reward-select {
+            width: 100%;
+            height: 38px;
+            padding: 0 10px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--title);
+            background: #FFFFFF;
+            outline: none;
+        }
+        .thumb-slider {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-top: 10px;
+            padding-bottom: 2px;
+            cursor: grab;
+            user-select: none;
+            scroll-behavior: smooth;
+        }
+        .thumb-slider.dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
+        }
+        .thumb-slider::-webkit-scrollbar {
+            display: none;
+        }
+        .thumb-box {
+            flex: 0 0 62px;
+            width: 62px;
+            height: 62px;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            background: #FFFFFF;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        .thumb-placeholder {
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-align: center;
+            color: #8E9BAE;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--title);
+            display: block;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .form-label-sub {
+            font-size: 11px;
+            color: var(--gray);
+            font-weight: 400;
+            margin-top: 2px;
+            margin-bottom: 6px;
+            display: block;
+            line-height: 1.4;
+        }
+        .input-text {
+            width: 100%;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            background: #FFFFFF;
+            transition: border-color 0.15s ease;
+        }
+        .input-text:focus {
+            border-color: var(--red);
+        }
+        .input-text::placeholder {
+            color: #B5B5B5;
+            font-size: 12px;
+        }
+        /* 연락처 3분할 */
+        .phone-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+        .phone-input {
+            min-width: 0;
+            width: 100%;
+            height: 38px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-light);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            background: #FFFFFF;
+        }
+        .phone-input:focus {
+            border-color: var(--red);
+        }
+        .phone-part1 {
+            flex: 0 0 52px;
+            width: 52px;
+        }
+        .phone-part2, .phone-part3 {
+            flex: 1;
+        }
+        .phone-dash {
+            color: var(--gray);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        /* 우편번호 & 주소 */
+        .zip-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .zip-input {
+            flex: 1;
+        }
+        .btn-find-addr {
+            flex: 0 0 86px;
+            height: 38px;
+            background: #F1F3F5;
+            border: none;
+            border-radius: var(--input-radius);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--title);
+            cursor: pointer;
+        }
+        .btn-find-addr:active {
+            background: #E9ECEF;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 11.5px;
+            color: var(--gray);
+            user-select: none;
+        }
+        .checkbox-row input {
+            accent-color: var(--red);
+            width: 14px;
+            height: 14px;
+        }
+        /* 배송 유의사항 안내 박스 */
+        .notice-box {
+            background: #FAFAFA;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin: 18px 0 20px;
+            border: 1px solid #F0F0F0;
+        }
+        .notice-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--title);
+            margin-bottom: 6px;
+        }
+        .notice-list {
+            list-style: none;
+            font-size: 10px;
+            color: var(--gray);
+            line-height: 1.55;
+            letter-spacing: -0.2px;
+        }
+        .notice-list li {
+            position: relative;
+            padding-left: 10px;
+            margin-bottom: 3px;
+        }
+        .notice-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--gray);
+        }
+        /* 버튼 영역 */
+        .btn-submit {
+            width: 100%;
+            height: 44px;
+            background: var(--red);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: var(--input-radius);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+            transition: opacity 0.15s ease, transform 0.1s ease;
+        }
+        .btn-submit:active {
+            opacity: 0.92;
+            transform: scale(0.99);
+        }
+        .btn-back-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--gray);
+            text-decoration: none;
+        }
+        .btn-back-link:hover {
+            color: var(--title);
+        }
+        .alert-error {
+            background: #FFEBEB;
+            color: var(--red);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .field-error {
+            color: var(--red);
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+        }
+    </style>
+
+/* ============================================================================
+ * 6. 배송 수정 및 완료 전용 스타일 확장 (.info-card, .check-circle, .details-card 등)
+ * ============================================================================ */
+.info-card {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    border: 1px solid var(--border-light);
+}
+.check-circle {
+    width: 48px;
+    height: 48px;
+    background: #FFEBEB;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+.check-circle svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--red);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+.congrats-sub {
+    font-size: 11.5px;
+    color: var(--gray);
+    margin-bottom: 20px;
+    letter-spacing: -0.2px;
+}
+.details-card {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 28px;
+}
+.goods-name-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--title);
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+}
+.info-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11.5px;
+}
+.info-row {
+    display: flex;
+    align-items: flex-start;
+}
+.info-key {
+    flex: 0 0 68px;
+    color: var(--gray);
+    font-weight: 500;
+}
+.info-value {
+    flex: 1;
+    color: var(--title);
+    font-weight: 600;
+    line-height: 1.4;
+    word-break: break-all;
+}
+.actions-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.btn-cta {
+    width: 100%;
+    height: 44px;
+    background: var(--red);
+    color: #FFFFFF;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 10px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+    transition: opacity 0.15s ease;
+}
+.btn-cta:active {
+    opacity: 0.92;
+}
+.btn-outline {
+    width: 100%;
+    height: 42px;
+    background: #FFFFFF;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    color: var(--title);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-outline:active {
+    background: #F8F9FA;
+}
+.link-home {
+    font-size: 12px;
+    color: var(--gray);
+    text-decoration: none;
+    margin-top: 6px;
+}
+.link-home:hover {
+    color: var(--title);
+}
