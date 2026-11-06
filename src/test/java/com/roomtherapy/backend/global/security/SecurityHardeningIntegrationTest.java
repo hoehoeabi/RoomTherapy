@@ -272,4 +272,26 @@ class SecurityHardeningIntegrationTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("허용되지 않는 파일 확장자");
     }
+
+    @Test
+    @DisplayName("보안 7 (Silent Refresh): Access Token이 없거나 만료되어도 유효한 Refresh Token 쿠키가 있으면 페이지 접근 성공 및 새 토큰 쿠키 자동 발급")
+    void silentRefresh_withValidRefreshToken_autoAuthenticatesAndRefreshesCookies() throws Exception {
+        // Given: Redis에 정상 저장된 Refresh Token 준비
+        com.roomtherapy.backend.global.security.jwt.RefreshToken tokenEntity =
+                com.roomtherapy.backend.global.security.jwt.RefreshToken.builder()
+                        .userId(normalUser.getId())
+                        .token(userRefreshToken)
+                        .ttl(jwtProvider.getRefreshTokenExpirationSec())
+                        .build();
+        context.getBean(com.roomtherapy.backend.global.security.jwt.RefreshTokenRepository.class).save(tokenEntity);
+
+        // When: accessToken 쿠키 없이 refreshToken 쿠키만 들고 보호된 경로(/mypage) 요청
+        mockMvc.perform(get("/mypage")
+                        .cookie(new Cookie("refreshToken", userRefreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user/mypage"))
+                .andExpect(model().attributeExists("userProfile"))
+                // Then: 응답 헤더(Set-Cookie)에 새 accessToken과 새 refreshToken이 구워졌는지 확인
+                .andExpect(header().exists("Set-Cookie"));
+    }
 }
