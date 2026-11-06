@@ -129,6 +129,8 @@ function initSellerGoodsForm(options) {
             thumbnailUrl: obj.thumbnailUrl || '',
             file: null,
             thumbFile: null,
+            existingModelBytes: null,
+            existingThumbBytes: null,
             sizeError: ''
         }));
     }
@@ -137,7 +139,11 @@ function initSellerGoodsForm(options) {
     function getImageUploadBytes() {
         let total = 0;
         imageItems.forEach(img => {
-            if (img.type === 'new' && img.file) total += img.file.size;
+            if (img.type === 'new' && img.file) {
+                total += img.file.size;
+            } else if (img.type === 'existing' && typeof img.existingBytes === 'number') {
+                total += img.existingBytes;
+            }
         });
         return total;
     }
@@ -145,7 +151,13 @@ function initSellerGoodsForm(options) {
     function get3dModelUploadBytes(excludeIdx = -1) {
         let total = 0;
         object3dItems.forEach((obj, i) => {
-            if (i !== excludeIdx && obj.file) total += obj.file.size;
+            if (i !== excludeIdx) {
+                if (obj.file) {
+                    total += obj.file.size;
+                } else if (obj.modelUrl && typeof obj.existingModelBytes === 'number') {
+                    total += obj.existingModelBytes;
+                }
+            }
         });
         return total;
     }
@@ -153,7 +165,11 @@ function initSellerGoodsForm(options) {
     function get3dThumbUploadBytes() {
         let total = 0;
         object3dItems.forEach(obj => {
-            if (obj.thumbFile) total += obj.thumbFile.size;
+            if (obj.thumbFile) {
+                total += obj.thumbFile.size;
+            } else if (obj.thumbnailUrl && typeof obj.existingThumbBytes === 'number') {
+                total += obj.existingThumbBytes;
+            }
         });
         return total;
     }
@@ -168,6 +184,58 @@ function initSellerGoodsForm(options) {
 
     function formatMb(bytes) {
         return (bytes / (1024 * 1024)).toFixed(1);
+    }
+
+    // 기존 등록된 URL의 파일 용량(bytes)을 HEAD 요청으로 가볍게 비동기 조회
+    function fetchFileSize(url, callback) {
+        if (!url || typeof url !== 'string' || !url.trim() || url.startsWith('data:')) return;
+        try {
+            fetch(url.trim(), { method: 'HEAD' })
+                .then(res => {
+                    if (!res.ok) return null;
+                    const len = res.headers.get('content-length');
+                    return len ? parseInt(len, 10) : null;
+                })
+                .then(bytes => {
+                    if (typeof bytes === 'number' && !isNaN(bytes) && bytes > 0) {
+                        callback(bytes);
+                    }
+                })
+                .catch(() => {
+                    // CORS 또는 네트워크 제한 시 조용히 무시 (폴백)
+                });
+        } catch (e) {
+            // 예외 방어
+        }
+    }
+
+    function loadInitialExistingFileSizes() {
+        // 기존 사진들 HEAD 조회
+        imageItems.forEach(img => {
+            if (img.type === 'existing' && img.url && img.existingBytes === undefined) {
+                fetchFileSize(img.url, (bytes) => {
+                    img.existingBytes = bytes;
+                    updateAllUploadSizeIndicators();
+                });
+            }
+        });
+
+        // 기존 3D 오브제 모델 및 썸네일 HEAD 조회
+        object3dItems.forEach(obj => {
+            if (obj.modelUrl && obj.existingModelBytes === null) {
+                fetchFileSize(obj.modelUrl, (bytes) => {
+                    obj.existingModelBytes = bytes;
+                    updateAllUploadSizeIndicators();
+                    render3dObjectsList();
+                });
+            }
+            if (obj.thumbnailUrl && obj.existingThumbBytes === null) {
+                fetchFileSize(obj.thumbnailUrl, (bytes) => {
+                    obj.existingThumbBytes = bytes;
+                    updateAllUploadSizeIndicators();
+                });
+            }
+        });
     }
 
     /**
@@ -535,17 +603,26 @@ function initSellerGoodsForm(options) {
             const card = document.createElement('div');
             card.className = 'obj3d-card';
 
-            const numStr = String(idx + 1).padStart(2, '0');
-            const ext = item.file ? extractModelExt(item.file.name) : extractModelExt(item.modelUrl);
-            const extLabel = ext ? ext.replace('.', '').toUpperCase() : '미선택';
+            // 모델 용량 계산 (신규 파일 크기 우선, 없으면 기존 URL 크기)
+            let modelBytes = null;
+            if (item.file) {
+                modelBytes = item.file.size;
+            } else if (typeof item.existingModelBytes === 'number') {
+                modelBytes = item.existingModelBytes;
+            }
+            const sizeLabel = modelBytes !== null ? `${formatMb(modelBytes)} MB` : '';
 
-            // 헤더 (순번, 포맷 뱃지, 이동 및 삭제 액션)
+            // 헤더 (순번, 포맷 뱃지, 용량 뱃지, 이동 및 삭제 액션)
             const header = document.createElement('div');
             header.className = 'obj3d-card-header';
 
             const badgeGroup = document.createElement('div');
             badgeGroup.className = 'obj3d-badge-group';
-            badgeGroup.innerHTML = `<span class="obj3d-index-badge">OBJECT ${numStr}</span><span class="obj3d-format-badge">${extLabel}</span>`;
+            let badgeGroupHtml = `<span class="obj3d-index-badge">OBJECT ${numStr}</span><span class="obj3d-format-badge">${extLabel}</span>`;
+            if (sizeLabel) {
+                badgeGroupHtml += `<span class="obj3d-size-badge">${sizeLabel}</span>`;
+            }
+            badgeGroup.innerHTML = badgeGroupHtml;
 
             const actions = document.createElement('div');
             actions.className = 'obj3d-actions';
@@ -682,6 +759,7 @@ function initSellerGoodsForm(options) {
                 }
                 item.sizeError = '';
                 item.file = chosen;
+                item.existingModelBytes = null;
                 render3dObjectsList();
             });
 
@@ -701,8 +779,14 @@ function initSellerGoodsForm(options) {
             urlInput.value = item.file ? '' : (item.modelUrl || '');
             urlInput.addEventListener('input', (e) => {
                 item.modelUrl = e.target.value.trim();
+                item.existingModelBytes = null;
                 if (item.modelUrl) {
                     item.file = null;
+                    fetchFileSize(item.modelUrl, (bytes) => {
+                        item.existingModelBytes = bytes;
+                        updateAllUploadSizeIndicators();
+                        render3dObjectsList();
+                    });
                 }
                 sync3dObjectsFormData();
             });
@@ -1049,6 +1133,9 @@ function initSellerGoodsForm(options) {
     // 초기 렌더링
     renderImageGrid();
     render3dObjectsList();
+
+    // 기존 등록된 파일들의 크기 비동기(HEAD) 감지 및 실시간 합산
+    loadInitialExistingFileSizes();
 
     sellerGoodsFormInstance = {
         addDirectUrl,
