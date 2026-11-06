@@ -1,0 +1,65 @@
+<!--
+================================================================================
+RoomTherapy Seller Goods Components (Thymeleaf Fragments)
+================================================================================
+[용도 및 쓰이는 곳]
+- 판매자 굿즈 등록 화면: /seller/goods/new (templates/seller/goods-new.html)
+- 판매자 굿즈 수정 화면: /seller/goods/{id}/edit (templates/seller/goods-edit.html)
+
+[제공 프래그먼트 목록]
+1. th:fragment="uploadProgressOverlay"
+   - 사진 및 3D 모델 파일 업로드 시 실시간 % 게이지 및 서버/S3 저장 상태를 안내하는 모달
+   - 사용 예: <div th:replace="~{fragments/goods-components :: uploadProgressOverlay}"></div>
+
+2. th:fragment="goodsDeleteModal(goodsId, goodsName)"
+   - 굿즈 삭제 시 오발 방지를 위해 화면 중앙에 띄우는 확인 다이얼로그 모달
+   - 사용 예: <div th:replace="~{fragments/goods-components :: goodsDeleteModal(${goods.id}, ${goods.name})}"></div>
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+    [프래그먼트 1: 실시간 업로드 진행 상태 모달 오버레이]
+    - 대용량 파일 전송 중 화면을 덮고 전송 퍼센트(0~90%) 및 S3 클라우드 병렬 저장(90~99%), 완료(100%) 상태를 안내합니다.
+-->
+<div th:fragment="uploadProgressOverlay" id="uploadProgressOverlay" class="upload-progress-overlay">
+    <div class="upload-progress-box">
+        <div id="uploadProgressIcon" class="upload-progress-icon">🚀</div>
+        <div id="uploadProgressTitle" class="upload-progress-title">3D 오브제 및 사진을 업로드하고 있습니다...</div>
+        <div id="uploadProgressSub" class="upload-progress-sub">네트워크를 통해 서버로 데이터를 전송 중입니다.</div>
+        <div class="upload-progress-stats">
+            <span id="uploadProgressPercent" class="upload-progress-percent">0%</span>
+            <span id="uploadProgressBytes" class="upload-progress-bytes">0.0 MB / 0.0 MB</span>
+        </div>
+        <div class="upload-progress-track">
+            <div id="uploadProgressFill" class="upload-progress-fill"></div>
+        </div>
+        <div class="upload-progress-warn">⚠️ 업로드 완료 전까지 창을 닫거나 새로고침하지 마세요.</div>
+    </div>
+</div>
+
+<!--
+    [프래그먼트 2: 굿즈 삭제 확인 모달 (화면 중앙 커스텀 다이얼로그)]
+    - 매개변수: goodsId (굿즈 PK 식별자), goodsName (확인창에 표시될 굿즈 명칭)
+    - 삭제 폼 제출 시 POST /seller/goods/{goodsId}/delete 로 전송됩니다.
+-->
+<div th:fragment="goodsDeleteModal(goodsId, goodsName)" id="goodsDeleteModal" class="confirm-modal-overlay" onclick="handleGoodsDeleteBackdrop(event)">
+    <div class="confirm-modal-box">
+        <div class="confirm-modal-icon">⚠️</div>
+        <h3 class="confirm-modal-title">굿즈를 삭제하시겠습니까?</h3>
+        <p class="confirm-modal-sub" th:text="${goodsName}">굿즈명</p>
+        <p class="confirm-modal-desc">삭제 시 해당 굿즈의 인증코드 및 상세 정보가 영구적으로 삭제됩니다.</p>
+        <form id="goodsDeleteForm" th:action="@{'/seller/goods/' + ${goodsId} + '/delete'}" method="post">
+            <input type="hidden" name="redirect" value="/goods">
+            <div class="confirm-modal-actions">
+                <button type="submit" class="btn-confirm-yes">그래</button>
+                <button type="button" class="btn-confirm-no" onclick="closeGoodsDeleteModal()">아니</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
