@@ -37,16 +37,17 @@
 
                 <!-- 굿즈 사진 등록 (드래그 앤 드롭 순서 변경 및 개별 삭제) -->
                 <div class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
-                    <div class="image-manager-header">
-                        <div>
-                            <label class="form-label" style="margin-bottom: 2px;">굿즈 사진 등록 <span style="color: var(--red);">*</span></label>
-                            <div class="form-label-desc" style="margin-bottom: 0;">
-                                사진을 마우스로 <strong>드래그</strong>하거나 <strong>[◀] [▶]</strong> 버튼을 눌러 순서를 변경하세요.<br>
-                                <strong>첫 번째(맨 앞) 사진이 대표 썸네일</strong>로 지정됩니다.
-                            </div>
-                        </div>
-                        <div class="header-badge-col">
+                    <div class="section-card-header">
+                        <div class="section-title-row">
+                            <label class="form-label" style="margin-bottom: 0;">굿즈 사진 등록 <span style="color: var(--red);">*</span></label>
                             <span id="imageCountBadge" class="image-count-badge">0장</span>
+                        </div>
+                        <div class="form-label-desc" style="margin-bottom: 6px;">
+                            사진을 마우스로 <strong>드래그</strong>하거나 <strong>[◀] [▶]</strong> 버튼을 눌러 순서를 변경하세요.<br>
+                            <strong>첫 번째(맨 앞) 사진이 대표 썸네일</strong>로 지정됩니다.
+                        </div>
+                        <div class="section-sub-action-row">
+                            <span></span>
                             <span id="imageSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
                         </div>
                     </div>
@@ -83,17 +84,18 @@
 
                 <!-- 스테이지 3D 오브제 등록 영역 (다중 등록/수정/삭제 지원) -->
                 <div id="section-3d-objects" class="form-group" style="background: var(--bg-light); padding: 12px; border-radius: 10px;">
-                    <div class="image-manager-header">
-                        <div>
-                            <label class="form-label" style="margin-bottom: 2px;">🧊 스테이지 3D 오브제 등록 (선택)</label>
-                            <div class="form-label-desc" style="margin-bottom: 0;">
-                                해당 스테이지(굿즈)의 <strong>3D 전시관</strong>에 전시할 오브제들을 등록하세요.<br>
-                                각 오브제마다 <strong>1. 오브제 이름 / 2. 오브제 설명 / 3. 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 설정할 수 있습니다.<br>
-                                <span style="color: var(--gray); font-weight: 700;" th:text="|※ 허용 용량: 오브제별 최대용량 ${uploadConfig != null ? uploadConfig.maxObjectMb : 300}MB, 총 허용용량 ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB|">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
-                            </div>
-                        </div>
-                        <div class="header-badge-col">
+                    <div class="section-card-header">
+                        <div class="section-title-row">
+                            <label class="form-label" style="margin-bottom: 0;">스테이지 3D 오브제 등록 (선택)</label>
                             <span id="obj3dCountBadge" class="image-count-badge">0개</span>
+                        </div>
+                        <div class="form-label-desc" style="margin-bottom: 6px;">
+                            해당 스테이지(굿즈)의 <strong>3D 전시관</strong>에 전시할 오브제들을 등록하세요.<br>
+                            각 오브제마다 <strong>1. 오브제 이름 / 2. 오브제 설명 / 3. 3D 모델 파일(.glb, .gltf, .fbx, .obj, .usdz)</strong>을 설정할 수 있습니다.<br>
+                            <span style="color: var(--gray); font-weight: 700;" th:text="|※ 허용 용량: 오브제별 최대용량 ${uploadConfig != null ? uploadConfig.maxObjectMb : 300}MB, 총 허용용량 ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000}MB|">※ 허용 용량: 오브제별 최대용량 300MB, 총 허용용량 3000MB</span>
+                        </div>
+                        <div class="section-sub-action-row">
+                            <span></span>
                             <span id="obj3dSizeBadge" class="size-indicator-badge" th:text="|0.0 MB / ${uploadConfig != null ? uploadConfig.maxTotalMb : 3000} MB|">0.0 MB / 3000 MB</span>
                         </div>
                     </div>
