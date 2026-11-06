@@ -5,7 +5,7 @@
 > 가상 공간에서의 테라피·힐링 경험을 현실의 실물 굿즈로 연결하는 스프링 부트 기반의 백엔드 시스템입니다.
 >
 > 🌐 **서비스 공식 접속 링크**: [https://www.roomtherapy.kr/](https://www.roomtherapy.kr/)
-> **스웨거 링크**:[https://www.roomtherapy.kr/swagger-ui/index.html](https://www.roomtherapy.kr/swagger-ui/index.html)
+> <br>📄**스웨거 링크**:[https://www.roomtherapy.kr/swagger-ui/index.html](https://www.roomtherapy.kr/swagger-ui/index.html)
 
 ---
 
