@@ -27,8 +27,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: ${app.upload.max-object-mb}MB
-      max-request-size: ${app.upload.max-total-mb}MB
+      max-file-size: 300MB
+      max-request-size: 3000MB
       location: ${app.upload.temp-dir}
 
   config:

@@ -32,6 +32,12 @@ spring:
       hibernate:
         format_sql: false
 
+  servlet:
+    multipart:
+      max-file-size: 300MB
+      max-request-size: 3000MB
+      location: /var/tmp
+
 # ==========================================
 # AWS S3 스토리지 연동 설정
 # ==========================================
@@ -46,9 +52,12 @@ cloud:
       secret-key: ${AWS_SECRET_ACCESS_KEY:}
 
 # ==========================================
-# 파일 업로드 임시 디렉터리 (EC2 메인 디스크 /var/tmp 사용으로 tmpfs 455M 고갈 방지)
+# 파일 업로드 설정 (단위 MB, 임시 디렉터리 /var/tmp)
 # ==========================================
 app:
   upload:
+    max-image-mb: 70
+    max-object-mb: 300
+    max-total-mb: 3000
     temp-dir: /var/tmp
 
