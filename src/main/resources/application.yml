@@ -1,6 +1,9 @@
 server:
   port: 8080
   forward-headers-strategy: framework
+  tomcat:
+    max-http-form-post-size: 3000MB
+    max-swallow-size: -1
   servlet:
     session:
       cookie:

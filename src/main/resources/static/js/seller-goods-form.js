@@ -603,6 +603,10 @@ function initSellerGoodsForm(options) {
             const card = document.createElement('div');
             card.className = 'obj3d-card';
 
+            const numStr = String(idx + 1).padStart(2, '0');
+            const ext = item.file ? extractModelExt(item.file.name) : extractModelExt(item.modelUrl);
+            const extLabel = ext ? ext.replace('.', '').toUpperCase() : '미선택';
+
             // 모델 용량 계산 (신규 파일 크기 우선, 없으면 기존 URL 크기)
             let modelBytes = null;
             if (item.file) {
