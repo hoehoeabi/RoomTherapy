@@ -210,7 +210,7 @@ class DeliveryAndAdminIntegrationTest {
         mockMvc.perform(get("/delivery/edit/" + order.getId())
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery-edit"))
+                .andExpect(view().name("delivery/edit"))
                 .andExpect(model().attributeExists("form", "order"));
 
         // 2. 배송지 수정 제출
@@ -357,7 +357,7 @@ class DeliveryAndAdminIntegrationTest {
         mockMvc.perform(get("/mypage")
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("mypage"))
+                .andExpect(view().name("user/mypage"))
                 .andExpect(model().attributeExists("userProfile", "nicknameForm", "deliveryInfoForm"))
                 .andExpect(model().attribute("currentTab", "profile"));
     }
@@ -378,7 +378,7 @@ class DeliveryAndAdminIntegrationTest {
         mockMvc.perform(get("/mypage?tab=orders")
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("mypage"))
+                .andExpect(view().name("user/mypage"))
                 .andExpect(model().attributeExists("orders"))
                 .andExpect(model().attribute("currentTab", "orders"));
     }
@@ -433,7 +433,7 @@ class DeliveryAndAdminIntegrationTest {
         mockMvc.perform(get("/delivery")
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("form"))
                 .andExpect(result -> {
                     var form = (DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
@@ -614,7 +614,7 @@ class DeliveryAndAdminIntegrationTest {
         mockMvc.perform(get("/delivery")
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("goodsList"))
                 .andDo(result -> {
                     @SuppressWarnings("unchecked")
@@ -645,7 +645,7 @@ class DeliveryAndAdminIntegrationTest {
                         .param("goodsId", String.valueOf(soldOutGoods.getId()))
                         .cookie(new Cookie("accessToken", userToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeDoesNotExist("selectedGoods"))
                 .andDo(result -> {
                     DeliveryOrderRequestDto form = (DeliveryOrderRequestDto) result.getModelAndView().getModel().get("form");
@@ -676,7 +676,7 @@ class DeliveryAndAdminIntegrationTest {
                         .param("detailAddress", "101호")
                         .param("goodsId", String.valueOf(soldOutGoods.getId())))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("errorMessage"))
                 .andDo(result -> {
                     String errorMsg = (String) result.getModelAndView().getModel().get("errorMessage");

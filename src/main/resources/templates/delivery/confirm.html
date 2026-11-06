@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>배송 신청 완료 - 룸테라피</title>
+    <!-- 사용자 배송 신청/수정 공통 스타일시트 모듈 (CSS 모듈화) -->
+    <link rel="stylesheet" th:href="@{/css/user-delivery.css}" href="/css/user-delivery.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 체크 아이콘 -->
+        <div class="check-circle">
+            <svg viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <h1>배송 신청이 완료되었습니다!</h1>
+        <p class="congrats-sub">룸테라피 스테이지 클리어를 축하해요!</p>
+
+        <!-- 리워드 가로 썸네일 슬라이더 (해당 굿즈의 실제 이미지들 연동) -->
+        <div class="thumb-slider">
+            <th:block th:if="${order.goodsImageList != null and !order.goodsImageList.empty}">
+                <div th:each="imgUrl : ${order.goodsImageList}" class="thumb-box">
+                    <img th:src="${imgUrl}" th:alt="${order.goodsName}">
+                </div>
+            </th:block>
+            <th:block th:if="${order.goodsImageList == null or order.goodsImageList.empty}">
+                <div class="thumb-box">
+                    <span class="thumb-placeholder">🎁</span>
+                </div>
+            </th:block>
+        </div>
+
+        <!-- 신청 내역 상세 -->
+        <div class="details-card" th:object="${order}">
+            <div class="goods-name-title" th:text="${order.goodsName}">룸테라피 아늑한 무드등 (스테이지 1 리워드)</div>
+            <div class="info-table">
+                <div class="info-row">
+                    <span class="info-key">수령인</span>
+                    <span class="info-value" th:text="${order.recipientName}">에이치</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">배송 주소</span>
+                    <span class="info-value" th:text="${'(' + order.zipcode + ') ' + order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">(13479) 경기 성남시 분당구 서판교로 32 301동 302호</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">신청 일시</span>
+                    <span class="info-value" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-22 18:05</span>
+                </div>
+                <div class="info-row" th:if="${order.feedback != null and !order.feedback.isEmpty()}">
+                    <span class="info-key">피드백</span>
+                    <span class="info-value" th:text="${order.feedback}">물건들이 너무 작아요</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 액션 버튼들 -->
+        <div class="actions-wrap">
+            <a href="/mypage?tab=orders" class="btn-cta">
+                내 배송 신청 내역 확인 &nbsp;|&nbsp; 배송지 변경
+            </a>
+            <a href="/goods" class="btn-outline">
+                굿즈 리워드 둘러보기
+            </a>
+            <a href="/" class="link-home">
+                홈으로 이동
+            </a>
+        </div>
+    </div>
+    <!-- 사용자 배송 신청 공통 스크립트 모듈 (JS 모듈화) -->
+    <script th:src="@{/js/user-delivery.js}" src="/js/user-delivery.js"></script>
+</body>
+</html>

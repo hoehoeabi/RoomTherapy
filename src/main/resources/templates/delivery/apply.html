@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>굿즈 배송 신청 - 룸테라피</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <!-- 사용자 배송 신청/수정 공통 스타일시트 모듈 (CSS 모듈화) -->
+    <link rel="stylesheet" th:href="@{/css/user-delivery.css}" href="/css/user-delivery.css">
+    <!-- 다음 우편번호 API -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 상단 뱃지 & 타이틀 -->
+        <span class="badge-stage">STAGE REWARD</span>
+        <h1>굿즈 배송 신청</h1>
+        <p class="sub-desc">게임에서 획득한 인증코드를 입력해 주세요.</p>
+
+        <!-- 에러 메시지 알림 -->
+        <div class="alert-error" th:if="${errorMessage != null}" th:text="${errorMessage}">
+            인증코드가 올바르지 않거나 이미 사용되었습니다.
+        </div>
+
+        <form th:action="@{/delivery}" th:object="${form}" method="post" id="deliveryForm">
+            <!-- 신청할 리워드 굿즈 선택 -->
+            <div class="reward-card" th:if="${goodsList != null and not #lists.isEmpty(goodsList)}">
+                <label for="goodsId">신청할 리워드 굿즈 선택</label>
+                <select id="goodsId" th:field="*{goodsId}" class="reward-select" onchange="onGoodsSelectChange(this)">
+                    <option value="">스테이지 기본 리워드 (선택 안 함)</option>
+                    <option th:each="goods : ${goodsList}" 
+                            th:value="${goods.id}" 
+                            th:text="${goods.name + ' (남은 재고: ' + goods.stockQuantity + '개)'}"
+                            th:attr="data-img=${goods.imageUrl}"
+                            th:selected="${form.goodsId != null and form.goodsId == goods.id}">
+                    </option>
+                </select>
+
+                <!-- 굿즈 썸네일 가로 슬라이더 -->
+                <div class="thumb-slider">
+                    <th:block th:each="goods : ${goodsList}">
+                        <th:block th:if="${goods.imageList != null and !goods.imageList.empty}">
+                            <div th:each="imgUrl : ${goods.imageList}" class="thumb-box" th:id="'thumb-' + ${goods.id}">
+                                <img th:src="${imgUrl}" th:alt="${goods.name}">
+                            </div>
+                        </th:block>
+                        <th:block th:if="${goods.imageList == null or goods.imageList.empty}">
+                            <div class="thumb-box" th:id="'thumb-' + ${goods.id}">
+                                <div class="thumb-placeholder">
+                                    <span>사진등록</span>
+                                    <span>예정</span>
+                                </div>
+                            </div>
+                        </th:block>
+                    </th:block>
+                </div>
+            </div>
+
+            <!-- 클리어 인증코드 -->
+            <div class="form-group">
+                <label class="form-label" for="stageCode">클리어 인증코드</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" id="stageCode" th:field="*{stageCode}" class="input-text" placeholder="인증코드를 입력하세요 (예: rt-1234)" style="flex: 1;" required>
+                    <button type="button" onclick="verifyAuthCode()" style="flex: 0 0 76px; height: 38px; background: #FFEBEB; color: var(--red); border: none; border-radius: var(--input-radius); font-size: 12px; font-weight: 700; cursor: pointer;">코드 검증</button>
+                </div>
+                <div id="codeVerifyFeedback" style="display: none; margin-top: 6px; font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 6px;"></div>
+                <span class="field-error" th:errors="*{stageCode}"></span>
+            </div>
+
+            <!-- 수령인 성함 -->
+            <div class="form-group">
+                <label class="form-label" for="recipientName">수령인 성함</label>
+                <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="수령인 성함 입력" required>
+                <span class="field-error" th:errors="*{recipientName}"></span>
+            </div>
+
+            <!-- 배송지 주소 및 우편번호 -->
+            <div class="form-group">
+                <label class="form-label">배송지 주소 및 우편번호</label>
+                <div class="zip-row">
+                    <input type="text" id="zipcode" th:field="*{zipcode}" class="input-text zip-input" placeholder="우편번호" maxlength="5" readonly required>
+                    <button type="button" class="btn-find-addr" onclick="openDaumPostcode()">주소 찾기</button>
+                </div>
+                <input type="text" id="address" th:field="*{address}" class="input-text" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 6px;" readonly required>
+                <input type="text" id="detailAddress" th:field="*{detailAddress}" class="input-text" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
+                <label class="checkbox-row">
+                    <input type="checkbox" id="saveAsDefaultAddress" th:field="*{saveAsDefaultAddress}">
+                    <span>이 정보를 마이페이지 기본 배송지로 저장</span>
+                </label>
+                <span class="field-error" th:errors="*{address}"></span>
+                <span class="field-error" th:errors="*{zipcode}"></span>
+            </div>
+
+            <!-- (선택) 게임 피드백 컬럼 -->
+            <div class="form-group">
+                <label class="form-label" for="feedback">(선택) 게임 피드백을 자유롭게 남겨주세요!</label>
+                <span class="form-label-sub">소중한 의견을 남겨주시면 랜덤 스티커 1장을 추가로 드립니다</span>
+                <input type="text" id="feedback" th:field="*{feedback}" class="input-text" placeholder="피드백을 남겨주세요.">
+            </div>
+
+            <!-- 룸테라피 리워드 발송 안내 문구 -->
+            <div class="notice-box">
+                <div class="notice-title">룸테라피 리워드 발송 안내</div>
+                <ul class="notice-list">
+                    <li>배송 방법: 일반우편 (발송 후 평일 기준 약 3~7일 소요, 주말·공휴일 제외)</li>
+                    <li>발송 안내: 공식 인스타그램 (@roomtherapy.game) 스토리 또는 게시물에서 발송 인증을 확인하실 수 있습니다.</li>
+                    <li>유의 사항: 일반우편은 배송 추적이 불가하며, 우편함으로 배송됩니다. 분실·도난·파손 시 주최 측 책임 및 재발송이 불가합니다.</li>
+                    <li>신청 제한: 주소당 1개만 수령할 수 있습니다.</li>
+                    <li>개인정보: 수집된 이름과 주소는 상품 발송에만 사용되며, 발송 완료 후 안전하게 파기됩니다.</li>
+                </ul>
+            </div>
+
+            <!-- 완료 버튼 & 돌아가기 -->
+            <button type="submit" class="btn-submit">
+                배송 신청 완료
+            </button>
+            <a href="/" class="btn-back-link">돌아가기</a>
+        </form>
+    </div>
+
+    <!-- 사용자 배송 신청 공통 스크립트 모듈 (JS 모듈화) -->
+    <script th:src="@{/js/user-delivery.js}" src="/js/user-delivery.js"></script>
+</body>
+</html>

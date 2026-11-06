@@ -78,7 +78,7 @@ public class DeliveryController {
         }
 
         model.addAttribute("user", userDetails);
-        return "delivery";
+        return "delivery/apply";
     }
 
     /**
@@ -102,7 +102,7 @@ public class DeliveryController {
                         .findFirst()
                         .ifPresent(g -> model.addAttribute("selectedGoods", g));
             }
-            return "delivery";
+            return "delivery/apply";
         }
 
         try {
@@ -120,7 +120,7 @@ public class DeliveryController {
                         .ifPresent(g -> model.addAttribute("selectedGoods", g));
             }
             model.addAttribute("errorMessage", e.getMessage());
-            return "delivery";
+            return "delivery/apply";
         }
     }
 
@@ -146,7 +146,7 @@ public class DeliveryController {
         DeliveryOrderResponseDto order = deliveryOrderService.getOrder(orderId);
         model.addAttribute("order", order);
         model.addAttribute("user", userDetails);
-        return "delivery-confirm";
+        return "delivery/confirm";
     }
 
     /**
@@ -178,7 +178,7 @@ public class DeliveryController {
         }
         model.addAttribute("order", order);
         model.addAttribute("user", userDetails);
-        return "delivery-edit";
+        return "delivery/edit";
     }
 
     /**
@@ -198,7 +198,7 @@ public class DeliveryController {
             DeliveryOrderResponseDto order = deliveryOrderService.getOrder(orderId);
             model.addAttribute("order", order);
             model.addAttribute("user", userDetails);
-            return "delivery-edit";
+            return "delivery/edit";
         }
 
         try {
@@ -211,7 +211,7 @@ public class DeliveryController {
             model.addAttribute("order", order);
             model.addAttribute("user", userDetails);
             model.addAttribute("errorMessage", e.getMessage());
-            return "delivery-edit";
+            return "delivery/edit";
         }
     }
 }

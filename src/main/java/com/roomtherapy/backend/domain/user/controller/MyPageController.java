@@ -76,7 +76,7 @@ public class MyPageController {
         model.addAttribute("deliveryInfoForm", model.getAttribute("deliveryForm"));
         model.addAttribute("currentTab", tab);
         model.addAttribute("user", userDetails);
-        return "mypage";
+        return "user/mypage";
     }
 
     /**

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>마이페이지 - 룸테라피</title>
+    <!-- 마이페이지 공통 스타일시트 모듈 (CSS 모듈화) -->
+    <link rel="stylesheet" th:href="@{/css/mypage.css}" href="/css/mypage.css">
+    <!-- 다음 우편번호 API -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 헤더 영역 -->
+        <div class="page-header">
+            <div class="header-title-wrap">
+                <h1>마이페이지</h1>
+                <p>내 프로필 정보와 기본 배송지, 굿즈 신청 내역을 관리합니다.</p>
+            </div>
+            <a href="/" class="btn-home">홈으로</a>
+        </div>
+
+        <div class="alert-success" th:if="${successMessage != null}" th:text="${successMessage}">
+            성공적으로 저장되었습니다.
+        </div>
+
+        <!-- 프로필 카드 (권한 승격 스위처 제거 완료) -->
+        <div class="profile-card">
+            <div>
+                <div class="profile-name" th:text="${profile.nickname}">에이치</div>
+                <div class="profile-id">
+                    연동 계정 ID: <span th:text="${profile.kakaoId}">5147599173</span>
+                </div>
+            </div>
+            <div>
+                <span class="badge-roommate" th:text="${profile.roleTitle}">룸메이트</span>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션: 새로고침 없는 즉시 토글 -->
+        <div class="tab-bar">
+            <button type="button" id="tab-btn-profile" onclick="switchTab('profile')"
+                    th:class="${currentTab == 'profile' ? 'tab-btn active' : 'tab-btn'}">
+                프로필 | 기본 배송지
+            </button>
+            <button type="button" id="tab-btn-orders" onclick="switchTab('orders')"
+                    th:class="${currentTab == 'orders' ? 'tab-btn active' : 'tab-btn'}">
+                내 굿즈 신청 내역 <span th:text="${'(' + myOrders.totalElements + ')'}">(2)</span>
+            </button>
+        </div>
+
+        <!-- 탭 1: 프로필 & 기본 배송지 (새로고침 없는 즉시 토글) -->
+        <div id="tab-profile-content" th:style="${currentTab == 'profile' ? 'display: block;' : 'display: none;'}">
+            <!-- 닉네임 변경 카드 -->
+            <div class="section-card">
+                <h2 class="section-title">닉네임 변경</h2>
+                <p class="section-desc">카카오 계정 닉네임과 별도로 서비스 내에서 표시될 닉네임을 변경할 수 있습니다.</p>
+                <form th:action="@{/mypage/nickname}" th:object="${nicknameForm}" method="post">
+                    <div class="form-group">
+                        <label class="form-label" for="nickname">닉네임</label>
+                        <input type="text" id="nickname" th:field="*{nickname}" class="input-text" placeholder="닉네임 입력" required>
+                        <span class="field-error" th:errors="*{nickname}"></span>
+                    </div>
+                    <button type="submit" class="btn-small-red">닉네임 저장</button>
+                </form>
+            </div>
+
+            <!-- 기본 배송지 관리 카드 (연락처 필드 제거 완료) -->
+            <div class="section-card">
+                <h2 class="section-title">기본 배송지 관리</h2>
+                <p class="section-desc">기본 배송지 등록해 두면 굿즈 신청 시 주소가 자동으로 입력됩니다.</p>
+                <form th:action="@{/mypage/delivery-info}" th:object="${deliveryForm}" method="post" id="deliveryInfoForm">
+                    <div class="form-group">
+                        <label class="form-label" for="recipientName">기본 수령인 성함</label>
+                        <input type="text" id="recipientName" th:field="*{recipientName}" class="input-text" placeholder="송혜정" required>
+                        <span class="field-error" th:errors="*{recipientName}"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">기본 배송지 주소 및 우편번호</label>
+                        <div class="zip-row">
+                            <input type="text" id="zipcode" th:field="*{zipcode}" class="input-text zip-input" placeholder="우편번호" maxlength="5" readonly required>
+                            <button type="button" class="btn-find-addr" onclick="openDaumPostcode()">주소 찾기</button>
+                        </div>
+                        <input type="text" id="address" th:field="*{address}" class="input-text" placeholder="기본 주소 (주소 찾기를 이용하세요)" style="margin-bottom: 6px;" readonly required>
+                        <input type="text" id="detailAddress" th:field="*{detailAddress}" class="input-text" placeholder="상세 주소 (동, 호수 등을 직접 입력하세요)">
+                        <span class="field-error" th:errors="*{address}"></span>
+                        <span class="field-error" th:errors="*{zipcode}"></span>
+                    </div>
+
+                    <button type="submit" class="btn-small-red">기본 배송지 저장</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 탭 2: 내 굿즈 신청 내역 (새로고침 없는 즉시 토글) -->
+        <div id="tab-orders-content" th:style="${currentTab == 'orders' ? 'display: block;' : 'display: none;'}">
+            <div class="section-card" style="padding: 16px 14px;">
+                <h2 class="section-title">내 굿즈 신청 내역</h2>
+                <p class="section-desc">클리어 인증코드로 신청하신 굿즈의 우편 배송 현황입니다.</p>
+
+                <div th:each="order : ${myOrders.content}" class="order-card">
+                    <div class="order-top">
+                        <div class="order-goods-name" th:text="${order.goodsName}">포근 힐링 담요 & 수면 안대 세트</div>
+                        <span th:if="${order.status.name() == 'ORDERED'}" class="badge-status-ordered" th:text="${order.statusDescription}">접수 완료</span>
+                        <span th:if="${order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}" class="badge-status-shipped" th:text="${order.statusDescription}">발송 완료</span>
+                        <span th:if="${order.status.name() != 'ORDERED' and order.status.name() != 'SHIPPED' and order.status.name() != 'DELIVERED'}" class="badge-status-other" th:text="${order.statusDescription}">배송 준비중</span>
+                    </div>
+                    <div class="order-table">
+                        <div class="order-row">
+                            <span class="order-key">클리어 코드</span>
+                            <span class="order-val" style="font-family: monospace;" th:text="${order.stageCode}">ew-1011-clear</span>
+                        </div>
+                        <div class="order-row">
+                            <span class="order-key">수령인</span>
+                            <span class="order-val" th:text="${order.recipientName}">에이치</span>
+                        </div>
+                        <div class="order-row">
+                            <span class="order-key">배송 주소</span>
+                            <span class="order-val" th:text="${'(' + order.zipcode + ') ' + order.address + ' ' + (order.detailAddress != null ? order.detailAddress : '')}">(13479) 경기 성남시 분당구 서판교로 32 302</span>
+                        </div>
+                        <div class="order-row">
+                            <span class="order-key">신청 일시</span>
+                            <span class="order-val" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-10-22 18:05</span>
+                        </div>
+                        <div class="order-row" th:if="${order.feedback != null and !order.feedback.isEmpty()}">
+                            <span class="order-key">피드백</span>
+                            <span class="order-val" th:text="${order.feedback}">물건들이 너무 작아요</span>
+                        </div>
+                    </div>
+
+                    <div th:if="${order.canModify}">
+                        <a th:href="@{'/delivery/edit/' + ${order.id}}" class="btn-edit-order">배송지 변경</a>
+                    </div>
+                </div>
+
+                <div th:if="${myOrders.empty}" style="padding: 30px 0; text-align: center; color: var(--gray); font-size: 12px;">
+                    아직 신청하신 굿즈 배송 내역이 없습니다.
+                </div>
+
+                <!-- 페이지네이션 -->
+                <div class="pagination" th:if="${myOrders.totalPages > 1}">
+                    <a th:if="${myOrders.hasPrevious()}" 
+                       th:href="@{/mypage(tab='orders', page=${myOrders.number - 1})}" 
+                       class="page-link">‹</a>
+
+                    <a th:each="i : ${#numbers.sequence(0, myOrders.totalPages - 1)}"
+                       th:href="@{/mypage(tab='orders', page=${i})}"
+                       th:class="${i == myOrders.number ? 'page-link active' : 'page-link'}"
+                       th:text="${i + 1}">1</a>
+
+                    <a th:if="${myOrders.hasNext()}" 
+                       th:href="@{/mypage(tab='orders', page=${myOrders.number + 1})}" 
+                       class="page-link">›</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 마이페이지 스크립트 모듈 (JS 모듈화) -->
+    <script th:src="@{/js/mypage.js}" src="/js/mypage.js"></script>
+</body>
+</html>
