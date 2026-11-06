@@ -113,7 +113,7 @@ class WebGLAuthenticationIntegrationTest {
         mockMvc.perform(get("/delivery")
                         .cookie(new Cookie("accessToken", validAccessToken)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("user"));
     }
 
@@ -164,7 +164,7 @@ class WebGLAuthenticationIntegrationTest {
         mockMvc.perform(get("/delivery")
                         .header("Authorization", "Bearer " + validAccessToken))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("user"));
     }
 }

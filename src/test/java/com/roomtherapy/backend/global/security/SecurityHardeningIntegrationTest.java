@@ -142,7 +142,7 @@ class SecurityHardeningIntegrationTest {
                         .param("zipcode", "12345")
                         .param("address", "서울시 강남구"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("errorMessage"));
 
         assertThat(deliveryOrderRepository.count()).isZero();

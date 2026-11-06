@@ -182,7 +182,7 @@ class GoodsAuthCodeIntegrationTest {
                         .param("zipcode", "12345")
                         .param("address", "서울특별시"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("errorMessage"));
 
         assertThat(deliveryOrderRepository.count()).isEqualTo(0);
@@ -216,7 +216,7 @@ class GoodsAuthCodeIntegrationTest {
                         .param("zipcode", "12345")
                         .param("address", "서울특별시"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("delivery"))
+                .andExpect(view().name("delivery/apply"))
                 .andExpect(model().attributeExists("errorMessage"));
 
         assertThat(deliveryOrderRepository.count()).isEqualTo(1);
