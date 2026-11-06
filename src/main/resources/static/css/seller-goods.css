@@ -1,0 +1,1000 @@
+/**
+ * ==============================================================================
+ * RoomTherapy Seller Goods Management - CSS
+ * ==============================================================================
+ * [용도 및 쓰이는 곳]
+ * - 판매자 굿즈 등록 화면: /seller/goods/new (templates/seller/goods-new.html)
+ * - 판매자 굿즈 수정 화면: /seller/goods/{id}/edit (templates/seller/goods-edit.html)
+ *
+ * [주요 섹션 구성]
+ * 1. 기본 레이아웃 & 컨테이너 (.app-container, .card, .form-group 등)
+ * 2. 굿즈 사진 매니저 (.image-grid, .image-card, 드래그 앤 드롭 애니메이션, 순서 컨트롤)
+ * 3. 3D 오브제 매니저 (.obj3d-list, .obj3d-card, 3D 파일/썸네일 선택 및 순서 버튼)
+ * 4. 파일 업로드 요약 박스 & 실시간 용량 인디케이터 (.upload-summary-container, .size-indicator-badge)
+ * 5. 모달 다이얼로그 (화면 중앙 삭제 모달, XHR 업로드 프로그레스 바 오버레이)
+ * ==============================================================================
+ */
+
+/* ==============================================================================
+ * 1. CSS 변수 및 기본 레이아웃 초기화
+ * ============================================================================== */
+:root {
+    --input-radius: 8px;
+    --card-radius: 14px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #EFEFEF;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+/* 모바일 뷰포트 기준 390px 컨테이너 */
+.app-container {
+    width: 100%;
+    max-width: 390px;
+    min-height: 100vh;
+    background: #FAFAFA;
+    padding: 24px 16px 40px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 440px) {
+    body {
+        background-color: #FAFAFA;
+    }
+    .app-container {
+        box-shadow: none;
+        min-height: 100dvh;
+        padding: 20px 14px 32px;
+    }
+}
+
+/* ==============================================================================
+ * 2. 헤더, 카드 및 폼 공통 컨트롤 (인풋, 버튼, 에러 알림)
+ * ============================================================================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.header-title-wrap h1 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--title);
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+
+.header-title-wrap p {
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: -0.2px;
+}
+
+.btn-home {
+    font-size: 12px;
+    color: var(--gray);
+    text-decoration: none;
+    padding: 4px 0;
+    font-weight: 500;
+}
+
+.btn-home:hover {
+    color: var(--title);
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: var(--card-radius);
+    padding: 18px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    margin-bottom: 14px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--title);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.form-label-desc {
+    font-size: 10.5px;
+    color: var(--gray);
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.input-text {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: var(--input-radius);
+    border: 1px solid var(--border-light);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    background: #FFFFFF;
+}
+
+.input-text:focus {
+    border-color: var(--red);
+}
+
+select.input-text {
+    cursor: pointer;
+}
+
+textarea.input-text {
+    height: 80px;
+    padding: 8px 12px;
+    resize: vertical;
+}
+
+textarea.code-area {
+    height: 90px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* 인증코드 자동 생성 버튼 (+ 5개 자동 생성) */
+.btn-gen {
+    background: #FFEBEB;
+    color: var(--red);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* 폼 제출 버튼 */
+.btn-submit {
+    width: 100%;
+    height: 44px;
+    background: var(--red);
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: var(--input-radius);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 75, 78, 0.28);
+    margin-top: 6px;
+    transition: opacity 0.15s ease;
+}
+
+.btn-submit:active {
+    opacity: 0.92;
+}
+
+.btn-submit:disabled {
+    background: #94A3B8;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+/* 용량 초과 시 비활성화 상태 */
+.btn-submit.btn-over-limit {
+    background: #94A3B8 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    opacity: 0.75 !important;
+}
+
+/* 굿즈 삭제 버튼 (수정 화면 하단) */
+.btn-delete {
+    width: 100%;
+    height: 40px;
+    background: #F8F9FA;
+    color: #DC3545;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: var(--input-radius);
+    border: 1px solid #F1F3F5;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.15s ease;
+}
+
+.btn-delete:hover {
+    background: #FFEAEA;
+}
+
+.field-error {
+    color: var(--red);
+    font-size: 11px;
+    margin-top: 4px;
+    display: block;
+}
+
+.alert-error {
+    background: #FFEBEB;
+    color: var(--red);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+/* ==============================================================================
+ * 3. 굿즈 사진 매니저 (드래그 앤 드롭, 순서 변경, 썸네일 그리드)
+ * 쓰이는 곳: 굿즈 사진 등록/관리 카드 영역
+ * ============================================================================== */
+.image-manager-wrap {
+    margin-top: 6px;
+}
+
+.image-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.image-count-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--red);
+    background: #FFEBEB;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.header-badge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* 실시간 용량 뱃지 (섹션별 & 총합) */
+.size-indicator-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    padding: 2px 7px;
+    border-radius: 8px;
+    white-space: nowrap;
+    letter-spacing: -0.2px;
+    transition: all 0.2s ease;
+}
+
+.size-indicator-badge.warn {
+    color: var(--red);
+    background: #FFEBEB;
+    border-color: #FFB3B4;
+    font-weight: 800;
+}
+
+/* 사진들이 나열되는 드래그 & 드롭 그리드 */
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    min-height: 86px;
+    padding: 8px;
+    background: #FFFFFF;
+    border-radius: var(--input-radius);
+    border: 1px dashed var(--border-light);
+    align-items: center;
+}
+
+.image-grid.drag-active {
+    border-color: var(--red);
+    background: #FFF7F7;
+}
+
+/* 개별 사진 카드 */
+.image-card {
+    position: relative;
+    width: 82px;
+    height: 82px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border-light);
+    background: #FAFAFA;
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    user-select: none;
+    touch-action: manipulation;
+    flex-shrink: 0;
+}
+
+.image-card:active {
+    cursor: grabbing;
+}
+
+.image-card.dragging {
+    opacity: 0.35;
+    transform: scale(0.92);
+    border-color: var(--red);
+}
+
+.image-card.drag-over {
+    border-color: var(--red);
+    box-shadow: 0 0 0 2px rgba(255, 75, 78, 0.4);
+    transform: scale(1.05);
+}
+
+.image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* 첫 번째 카드에 붙는 '★ 대표 사진' 뱃지 */
+.badge-main-photo {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: var(--red);
+    color: #FFFFFF;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 사진 우측 상단 개별 삭제 (X) 버튼 */
+.btn-delete-image {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    color: #FFFFFF;
+    border: none;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+    z-index: 3;
+    line-height: 1;
+}
+
+.btn-delete-image:hover {
+    background: var(--red);
+    transform: scale(1.15);
+}
+
+/* 사진 카드 하단 좌우 [◀] [▶] 이동 버튼 컨트롤 바 */
+.card-order-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 4px;
+    z-index: 2;
+}
+
+.btn-order-move {
+    background: none;
+    border: none;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 1px 4px;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.btn-order-move:hover {
+    color: #FFB3B4;
+}
+
+.btn-order-move:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.image-empty-notice {
+    width: 100%;
+    padding: 18px 8px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--gray);
+}
+
+/* 추가 파일 업로드 드롭존 영역 */
+.upload-dropzone {
+    border: 2px dashed #D2D2D2;
+    border-radius: var(--input-radius);
+    padding: 12px 10px;
+    text-align: center;
+    background: #FFFFFF;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    margin-bottom: 6px;
+}
+
+.upload-dropzone:hover, .upload-dropzone.drag-active {
+    border-color: var(--red);
+    background: #FFF7F7;
+}
+
+.upload-dropzone-icon {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.upload-dropzone-text {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--title);
+}
+
+.upload-dropzone-sub {
+    font-size: 10px;
+    color: var(--gray);
+    margin-top: 1px;
+}
+
+/* 외부 이미지 URL 직접 추가 (details 접기 메뉴) */
+.url-input-collapse {
+    margin-top: 6px;
+}
+
+.url-input-collapse summary {
+    font-size: 11px;
+    color: var(--gray);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+}
+
+.url-input-collapse summary:hover {
+    color: var(--red);
+}
+
+.url-input-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.btn-add-url {
+    padding: 0 12px;
+    height: 38px;
+    background: #EFEFEF;
+    border: 1px solid var(--border-light);
+    border-radius: var(--input-radius);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.btn-add-url:hover {
+    background: #FFEBEB;
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.auth-code-summary {
+    font-size: 11.5px;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.auth-code-summary a {
+    color: var(--red);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* ==============================================================================
+ * 4. 스테이지 3D 오브제 매니저
+ * 쓰이는 곳: 굿즈 등록/수정 화면의 '🧊 스테이지 3D 오브제 관리' 섹션
+ * (.glb, .gltf, .fbx, .obj, .usdz 모델 파일 업로드 및 썸네일 등록)
+ * ============================================================================== */
+.obj3d-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+.obj3d-card {
+    background: #FFFFFF;
+    border: 1.5px solid var(--border-light);
+    border-radius: 10px;
+    padding: 12px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.obj3d-card:hover {
+    border-color: #FFD0D1;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.obj3d-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #F2F2F2;
+}
+
+.obj3d-badge-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.obj3d-index-badge {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #FFFFFF;
+    background: #2C2C35;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.4px;
+}
+
+.obj3d-format-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--red);
+    background: #FFEBEB;
+    padding: 2px 6px;
+    border-radius: 5px;
+}
+
+.obj3d-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-obj3d-ctrl {
+    background: #F4F4F6;
+    border: 1px solid #E2E2E6;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-obj3d-ctrl:hover:not(:disabled) {
+    background: #E8E8EC;
+}
+
+.btn-obj3d-ctrl:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.btn-obj3d-delete {
+    background: #FFF0F0;
+    border: 1px solid #FFD6D6;
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-obj3d-delete:hover {
+    background: var(--red);
+    color: #FFFFFF;
+    border-color: var(--red);
+}
+
+.obj3d-field-row {
+    margin-bottom: 8px;
+}
+
+.obj3d-field-row:last-child {
+    margin-bottom: 0;
+}
+
+.obj3d-sub-label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--title);
+    margin-bottom: 4px;
+}
+
+.obj3d-file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-obj3d-file {
+    padding: 7px 12px;
+    background: #2C2C35;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-obj3d-file:hover {
+    background: var(--red);
+}
+
+.obj3d-file-status {
+    font-size: 11.5px;
+    color: var(--text);
+    font-weight: 600;
+    word-break: break-all;
+    flex: 1;
+}
+
+.btn-add-obj3d {
+    width: 100%;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border: 1.5px dashed var(--red);
+    border-radius: 8px;
+    color: var(--red);
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-add-obj3d:hover {
+    background: #FFF5F5;
+}
+
+/* ==============================================================================
+ * 5. 총 업로드 용량 요약 박스 & 실시간 한도 초과 경고
+ * 쓰이는 곳: 폼 하단 제출 버튼 바로 위 요약 섹션
+ * ============================================================================== */
+.upload-summary-container {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.upload-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--title);
+}
+
+.upload-summary-total {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1E293B;
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    padding: 2px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.upload-summary-total.warn {
+    color: var(--red);
+    background: #FFEBEB;
+    border-color: #FFB3B4;
+}
+
+.upload-summary-details {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--gray);
+    flex-wrap: wrap;
+}
+
+.upload-summary-details strong {
+    color: var(--text);
+}
+
+.summary-divider {
+    color: #CBD5E1;
+}
+
+.upload-limit-alert {
+    background: #FFEBEB;
+    border: 1px solid #FFCCD0;
+    color: var(--red);
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 7px 10px;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 4px;
+    animation: pulseWarn 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseWarn {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ==============================================================================
+ * 6. 실시간 업로드 진행률 모달 오버레이
+ * 쓰이는 곳: 대용량 파일 전송 중 화면을 덮고 % 진행 상태를 안내하는 모달
+ * (templates/fragments/goods-components.html :: uploadProgressOverlay)
+ * ============================================================================== */
+.upload-progress-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.upload-progress-overlay.active {
+    display: flex;
+}
+
+.upload-progress-box {
+    background: #FFFFFF;
+    width: 100%;
+    max-width: 380px;
+    border-radius: 16px;
+    padding: 24px 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+    text-align: center;
+}
+
+.upload-progress-icon {
+    font-size: 34px;
+    margin-bottom: 10px;
+    display: inline-block;
+    animation: pulseIcon 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseIcon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.upload-progress-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+    word-break: keep-all;
+}
+
+.upload-progress-sub {
+    font-size: 12px;
+    color: var(--gray);
+    margin-bottom: 16px;
+    line-height: 1.45;
+    word-break: keep-all;
+}
+
+.upload-progress-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.upload-progress-percent {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--red);
+}
+
+.upload-progress-bytes {
+    font-size: 11.5px;
+    color: #475569;
+    font-weight: 700;
+}
+
+.upload-progress-track {
+    width: 100%;
+    height: 12px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #E60023 0%, #FF5A5F 50%, #E60023 100%);
+    background-size: 200% 100%;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+    animation: progressShimmer 1.6s linear infinite;
+}
+
+@keyframes progressShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.upload-progress-warn {
+    margin-top: 12px;
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 600;
+}
+
+/* ==============================================================================
+ * 7. 화면 중앙 커스텀 다이얼로그 모달 (굿즈 삭제 확인 등)
+ * 쓰이는 곳: (templates/fragments/goods-components.html :: goodsDeleteModal)
+ * ============================================================================== */
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.confirm-modal-overlay.active {
+    display: flex;
+}
+
+.confirm-modal-box {
+    background: #FFFFFF;
+    border-radius: 20px;
+    max-width: 360px;
+    width: 100%;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.confirm-modal-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.confirm-modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F172A;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+    line-height: 1.4;
+}
+
+.confirm-modal-sub {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 8px;
+}
+
+.confirm-modal-desc {
+    font-size: 12.5px;
+    color: #64748B;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-confirm-yes {
+    flex: 1;
+    padding: 12px 18px;
+    background: var(--red);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.btn-confirm-yes:hover {
+    opacity: 0.9;
+}
+
+.btn-confirm-no {
+    flex: 1;
+    padding: 12px 18px;
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-confirm-no:hover {
+    background: #E2E8F0;
+}
