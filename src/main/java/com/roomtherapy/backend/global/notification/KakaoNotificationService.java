@@ -2,7 +2,6 @@ package com.roomtherapy.backend.global.notification;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus;
 import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -104,19 +103,6 @@ public class KakaoNotificationService {
         );
     }
 
-    /**
-     * 3. [판매자/관리자 -> 룸메이트] 배송 상태 변경(배송 준비중 / 발송 완료) 알림 (비동기 발송)
-     */
-    public void notifyRoommateStatusChanged(Long roommateUserId, String goodsName, DeliveryStatus newStatus, LocalDateTime changedAt) {
-        if (roommateUserId == null || (newStatus != DeliveryStatus.PREPARING && newStatus != DeliveryStatus.SHIPPED)) {
-            return;
-        }
-        CompletableFuture.runAsync(
-                () -> sendStatusChangedSync(roommateUserId, goodsName, newStatus, changedAt),
-                NOTIFICATION_EXECUTOR
-        );
-    }
-
     // =========================================================================
     // 동기 실행 및 메시지 포맷 빌더 (단위 테스트 및 내부 워커 호출용)
     // =========================================================================
@@ -151,20 +137,6 @@ public class KakaoNotificationService {
         }
     }
 
-    public void sendStatusChangedSync(Long roommateUserId, String goodsName, DeliveryStatus newStatus, LocalDateTime changedAt) {
-        if (newStatus != DeliveryStatus.PREPARING && newStatus != DeliveryStatus.SHIPPED) {
-            return;
-        }
-        try {
-            String text = buildStatusChangedText(goodsName, newStatus, changedAt);
-            String targetUrl = normalizeBaseUrl() + "/mypage?tab=orders";
-            sendKakaoTextMessageToUser(roommateUserId, text, "🔍 내 배송 현황 확인하기", targetUrl);
-        } catch (Exception e) {
-            log.warn("[KakaoNotification] 룸메이트 배송 상태 변경 알림 발송 중 예외 발생 (상태 변경은 정상 처리됨) - userId: {}, status: {}, cause: {}",
-                    roommateUserId, newStatus, e.getMessage());
-        }
-    }
-
     public String buildOrderCreatedText(String goodsName, String fullAddress, String recipientName, LocalDateTime orderedAt) {
         String timeStr = (orderedAt != null ? orderedAt : LocalDateTime.now()).format(DATE_TIME_FORMATTER);
         String safeGoodsName = (goodsName != null && !goodsName.isBlank()) ? goodsName : "스테이지 기본 리워드";
@@ -196,27 +168,6 @@ public class KakaoNotificationService {
                 + "• 주문 번호: #" + orderId + " (" + safeGoodsName + ")\n"
                 + addressLabel + fullAddress + "\n"
                 + recipientLabel + recipientName + " 님";
-    }
-
-    public String buildStatusChangedText(String goodsName, DeliveryStatus newStatus, LocalDateTime changedAt) {
-        String timeStr = (changedAt != null ? changedAt : LocalDateTime.now()).format(DATE_TIME_FORMATTER);
-        String safeGoodsName = (goodsName != null && !goodsName.isBlank()) ? goodsName : "스테이지 기본 리워드";
-
-        if (newStatus == DeliveryStatus.PREPARING) {
-            return "🎁 [룸테라피 배송 상태 안내]\n"
-                    + "신청하신 굿즈가 발송을 위해 준비 중입니다!\n\n"
-                    + "• 신청 굿즈: " + safeGoodsName + "\n"
-                    + "• 현재 상태: " + newStatus.getDescription() + "\n"
-                    + "• 처리 일시: " + timeStr + "\n\n"
-                    + "꼼꼼하게 포장하여 곧 출발할 예정이니 조금만 기다려 주세요 :)";
-        }
-
-        return "🚚 [룸테라피 배송 출발 안내]\n"
-                + "기다리시던 굿즈가 발송 완료되었습니다!\n\n"
-                + "• 신청 굿즈: " + safeGoodsName + "\n"
-                + "• 현재 상태: " + newStatus.getDescription() + "\n"
-                + "• 발송 일시: " + timeStr + "\n\n"
-                + "소중한 일상 공간에 따뜻한 힐링이 곧 도착합니다 :)";
     }
 
     // =========================================================================
