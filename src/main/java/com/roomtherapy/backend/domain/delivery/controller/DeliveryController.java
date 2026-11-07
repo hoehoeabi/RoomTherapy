@@ -158,7 +158,7 @@ public class DeliveryController {
     }
 
     /**
-     * 배송 정보 수정 폼 화면 (본인 주문 또는 관리자만 접근 가능)
+     * 배송 정보 수정 폼 화면 (본인 주문 또는 관리자만 접근 가능, ORDERED/PREPARING 상태만 허용)
      */
     @PreAuthorize("hasRole('ADMIN') or @deliveryOrderService.isOrderOwner(#orderId, principal)")
     @GetMapping("/delivery/edit/{orderId}")
@@ -167,6 +167,10 @@ public class DeliveryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model) {
         DeliveryOrderResponseDto order = deliveryOrderService.getOrder(orderId);
+        if (!order.isCanModify()) {
+            throw new com.roomtherapy.backend.global.error.BusinessException(
+                    com.roomtherapy.backend.global.error.ErrorCode.ORDER_CANNOT_BE_MODIFIED);
+        }
         if (!model.containsAttribute("form")) {
             model.addAttribute("form", new DeliveryOrderUpdateRequestDto(
                     order.recipientName(),

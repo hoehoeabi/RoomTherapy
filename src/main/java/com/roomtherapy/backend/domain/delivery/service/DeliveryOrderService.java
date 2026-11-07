@@ -16,6 +16,7 @@ import com.roomtherapy.backend.domain.user.entity.User;
 import com.roomtherapy.backend.domain.user.repository.UserRepository;
 import com.roomtherapy.backend.global.error.BusinessException;
 import com.roomtherapy.backend.global.error.ErrorCode;
+import com.roomtherapy.backend.global.notification.KakaoNotificationService;
 import com.roomtherapy.backend.global.security.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class DeliveryOrderService {
     private final StageCodeService stageCodeService;
     private final GoodsAuthCodeManager goodsAuthCodeManager;
     private final RedisGoodsStockService redisGoodsStockService;
+    private final KakaoNotificationService kakaoNotificationService;
 
     /**
      * 굿즈 배송 신청 처리 및 DB 저장
@@ -120,6 +122,21 @@ public class DeliveryOrderService {
 
         log.info("굿즈 배송 신청 DB 저장 완료 - OrderId: {}, UserId: {}, StageCode: {}",
                 savedOrder.getId(), userId, savedOrder.getStageCode());
+
+        // 7. 판매자에게 신규 굿즈 신청 카카오톡 실시간 알림 비동기 발송
+        Long sellerId = resolveSellerId(savedOrder);
+        if (sellerId != null) {
+            String fullAddress = KakaoNotificationService.formatFullAddress(
+                    savedOrder.getZipcode(), savedOrder.getAddress(), savedOrder.getDetailAddress());
+            LocalDateTime orderedAt = savedOrder.getCreatedAt() != null ? savedOrder.getCreatedAt() : LocalDateTime.now();
+            kakaoNotificationService.notifySellerOrderCreated(
+                    sellerId,
+                    savedOrder.getEffectiveGoodsName(),
+                    fullAddress,
+                    savedOrder.getRecipientName(),
+                    orderedAt
+            );
+        }
 
         return DeliveryOrderResponseDto.from(savedOrder);
     }
@@ -202,15 +219,39 @@ public class DeliveryOrderService {
             throw new BusinessException(ErrorCode.NOT_ORDER_OWNER);
         }
 
-        order.updateDeliveryInfo(
-                request.recipientName().trim(),
-                request.phone() != null ? request.phone().trim() : "",
-                request.zipcode().trim(),
-                request.address().trim(),
-                request.detailAddress() != null ? request.detailAddress().trim() : ""
-        );
+        String oldRecipient = order.getRecipientName() != null ? order.getRecipientName().trim() : "";
+        String oldFullAddress = KakaoNotificationService.formatFullAddress(
+                order.getZipcode(), order.getAddress(), order.getDetailAddress());
+
+        String newRecipient = request.recipientName().trim();
+        String newPhone = request.phone() != null ? request.phone().trim() : "";
+        String newZipcode = request.zipcode().trim();
+        String newAddress = request.address().trim();
+        String newDetailAddress = request.detailAddress() != null ? request.detailAddress().trim() : "";
+        String newFullAddress = KakaoNotificationService.formatFullAddress(
+                newZipcode, newAddress, newDetailAddress);
+
+        boolean recipientChanged = !oldRecipient.equals(newRecipient);
+        boolean addressChanged = !oldFullAddress.equals(newFullAddress);
+
+        order.updateDeliveryInfo(newRecipient, newPhone, newZipcode, newAddress, newDetailAddress);
 
         log.info("배송 정보 사용자 수정 완료 - OrderId: {}, UserId: {}", orderId, userId);
+
+        Long sellerId = resolveSellerId(order);
+        if (sellerId != null) {
+            kakaoNotificationService.notifySellerOrderModified(
+                    sellerId,
+                    order.getId(),
+                    order.getEffectiveGoodsName(),
+                    newFullAddress,
+                    addressChanged,
+                    newRecipient,
+                    recipientChanged,
+                    LocalDateTime.now()
+            );
+        }
+
         return DeliveryOrderResponseDto.from(order);
     }
 
@@ -241,8 +282,11 @@ public class DeliveryOrderService {
     public void updateOrderStatus(Long orderId, DeliveryStatus newStatus) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        DeliveryStatus previousStatus = order.getStatus();
         order.updateStatus(newStatus);
         log.info("배송 상태 업데이트 완료 - OrderId: {}, Status: {}", orderId, newStatus);
+
+        notifyRoommateIfStatusTransitioned(order, previousStatus, newStatus);
     }
 
     /**
@@ -277,8 +321,38 @@ public class DeliveryOrderService {
             throw new BusinessException(ErrorCode.NOT_SELLER_OWNER);
         }
 
+        DeliveryStatus previousStatus = order.getStatus();
         order.updateStatus(newStatus);
         log.info("판매자에 의한 배송 상태 업데이트 완료 - SellerId: {}, OrderId: {}, Status: {}", sellerId, orderId, newStatus);
+
+        notifyRoommateIfStatusTransitioned(order, previousStatus, newStatus);
+    }
+
+    private Long resolveSellerId(DeliveryOrder order) {
+        if (order == null) {
+            return null;
+        }
+        if (order.getSeller() != null) {
+            return order.getSeller().getId();
+        }
+        if (order.getGoods() != null && order.getGoods().getSeller() != null) {
+            return order.getGoods().getSeller().getId();
+        }
+        return null;
+    }
+
+    private void notifyRoommateIfStatusTransitioned(DeliveryOrder order, DeliveryStatus previousStatus, DeliveryStatus newStatus) {
+        if (order == null || order.getUser() == null || previousStatus == newStatus) {
+            return;
+        }
+        if (newStatus == DeliveryStatus.PREPARING || newStatus == DeliveryStatus.SHIPPED) {
+            kakaoNotificationService.notifyRoommateStatusChanged(
+                    order.getUser().getId(),
+                    order.getEffectiveGoodsName(),
+                    newStatus,
+                    LocalDateTime.now()
+            );
+        }
     }
 
     /**
