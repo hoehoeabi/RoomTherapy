@@ -44,40 +44,46 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
            "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) AND d.isModified = true ORDER BY d.updatedAt DESC")
     List<DeliveryOrder> findModifiedBySellerId(@Param("sellerId") Long sellerId);
 
-    // 관리자용 배송 신청 목록 페이징 및 날짜/수정여부 필터 조회
+    // 관리자용 배송 신청 목록 페이징 및 날짜/수정여부/피드백유무 필터 조회
     @Query(value = "SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
             "WHERE (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
             "AND (:isModified IS NULL OR d.isModified = :isModified) " +
+            "AND (:hasFeedback IS NULL OR (:hasFeedback = true AND d.feedback IS NOT NULL AND TRIM(d.feedback) <> '')) " +
             "ORDER BY d.createdAt DESC",
             countQuery = "SELECT count(d) FROM DeliveryOrder d " +
             "WHERE (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
-            "AND (:isModified IS NULL OR d.isModified = :isModified)")
+            "AND (:isModified IS NULL OR d.isModified = :isModified) " +
+            "AND (:hasFeedback IS NULL OR (:hasFeedback = true AND d.feedback IS NOT NULL AND TRIM(d.feedback) <> ''))")
     Page<DeliveryOrder> findAdminOrdersWithFilter(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             @Param("isModified") Boolean isModified,
+            @Param("hasFeedback") Boolean hasFeedback,
             Pageable pageable
     );
 
-    // 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정여부 필터 조회
+    // 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정여부/피드백유무 필터 조회
     @Query(value = "SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
             "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
             "AND (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
             "AND (:isModified IS NULL OR d.isModified = :isModified) " +
+            "AND (:hasFeedback IS NULL OR (:hasFeedback = true AND d.feedback IS NOT NULL AND TRIM(d.feedback) <> '')) " +
             "ORDER BY d.createdAt DESC",
             countQuery = "SELECT count(d) FROM DeliveryOrder d LEFT JOIN d.goods g " +
             "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
             "AND (:start IS NULL OR d.createdAt >= :start) " +
             "AND (:end IS NULL OR d.createdAt <= :end) " +
-            "AND (:isModified IS NULL OR d.isModified = :isModified)")
+            "AND (:isModified IS NULL OR d.isModified = :isModified) " +
+            "AND (:hasFeedback IS NULL OR (:hasFeedback = true AND d.feedback IS NOT NULL AND TRIM(d.feedback) <> ''))")
     Page<DeliveryOrder> findSellerOrdersWithFilter(
             @Param("sellerId") Long sellerId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             @Param("isModified") Boolean isModified,
+            @Param("hasFeedback") Boolean hasFeedback,
             Pageable pageable
     );
 

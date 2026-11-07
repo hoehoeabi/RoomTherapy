@@ -363,7 +363,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * 관리자용 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
+     * 관리자용 배송 신청 목록 페이징 및 날짜/수정/피드백 필터링 조회
      */
     @Transactional(readOnly = true)
     public Page<DeliveryOrderResponseDto> getAdminOrdersWithPaging(
@@ -371,13 +371,14 @@ public class DeliveryOrderService {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
+        Boolean hasFeedback = "feedback".equalsIgnoreCase(filter) ? true : null;
 
-        return deliveryOrderRepository.findAdminOrdersWithFilter(start, end, isModified, pageable)
+        return deliveryOrderRepository.findAdminOrdersWithFilter(start, end, isModified, hasFeedback, pageable)
                 .map(DeliveryOrderResponseDto::from);
     }
 
     /**
-     * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정 필터링 조회
+     * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정/피드백 필터링 조회
      */
     @Transactional(readOnly = true)
     public Page<DeliveryOrderResponseDto> getSellerOrdersWithPaging(
@@ -385,8 +386,9 @@ public class DeliveryOrderService {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
+        Boolean hasFeedback = "feedback".equalsIgnoreCase(filter) ? true : null;
 
-        return deliveryOrderRepository.findSellerOrdersWithFilter(sellerId, start, end, isModified, pageable)
+        return deliveryOrderRepository.findSellerOrdersWithFilter(sellerId, start, end, isModified, hasFeedback, pageable)
                 .map(DeliveryOrderResponseDto::from);
     }
 
@@ -455,8 +457,12 @@ public class DeliveryOrderService {
                         return false;
                     }
 
-                    // 5. 수정 여부 필터
+                    // 5. 수정 여부 / 피드백 작성 여부 필터
                     if ("modified".equalsIgnoreCase(condition.filter()) && !o.isModified()) {
+                        return false;
+                    }
+                    if ("feedback".equalsIgnoreCase(condition.filter())
+                            && (o.getFeedback() == null || o.getFeedback().isBlank())) {
                         return false;
                     }
 
