@@ -282,11 +282,8 @@ public class DeliveryOrderService {
     public void updateOrderStatus(Long orderId, DeliveryStatus newStatus) {
         DeliveryOrder order = deliveryOrderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-        DeliveryStatus previousStatus = order.getStatus();
         order.updateStatus(newStatus);
         log.info("배송 상태 업데이트 완료 - OrderId: {}, Status: {}", orderId, newStatus);
-
-        notifyRoommateIfStatusTransitioned(order, previousStatus, newStatus);
     }
 
     /**
@@ -321,11 +318,8 @@ public class DeliveryOrderService {
             throw new BusinessException(ErrorCode.NOT_SELLER_OWNER);
         }
 
-        DeliveryStatus previousStatus = order.getStatus();
         order.updateStatus(newStatus);
         log.info("판매자에 의한 배송 상태 업데이트 완료 - SellerId: {}, OrderId: {}, Status: {}", sellerId, orderId, newStatus);
-
-        notifyRoommateIfStatusTransitioned(order, previousStatus, newStatus);
     }
 
     private Long resolveSellerId(DeliveryOrder order) {
@@ -339,20 +333,6 @@ public class DeliveryOrderService {
             return order.getGoods().getSeller().getId();
         }
         return null;
-    }
-
-    private void notifyRoommateIfStatusTransitioned(DeliveryOrder order, DeliveryStatus previousStatus, DeliveryStatus newStatus) {
-        if (order == null || order.getUser() == null || previousStatus == newStatus) {
-            return;
-        }
-        if (newStatus == DeliveryStatus.PREPARING || newStatus == DeliveryStatus.SHIPPED) {
-            kakaoNotificationService.notifyRoommateStatusChanged(
-                    order.getUser().getId(),
-                    order.getEffectiveGoodsName(),
-                    newStatus,
-                    LocalDateTime.now()
-            );
-        }
     }
 
     /**

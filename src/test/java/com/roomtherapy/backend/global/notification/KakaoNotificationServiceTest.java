@@ -127,40 +127,32 @@ class KakaoNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("3. [판매자/관리자 -> 룸메이트] 배송 준비중(PREPARING) 및 발송 완료(SHIPPED) 전환 시 룸메이트에게 카톡 알림이 전송된다")
-    void sendStatusChangedSync_SendsPreparingAndShippedMessages() throws Exception {
-        User roommate = User.builder()
-                .kakaoId("roommate-1")
-                .nickname("룸메이트")
-                .role(Role.USER)
+    @DisplayName("3. [룸메이트 -> 판매자] 배송지 수정 알림 전송 시 수정된 주문 모아보기 버튼 링크가 포함된다")
+    void sendOrderModifiedSync_SendsModifiedPayloadAndButtonLink() throws Exception {
+        User seller = User.builder()
+                .kakaoId("seller-2")
+                .nickname("판매자")
+                .role(Role.SELLER)
                 .build();
-        ReflectionTestUtils.setField(roommate, "id", 20L);
-        roommate.updateKakaoTokens("roommate-access-token", "roommate-refresh-token");
+        ReflectionTestUtils.setField(seller, "id", 20L);
+        seller.updateKakaoTokens("seller-access-token", "seller-refresh-token");
 
-        when(userRepository.findById(20L)).thenReturn(Optional.of(roommate));
-        when(kakaoApiSender.sendMemo(eq("roommate-access-token"), anyString())).thenReturn(200);
+        when(userRepository.findById(20L)).thenReturn(Optional.of(seller));
+        when(kakaoApiSender.sendMemo(eq("seller-access-token"), anyString())).thenReturn(200);
 
         LocalDateTime now = LocalDateTime.of(2026, 11, 7, 22, 0);
-
-        // 1) 배송 준비중
-        kakaoNotificationService.sendStatusChangedSync(20L, "룸테라피 힐링 엽서 세트", DeliveryStatus.PREPARING, now);
-        // 2) 발송 완료
-        kakaoNotificationService.sendStatusChangedSync(20L, "룸테라피 힐링 엽서 세트", DeliveryStatus.SHIPPED, now);
-        // 3) 그 외 상태(DELIVERED)는 발송하지 않음
-        kakaoNotificationService.sendStatusChangedSync(20L, "룸테라피 힐링 엽서 세트", DeliveryStatus.DELIVERED, now);
+        kakaoNotificationService.sendOrderModifiedSync(
+                20L, 15L, "룸테라피 힐링 엽서 세트", "(06000) 서울 강남구 테헤란로 10 202호", true, "정용현", false, now);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
-        verify(kakaoApiSender, times(2)).sendMemo(eq("roommate-access-token"), jsonCaptor.capture());
+        verify(kakaoApiSender).sendMemo(eq("seller-access-token"), jsonCaptor.capture());
 
-        JsonNode preparingPayload = objectMapper.readTree(jsonCaptor.getAllValues().get(0));
-        assertThat(preparingPayload.get("text").asText()).contains("🎁 [룸테라피 배송 상태 안내]");
-        assertThat(preparingPayload.get("text").asText()).contains("• 현재 상태: 배송 준비중");
-        assertThat(preparingPayload.get("button_title").asText()).isEqualTo("🔍 내 배송 현황 확인하기");
-        assertThat(preparingPayload.get("link").get("web_url").asText()).isEqualTo("https://www.roomtherapy.kr/mypage?tab=orders");
-
-        JsonNode shippedPayload = objectMapper.readTree(jsonCaptor.getAllValues().get(1));
-        assertThat(shippedPayload.get("text").asText()).contains("🚚 [룸테라피 배송 출발 안내]");
-        assertThat(shippedPayload.get("text").asText()).contains("• 현재 상태: 발송 완료");
+        JsonNode payload = objectMapper.readTree(jsonCaptor.getValue());
+        assertThat(payload.get("text").asText()).contains("✏️ [룸테라피 배송지 정보 수정 알림]");
+        assertThat(payload.get("text").asText()).contains("• 배송 주소(변경): (06000) 서울 강남구 테헤란로 10 202호");
+        assertThat(payload.get("button_title").asText()).isEqualTo("📋 수정된 주문 모아보기");
+        assertThat(payload.get("link").get("web_url").asText())
+                .isEqualTo("https://www.roomtherapy.kr/seller/deliveries?filter=modified");
     }
 
     @Test
