@@ -61,9 +61,18 @@ public class User extends BaseTimeEntity {
     @Column(length = 255)
     private String detailAddress;
 
+    // 카카오톡 알림(나에게 보내기 API) 발송용 카카오 OAuth2 Access Token
+    @Column(length = 512)
+    private String kakaoAccessToken;
+
+    // 카카오 OAuth2 Access Token 만료 시 자동 갱신용 Refresh Token
+    @Column(length = 512)
+    private String kakaoRefreshToken;
+
     @Builder
     public User(String kakaoId, String nickname, String email, Role role,
-                String recipientName, String phone, String zipcode, String address, String detailAddress) {
+                String recipientName, String phone, String zipcode, String address, String detailAddress,
+                String kakaoAccessToken, String kakaoRefreshToken) {
         this.kakaoId = kakaoId;
         this.nickname = nickname;
         this.email = email;
@@ -74,6 +83,8 @@ public class User extends BaseTimeEntity {
         this.zipcode = zipcode;
         this.address = address;
         this.detailAddress = detailAddress;
+        this.kakaoAccessToken = kakaoAccessToken;
+        this.kakaoRefreshToken = kakaoRefreshToken;
     }
 
     /**
@@ -112,5 +123,17 @@ public class User extends BaseTimeEntity {
 
     public void updateRole(Role role) {
         this.role = role;
+    }
+
+    /**
+     * 카카오 OAuth2 토큰(Access / Refresh) 저장 및 갱신
+     */
+    public void updateKakaoTokens(String accessToken, String refreshToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            this.kakaoAccessToken = accessToken.trim();
+        }
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            this.kakaoRefreshToken = refreshToken.trim();
+        }
     }
 }

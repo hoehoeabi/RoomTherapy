@@ -46,7 +46,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         OAuthAttributes attributes = OAuthAttributes.of(registrationId, userNameAttributeName, oAuth2User.getAttributes());
 
-        User user = saveOrUpdate(attributes);
+        String kakaoAccessToken = userRequest.getAccessToken() != null
+                ? userRequest.getAccessToken().getTokenValue()
+                : null;
+
+        User user = saveOrUpdate(attributes, kakaoAccessToken);
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority(user.getRole().getKey())),
@@ -55,7 +59,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
     }
 
-    private User saveOrUpdate(OAuthAttributes attributes) {
+    private User saveOrUpdate(OAuthAttributes attributes, String kakaoAccessToken) {
         boolean isAdmin = adminKakaoIds != null && adminKakaoIds.contains(attributes.getKakaoId());
         boolean isSeller = sellerKakaoIds != null && sellerKakaoIds.contains(attributes.getKakaoId());
 
@@ -69,6 +73,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     } else {
                         entity.updateRole(Role.USER);
                     }
+                    entity.updateKakaoTokens(kakaoAccessToken, null);
                     return entity;
                 })
                 .orElseGet(() -> {
@@ -80,6 +85,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     } else {
                         newUser.updateRole(Role.USER);
                     }
+                    newUser.updateKakaoTokens(kakaoAccessToken, null);
                     return newUser;
                 });
 

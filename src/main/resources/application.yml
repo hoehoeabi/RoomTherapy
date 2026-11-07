@@ -14,6 +14,7 @@ server:
         same-site: lax
 
 app:
+  base-url: ${APP_BASE_URL:https://www.roomtherapy.kr}
   upload:
     max-image-mb: 70
     max-object-mb: 300
@@ -53,6 +54,7 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - profile_nickname
+              - talk_message
             client-name: Kakao
         provider:
           kakao:
