@@ -80,8 +80,11 @@ public class SellerDeliveryController {
             @PathVariable Long orderId,
             @RequestParam DeliveryStatus status,
             @RequestParam(name = "redirect", required = false) String redirect,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
         deliveryOrderService.updateOrderStatusBySeller(userDetails.getUserId(), orderId, status);
+        redirectAttributes.addFlashAttribute("successMessage",
+                "✅ 주문 #" + orderId + "의 배송 상태가 [" + status.getDescription() + "](으)로 변경되었습니다.");
         return "redirect:" + resolveSafeRedirect(redirect, "/seller/deliveries");
     }
 
