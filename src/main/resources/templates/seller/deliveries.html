@@ -133,6 +133,18 @@
                                         onclick="confirmOrderDelete(this.dataset.orderId, this.dataset.status, this.dataset.goodsName)">
                                     🗑️ 삭제
                                 </button>
+                                <!-- 사용자 피드백 확인 버튼 (피드백 없을 시 상호작용 없는 '피드백X' 표시) -->
+                                <button th:if="${delivery.feedback != null and !#strings.isEmpty(#strings.trim(delivery.feedback))}"
+                                        type="button" class="btn-view-feedback"
+                                        th:data-order-id="${delivery.id}"
+                                        th:data-applicant="${delivery.applicantNickname}"
+                                        th:data-goods-name="${delivery.goodsName}"
+                                        th:data-feedback="${delivery.feedback}"
+                                        onclick="openFeedbackModal(this.dataset.orderId, this.dataset.applicant, this.dataset.goodsName, this.dataset.feedback)">
+                                    💬 피드백 보기
+                                </button>
+                                <span th:if="${delivery.feedback == null or #strings.isEmpty(#strings.trim(delivery.feedback))}"
+                                      class="badge-no-feedback">피드백X</span>
                             </div>
                         </td>
                     </tr>
@@ -293,6 +305,19 @@
                     <button type="button" class="btn-confirm-no" onclick="closeDeleteConfirmModal()">아니</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 4. 사용자 피드백 열람 모달 -->
+    <div id="feedbackModal" class="confirm-modal-overlay" onclick="handleFeedbackModalBackdrop(event)">
+        <div class="confirm-modal-box feedback-modal-box">
+            <div class="confirm-modal-icon">💬</div>
+            <h3 class="confirm-modal-title" id="feedbackModalTitle">사용자 피드백</h3>
+            <p class="confirm-modal-desc" id="feedbackModalMeta" style="margin-bottom: 12px;"></p>
+            <div class="feedback-content-box" id="feedbackModalContent"></div>
+            <div class="confirm-modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-confirm-yes" onclick="closeFeedbackModal()">닫기</button>
+            </div>
         </div>
     </div>
 

@@ -106,3 +106,35 @@ function handleDeleteModalBackdrop(event) {
         closeDeleteConfirmModal();
     }
 }
+
+/* 7. 사용자 피드백 열람 모달 제어 */
+function openFeedbackModal(orderId, applicant, goodsName, feedback) {
+    const metaEl = document.getElementById('feedbackModalMeta');
+    const contentEl = document.getElementById('feedbackModalContent');
+
+    const safeOrderId = escapeHtml(orderId);
+    const safeApplicant = escapeHtml(applicant || '익명');
+    const safeGoodsName = escapeHtml(goodsName || '굿즈');
+
+    if (metaEl) {
+        metaEl.innerHTML = '주문번호 <strong>#' + safeOrderId + '</strong> · 신청자: <strong>' + safeApplicant + '</strong><br>' + safeGoodsName;
+    }
+    if (contentEl) {
+        contentEl.textContent = feedback || '';
+    }
+
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function handleFeedbackModalBackdrop(event) {
+    if (event.target.id === 'feedbackModal') {
+        closeFeedbackModal();
+    }
+}
+
