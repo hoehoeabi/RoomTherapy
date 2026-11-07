@@ -50,6 +50,10 @@
                th:class="${currentFilter == 'modified' ? 'tab-btn active' : 'tab-btn'}">
                 ⚠️ 사용자가 수정한 신청
             </a>
+            <a th:href="@{/admin/deliveries(filter='feedback', startDate=${startDate}, endDate=${endDate})}" 
+               th:class="${currentFilter == 'feedback' ? 'tab-btn active' : 'tab-btn'}">
+                💬 피드백 모아보기
+            </a>
         </div>
 
         <form th:action="@{/admin/deliveries}" method="get" class="date-filter-form">

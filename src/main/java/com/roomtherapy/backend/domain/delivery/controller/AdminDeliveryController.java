@@ -78,8 +78,11 @@ public class AdminDeliveryController {
     public String updateStatus(
             @PathVariable Long orderId,
             @RequestParam DeliveryStatus status,
-            @RequestParam(name = "redirect", required = false) String redirect) {
+            @RequestParam(name = "redirect", required = false) String redirect,
+            RedirectAttributes redirectAttributes) {
         deliveryOrderService.updateOrderStatus(orderId, status);
+        redirectAttributes.addFlashAttribute("successMessage",
+                "✅ 주문 #" + orderId + "의 배송 상태가 [" + status.getDescription() + "](으)로 변경되었습니다.");
         return "redirect:" + resolveSafeRedirect(redirect, "/admin/deliveries");
     }
 
