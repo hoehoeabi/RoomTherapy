@@ -348,7 +348,7 @@ class DeliveryExcelIntegrationTest {
             Row headerRow = sheet.createRow(0);
             String[] headers = {
                     "상품명(또는 상품ID)*", "수령인*", "연락처*", "우편번호*",
-                    "기본주소*", "상세주소", "인증코드(선택)", "요청사항(선택)", "배송상태(선택)"
+                    "기본주소*", "상세주소", "인증코드(선택)", "게임 피드백(선택)", "배송상태(선택)"
             };
             for (int i = 0; i < headers.length; i++) {
                 headerRow.createCell(i).setCellValue(headers[i]);
