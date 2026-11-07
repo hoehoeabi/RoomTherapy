@@ -113,6 +113,7 @@
                         </td>
                         <td>
                             <form th:action="@{'/seller/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: flex; align-items: center; margin-bottom: 4px;">
+                                <input type="hidden" name="redirect" th:value="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${deliveryPage != null ? deliveryPage.number : 0})}">
                                 <select name="status" class="status-select">
                                     <option th:each="st : ${statuses}" 
                                             th:value="${st}" 
@@ -127,6 +128,7 @@
                                 <form th:if="${delivery.status != T(com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus).DELIVERED}" 
                                       th:action="@{'/seller/deliveries/' + ${delivery.id} + '/status'}" method="post" style="display: inline;">
                                     <input type="hidden" name="status" value="DELIVERED">
+                                    <input type="hidden" name="redirect" th:value="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${deliveryPage != null ? deliveryPage.number : 0})}">
                                     <button type="submit" class="btn-quick-deliver">✅ 배송완료</button>
                                 </form>
                                 <!-- 배송 주문 삭제 버튼 -->
@@ -225,10 +227,11 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">수정 여부</label>
+                        <label class="form-label">수정 / 피드백 필터</label>
                         <select name="filter" class="form-select">
                             <option value="all">전체</option>
                             <option value="modified">사용자 수정건만</option>
+                            <option value="feedback">피드백 작성건만</option>
                         </select>
                     </div>
                 </div>
@@ -252,7 +255,7 @@
                         <label class="checkbox-label"><input type="checkbox" name="columns" value="zipcode" checked class="col-check"> 우편번호</label>
                         <label class="checkbox-label"><input type="checkbox" name="columns" value="address" checked class="col-check"> 배송지 주소</label>
                         <label class="checkbox-label"><input type="checkbox" name="columns" value="status" checked class="col-check"> 배송 상태</label>
-                        <label class="checkbox-label"><input type="checkbox" name="columns" value="feedback" checked class="col-check"> 요청/피드백</label>
+                        <label class="checkbox-label"><input type="checkbox" name="columns" value="feedback" checked class="col-check"> 게임 피드백</label>
                     </div>
                 </div>
 
@@ -304,6 +307,7 @@
             <p class="confirm-modal-sub" id="deleteModalSub">삭제하시겠습니까?</p>
             <p class="confirm-modal-desc" id="deleteModalDesc"></p>
             <form id="deleteOrderForm" method="post" action="">
+                <input type="hidden" name="redirect" th:value="@{/seller/deliveries(filter=${currentFilter}, startDate=${startDate}, endDate=${endDate}, page=${deliveryPage != null ? deliveryPage.number : 0})}">
                 <div class="confirm-modal-actions">
                     <button type="submit" class="btn-confirm-yes">그래</button>
                     <button type="button" class="btn-confirm-no" onclick="closeDeleteConfirmModal()">아니</button>
