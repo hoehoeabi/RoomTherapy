@@ -1,3 +1,5 @@
+[![시연 영상 보기](https://img.youtube.com/vi/2AJzwDxC_K8/0.jpg)](https://www.youtube.com/watch?v=2AJzwDxC_K8)
+
 # 🛋️ Room Therapy (룸테라피)
 
 > **힐링 3D 방 정리 웹 게임과 웹 3D 인터랙티브 전시관 & 실물 굿즈 리워드 배송 연동 플랫폼**
