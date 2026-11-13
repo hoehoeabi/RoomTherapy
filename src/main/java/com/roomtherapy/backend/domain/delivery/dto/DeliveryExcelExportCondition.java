@@ -15,7 +15,8 @@ public record DeliveryExcelExportCondition(
         LocalDate endDate,
         List<DayOfWeek> daysOfWeek,
         DeliveryStatus status,
-        String filter, // "all" 또는 "modified"
+        String filter, // "all", "modified", "feedback", "bundle"
+        String sortBy, // "latest"(신청일시순), "bundle"(합배송 묶음순)
         List<String> columns // 선택한 컬럼 키 목록
 ) {
 }

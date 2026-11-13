@@ -285,6 +285,103 @@ class DeliveryExcelIntegrationTest {
     }
 
     @Test
+    @DisplayName("관리자 배송 목록 엑셀 다운로드 - 합배송 묶음순(?sortBy=bundle) 정렬 시 최초 신청일 오름차순으로 신청자별 묶여서 다운로드된다")
+    void exportDeliveries_withBundleSorting() throws Exception {
+        // Given: 유저1(홍길동), 유저2(임꺽정)
+        User userA = sellerUser; // 홍길동 역할
+        User userB = otherSellerUser; // 임꺽정 역할
+
+        DeliveryOrder orderA1 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .goods(sellerGoods)
+                .user(userA)
+                .stageCode("A-CODE-1")
+                .recipientName("홍길동")
+                .phone("010-1111-1111")
+                .zipcode("11111")
+                .address("서울시 강남구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+        setCreatedAt(orderA1, java.time.LocalDateTime.now().minusDays(7));
+
+        DeliveryOrder orderA2 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .goods(sellerGoods)
+                .user(userA)
+                .stageCode("A-CODE-2")
+                .recipientName("홍길동")
+                .phone("010-1111-1111")
+                .zipcode("11111")
+                .address("서울시 강남구")
+                .status(DeliveryStatus.PREPARING)
+                .build());
+        setCreatedAt(orderA2, java.time.LocalDateTime.now().minusDays(1));
+
+        DeliveryOrder orderB1 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .goods(otherGoods)
+                .user(userB)
+                .stageCode("B-CODE-1")
+                .recipientName("임꺽정")
+                .phone("010-2222-2222")
+                .zipcode("22222")
+                .address("서울시 서초구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+        setCreatedAt(orderB1, java.time.LocalDateTime.now().minusDays(5));
+
+        DeliveryOrder orderB2 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .goods(otherGoods)
+                .user(userB)
+                .stageCode("B-CODE-2")
+                .recipientName("임꺽정")
+                .phone("010-2222-2222")
+                .zipcode("22222")
+                .address("서울시 서초구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+        setCreatedAt(orderB2, java.time.LocalDateTime.now().minusDays(3));
+
+        // When: ?filter=bundle & ?sortBy=bundle
+        MvcResult result = mockMvc.perform(get("/admin/deliveries/export/excel")
+                        .cookie(new Cookie("accessToken", adminToken))
+                        .param("filter", "bundle")
+                        .param("sortBy", "bundle")
+                        .param("columns", "id", "recipientName"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+            Sheet sheet = wb.getSheet("배송신청목록");
+            assertThat(sheet.getPhysicalNumberOfRows()).isEqualTo(5); // 1 header + 4 data rows
+
+            // 행1: orderA1 (#orderA1.id, 홍길동)
+            assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("#" + orderA1.getId());
+            assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("홍길동");
+
+            // 행2: orderA2 (#orderA2.id, 홍길동)
+            assertThat(sheet.getRow(2).getCell(0).getStringCellValue()).isEqualTo("#" + orderA2.getId());
+            assertThat(sheet.getRow(2).getCell(1).getStringCellValue()).isEqualTo("홍길동");
+
+            // 행3: orderB1 (#orderB1.id, 임꺽정)
+            assertThat(sheet.getRow(3).getCell(0).getStringCellValue()).isEqualTo("#" + orderB1.getId());
+            assertThat(sheet.getRow(3).getCell(1).getStringCellValue()).isEqualTo("임꺽정");
+
+            // 행4: orderB2 (#orderB2.id, 임꺽정)
+            assertThat(sheet.getRow(4).getCell(0).getStringCellValue()).isEqualTo("#" + orderB2.getId());
+            assertThat(sheet.getRow(4).getCell(1).getStringCellValue()).isEqualTo("임꺽정");
+        }
+    }
+
+    private void setCreatedAt(DeliveryOrder order, java.time.LocalDateTime time) {
+        try {
+            java.lang.reflect.Field field = com.roomtherapy.backend.global.common.entity.BaseTimeEntity.class.getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, time);
+            deliveryOrderRepository.save(order);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     @DisplayName("관리자 엑셀 일괄 등록 - 업로드된 엑셀 파일의 주문 정보가 DB에 저장된다")
     void adminImport_success() throws Exception {
         byte[] excelBytes = createSampleImportExcel(List.of(

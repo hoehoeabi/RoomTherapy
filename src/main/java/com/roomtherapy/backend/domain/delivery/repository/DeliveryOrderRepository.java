@@ -64,6 +64,17 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
             Pageable pageable
     );
 
+    // 관리자용 전체 미배송 주문 조회 (합배송 그룹핑 정렬용: ORDERED, PREPARING)
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
+            "WHERE d.status IN (com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus.ORDERED, com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus.PREPARING) " +
+            "AND (:start IS NULL OR d.createdAt >= :start) " +
+            "AND (:end IS NULL OR d.createdAt <= :end) " +
+            "ORDER BY d.createdAt ASC")
+    List<DeliveryOrder> findAdminUnshippedOrders(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
     // 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정여부/피드백유무 필터 조회
     @Query(value = "SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
             "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
@@ -85,6 +96,19 @@ public interface DeliveryOrderRepository extends JpaRepository<DeliveryOrder, Lo
             @Param("isModified") Boolean isModified,
             @Param("hasFeedback") Boolean hasFeedback,
             Pageable pageable
+    );
+
+    // 판매자용 본인 굿즈 미배송 주문 조회 (합배송 그룹핑 정렬용: ORDERED, PREPARING)
+    @Query("SELECT d FROM DeliveryOrder d JOIN FETCH d.user LEFT JOIN FETCH d.goods g " +
+            "WHERE (d.seller.id = :sellerId OR (g IS NOT NULL AND g.seller.id = :sellerId)) " +
+            "AND d.status IN (com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus.ORDERED, com.roomtherapy.backend.domain.delivery.entity.DeliveryStatus.PREPARING) " +
+            "AND (:start IS NULL OR d.createdAt >= :start) " +
+            "AND (:end IS NULL OR d.createdAt <= :end) " +
+            "ORDER BY d.createdAt ASC")
+    List<DeliveryOrder> findSellerUnshippedOrders(
+            @Param("sellerId") Long sellerId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
     );
 
     // 특정 굿즈와 연계된 배송 주문 목록 조회

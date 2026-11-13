@@ -363,13 +363,21 @@ public class DeliveryOrderService {
     }
 
     /**
-     * 관리자용 배송 신청 목록 페이징 및 날짜/수정/피드백 필터링 조회
+     * 관리자용 배송 신청 목록 페이징 및 날짜/수정/피드백/합배송 필터링 조회
      */
     @Transactional(readOnly = true)
     public Page<DeliveryOrderResponseDto> getAdminOrdersWithPaging(
             LocalDate startDate, LocalDate endDate, String filter, Pageable pageable) {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+
+        // 합배송 묶어보기 필터
+        if ("bundle".equalsIgnoreCase(filter)) {
+            List<DeliveryOrder> unshipped = deliveryOrderRepository.findAdminUnshippedOrders(start, end);
+            List<DeliveryOrder> grouped = sortOrdersByBundle(unshipped);
+            return toPage(grouped, pageable).map(DeliveryOrderResponseDto::from);
+        }
+
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
         Boolean hasFeedback = "feedback".equalsIgnoreCase(filter) ? true : null;
 
@@ -378,18 +386,100 @@ public class DeliveryOrderService {
     }
 
     /**
-     * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정/피드백 필터링 조회
+     * 판매자용 본인 굿즈 배송 신청 목록 페이징 및 날짜/수정/피드백/합배송 필터링 조회
      */
     @Transactional(readOnly = true)
     public Page<DeliveryOrderResponseDto> getSellerOrdersWithPaging(
             Long sellerId, LocalDate startDate, LocalDate endDate, String filter, Pageable pageable) {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+
+        // 합배송 묶어보기 필터
+        if ("bundle".equalsIgnoreCase(filter)) {
+            List<DeliveryOrder> unshipped = deliveryOrderRepository.findSellerUnshippedOrders(sellerId, start, end);
+            List<DeliveryOrder> grouped = sortOrdersByBundle(unshipped);
+            return toPage(grouped, pageable).map(DeliveryOrderResponseDto::from);
+        }
+
         Boolean isModified = "modified".equalsIgnoreCase(filter) ? true : null;
         Boolean hasFeedback = "feedback".equalsIgnoreCase(filter) ? true : null;
 
         return deliveryOrderRepository.findSellerOrdersWithFilter(sellerId, start, end, isModified, hasFeedback, pageable)
                 .map(DeliveryOrderResponseDto::from);
+    }
+
+    /**
+     * 합배송 묶음 정렬 로직:
+     * 1. 신청자(동일 계정 또는 동일 수령인+주소)별로 그룹핑
+     * 2. 각 신청자의 가장 오래된 미배송 신청일(min(createdAt)) 오름차순으로 신청자 정렬
+     * 3. 동일 신청자 내에서는 신청일시 순차 정렬(createdAt ASC)
+     */
+    public List<DeliveryOrder> sortOrdersByBundle(List<DeliveryOrder> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        // 신청자 식별 키: user.id 우선, 없으면 "수령인_주소"
+        java.util.Map<String, List<DeliveryOrder>> grouped = new java.util.LinkedHashMap<>();
+        for (DeliveryOrder order : orders) {
+            String key = resolveApplicantKey(order);
+            grouped.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(order);
+        }
+
+        // 그룹 내에서 createdAt ASC 정렬 & 그룹별 최소 createdAt 파악
+        class ApplicantGroup {
+            final String key;
+            final List<DeliveryOrder> list;
+            final LocalDateTime minCreatedAt;
+
+            ApplicantGroup(String key, List<DeliveryOrder> list) {
+                this.key = key;
+                list.sort(java.util.Comparator.comparing(
+                        DeliveryOrder::getCreatedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())
+                ));
+                this.list = list;
+                this.minCreatedAt = list.isEmpty() || list.get(0).getCreatedAt() == null
+                        ? LocalDateTime.MAX
+                        : list.get(0).getCreatedAt();
+            }
+        }
+
+        List<ApplicantGroup> groupList = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<String, List<DeliveryOrder>> entry : grouped.entrySet()) {
+            groupList.add(new ApplicantGroup(entry.getKey(), entry.getValue()));
+        }
+
+        // 그룹 간 정렬: minCreatedAt ASC (가장 오래 기다린 신청자부터)
+        groupList.sort(java.util.Comparator.comparing(g -> g.minCreatedAt));
+
+        List<DeliveryOrder> result = new java.util.ArrayList<>();
+        for (ApplicantGroup group : groupList) {
+            result.addAll(group.list);
+        }
+        return result;
+    }
+
+    private String resolveApplicantKey(DeliveryOrder order) {
+        if (order == null) return "UNKNOWN";
+        if (order.getUser() != null && order.getUser().getId() != null) {
+            return "USER_" + order.getUser().getId();
+        }
+        String recipient = order.getRecipientName() != null ? order.getRecipientName().trim() : "";
+        String addr = order.getAddress() != null ? order.getAddress().trim() : "";
+        return "REC_" + recipient + "_" + addr;
+    }
+
+    private <T> Page<T> toPage(List<T> list, Pageable pageable) {
+        int page = pageable.getPageNumber();
+        int size = pageable.getPageSize();
+        int fromIndex = page * size;
+        if (fromIndex >= list.size()) {
+            return new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList(), pageable, list.size());
+        }
+        int toIndex = Math.min(fromIndex + size, list.size());
+        List<T> subList = list.subList(fromIndex, toIndex);
+        return new org.springframework.data.domain.PageImpl<>(subList, pageable, list.size());
     }
 
     /**
@@ -403,12 +493,16 @@ public class DeliveryOrderService {
     }
 
     /**
-     * 관리자용 엑셀 다운로드 필터 대상 주문 목록 조회 (기간, 요일, 굿즈, 상태, 수정여부)
+     * 관리자용 엑셀 다운로드 필터 대상 주문 목록 조회 (기간, 요일, 굿즈, 상태, 수정여부, 합배송 묶음 정렬)
      */
     @Transactional(readOnly = true)
     public List<DeliveryOrder> getOrdersForAdminExport(com.roomtherapy.backend.domain.delivery.dto.DeliveryExcelExportCondition condition) {
         List<DeliveryOrder> list = deliveryOrderRepository.findAllWithUserAndGoodsOrderByCreatedAtDesc();
-        return filterExportOrders(list, condition);
+        List<DeliveryOrder> filtered = filterExportOrders(list, condition);
+        if (condition != null && ("bundle".equalsIgnoreCase(condition.sortBy()) || "bundle".equalsIgnoreCase(condition.filter()))) {
+            return sortOrdersByBundle(filtered);
+        }
+        return filtered;
     }
 
     /**
@@ -417,7 +511,11 @@ public class DeliveryOrderService {
     @Transactional(readOnly = true)
     public List<DeliveryOrder> getOrdersForSellerExport(Long sellerId, DeliveryExcelExportCondition condition) {
         List<DeliveryOrder> list = deliveryOrderRepository.findAllBySellerId(sellerId);
-        return filterExportOrders(list, condition);
+        List<DeliveryOrder> filtered = filterExportOrders(list, condition);
+        if (condition != null && ("bundle".equalsIgnoreCase(condition.sortBy()) || "bundle".equalsIgnoreCase(condition.filter()))) {
+            return sortOrdersByBundle(filtered);
+        }
+        return filtered;
     }
 
     private List<DeliveryOrder> filterExportOrders(List<DeliveryOrder> list, DeliveryExcelExportCondition condition) {
@@ -457,12 +555,16 @@ public class DeliveryOrderService {
                         return false;
                     }
 
-                    // 5. 수정 여부 / 피드백 작성 여부 필터
+                    // 5. 수정 여부 / 피드백 작성 여부 / 합배송(미배송만) 필터
                     if ("modified".equalsIgnoreCase(condition.filter()) && !o.isModified()) {
                         return false;
                     }
                     if ("feedback".equalsIgnoreCase(condition.filter())
                             && (o.getFeedback() == null || o.getFeedback().isBlank())) {
+                        return false;
+                    }
+                    if ("bundle".equalsIgnoreCase(condition.filter())
+                            && (o.getStatus() != DeliveryStatus.ORDERED && o.getStatus() != DeliveryStatus.PREPARING)) {
                         return false;
                     }
 
