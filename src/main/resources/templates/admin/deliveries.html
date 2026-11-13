@@ -46,6 +46,11 @@
                th:class="${currentFilter == 'all' ? 'tab-btn active' : 'tab-btn'}">
                 전체 신청 목록
             </a>
+            <a th:href="@{/admin/deliveries(filter='bundle', startDate=${startDate}, endDate=${endDate})}" 
+               th:class="${currentFilter == 'bundle' ? 'tab-btn active' : 'tab-btn'}"
+               title="미배송 건 중 가장 오래 기다린 신청자 순으로 합배송 묶음 정렬">
+                📦 합배송 묶어보기
+            </a>
             <a th:href="@{/admin/deliveries(filter='modified', startDate=${startDate}, endDate=${endDate})}" 
                th:class="${currentFilter == 'modified' ? 'tab-btn active' : 'tab-btn'}">
                 ⚠️ 사용자가 수정한 신청
@@ -217,7 +222,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                     <div class="form-group">
                         <label class="form-label">배송 상태</label>
                         <select name="status" class="form-select">
@@ -226,11 +231,19 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">수정 / 피드백 필터</label>
+                        <label class="form-label">필터 조건</label>
                         <select name="filter" class="form-select">
                             <option value="all">전체</option>
+                            <option value="bundle">📦 합배송(미배송만)</option>
                             <option value="modified">사용자 수정건만</option>
                             <option value="feedback">피드백 작성건만</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">정렬 기준</label>
+                        <select name="sortBy" class="form-select">
+                            <option value="latest">최신 신청일순</option>
+                            <option value="bundle">📦 합배송 묶음순</option>
                         </select>
                     </div>
                 </div>

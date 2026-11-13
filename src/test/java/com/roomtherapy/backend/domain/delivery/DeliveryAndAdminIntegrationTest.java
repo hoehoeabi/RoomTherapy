@@ -683,4 +683,102 @@ class DeliveryAndAdminIntegrationTest {
                     assertThat(errorMsg).isEqualTo(ErrorCode.GOODS_OUT_OF_STOCK.getMessage());
                 });
     }
+
+    @Test
+    @DisplayName("관리자 배송 목록에서 합배송 묶어보기(?filter=bundle) 조회 시 최초 신청일 오름차순으로 신청자별 그룹핑되어 반환된다")
+    void adminDeliveries_bundleFilter_groupedByOldestApplicant() throws Exception {
+        // Given: 유저A(홍길동), 유저B(임꺽정)
+        User userA = normalUser;
+        User userB = userRepository.save(User.builder()
+                .kakaoId("kakao_user_b")
+                .nickname("임꺽정계정")
+                .email("userb@roomtherapy.com")
+                .role(Role.USER)
+                .build());
+
+        // 홍길동이 7일 전 첫 주문, 1일 전 두 번째 주문 신청
+        DeliveryOrder orderA1 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(userA)
+                .stageCode("A-CODE-1")
+                .recipientName("홍길동")
+                .zipcode("11111")
+                .address("서울시 강남구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+        setCreatedAt(orderA1, java.time.LocalDateTime.now().minusDays(7));
+
+        DeliveryOrder orderA2 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(userA)
+                .stageCode("A-CODE-2")
+                .recipientName("홍길동")
+                .zipcode("11111")
+                .address("서울시 강남구")
+                .status(DeliveryStatus.PREPARING)
+                .build());
+        setCreatedAt(orderA2, java.time.LocalDateTime.now().minusDays(1));
+
+        // 임꺽정이 5일 전 첫 주문, 3일 전 두 번째 주문 신청
+        DeliveryOrder orderB1 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(userB)
+                .stageCode("B-CODE-1")
+                .recipientName("임꺽정")
+                .zipcode("22222")
+                .address("서울시 서초구")
+                .status(DeliveryStatus.ORDERED)
+                .build());
+        setCreatedAt(orderB1, java.time.LocalDateTime.now().minusDays(5));
+
+        DeliveryOrder orderB2 = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(userB)
+                .stageCode("B-CODE-2")
+                .recipientName("임꺽정")
+                .zipcode("22222")
+                .address("서울시 서초구")
+                .status(DeliveryStatus.PREPARING)
+                .build());
+        setCreatedAt(orderB2, java.time.LocalDateTime.now().minusDays(3));
+
+        // 이미 배송 완료된 건(합배송 대상에서 제외되어야 함)
+        DeliveryOrder orderA_delivered = deliveryOrderRepository.save(DeliveryOrder.builder()
+                .user(userA)
+                .stageCode("A-CODE-DELIVERED")
+                .recipientName("홍길동")
+                .zipcode("11111")
+                .address("서울시 강남구")
+                .status(DeliveryStatus.DELIVERED)
+                .build());
+        setCreatedAt(orderA_delivered, java.time.LocalDateTime.now().minusDays(10));
+
+        // When: ?filter=bundle 요청
+        mockMvc.perform(get("/admin/deliveries")
+                        .cookie(new Cookie("accessToken", adminToken))
+                        .param("filter", "bundle"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/deliveries"))
+                .andExpect(model().attribute("currentFilter", "bundle"))
+                .andDo(result -> {
+                    @SuppressWarnings("unchecked")
+                    java.util.List<com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderResponseDto> deliveries =
+                            (java.util.List<com.roomtherapy.backend.domain.delivery.dto.DeliveryOrderResponseDto>)
+                                    result.getModelAndView().getModel().get("deliveries");
+
+                    assertThat(deliveries).hasSize(4);
+                    // 홍길동 1차(7일전), 홍길동 2차(1일전), 임꺽정 1차(5일전), 임꺽정 2차(3일전) 순서
+                    assertThat(deliveries.get(0).id()).isEqualTo(orderA1.getId());
+                    assertThat(deliveries.get(1).id()).isEqualTo(orderA2.getId());
+                    assertThat(deliveries.get(2).id()).isEqualTo(orderB1.getId());
+                    assertThat(deliveries.get(3).id()).isEqualTo(orderB2.getId());
+                });
+    }
+
+    private void setCreatedAt(DeliveryOrder order, java.time.LocalDateTime time) {
+        try {
+            java.lang.reflect.Field field = com.roomtherapy.backend.global.common.entity.BaseTimeEntity.class.getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, time);
+            deliveryOrderRepository.save(order);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
