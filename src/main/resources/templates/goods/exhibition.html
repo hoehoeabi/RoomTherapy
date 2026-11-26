@@ -94,11 +94,25 @@
                     <button type="button" id="btnModelRetry" class="btn-model-retry" onclick="retryCurrentStageObject()">↻ 다시 불러오기</button>
                 </div>
 
+                <!-- USDZ 모델 전용 안내 화면 및 다운로드/AR 액션 영역 -->
+                <div id="usdzFallbackState" class="usdz-fallback-state" style="display: none;">
+                    <div class="usdz-fallback-icon" id="usdzFallbackIcon">🥽</div>
+                    <h3 class="usdz-fallback-title" id="usdzFallbackTitle">Apple Vision Pro / iOS 전용 3D 오브제</h3>
+                    <p class="usdz-fallback-desc" id="usdzFallbackDesc">
+                        해당 3D 모델(USDZ)은 웹 브라우저 3D 뷰어를 지원하지 않습니다.<br>
+                        전용 기기에서 공간 AR로 감상하시거나 파일을 다운로드해 주세요.
+                    </p>
+                    <a id="btnUsdzAction" class="btn-usdz-action" href="#" target="_blank">
+                        <span id="usdzActionIcon">📥</span>
+                        <span id="usdzActionText">USDZ 파일 다운로드</span>
+                    </a>
+                </div>
+
                 <div id="threeCanvasContainer"></div>
 
                 <a id="arQuickLookLink" rel="ar" href="#" class="btn-ar-quicklook">🥽 AR 공간 보기</a>
 
-                <div class="stage-zoom-controls">
+                <div class="stage-zoom-controls" id="stageZoomControls">
                     <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(-0.22)" title="확대">+</button>
                     <button type="button" class="btn-stage-ctrl" onclick="zoomStageCamera(0.22)" title="축소">&minus;</button>
                 </div>
@@ -123,7 +137,7 @@
                             <button type="submit" class="btn-detail-delete" style="width:100%;">삭제</button>
                         </form>
                     </div>
-                    <div class="info-rotate-hint">
+                    <div class="info-rotate-hint" id="infoRotateHint">
                         <span>↻</span>
                         <span>Drag to rotate model</span>
                     </div>
