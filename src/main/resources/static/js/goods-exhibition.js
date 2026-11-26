@@ -45,6 +45,15 @@
             return idx >= 0 ? clean.substring(idx) : '';
         }
 
+        // Apple Vision Pro / iOS Safari 환경(AR Quick Look 공식 지원) 감지
+        function isAppleArSupported() {
+            const ua = navigator.userAgent || '';
+            const isVision = /Vision/i.test(ua) || /visionOS/i.test(ua);
+            const isIOS = (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
+            const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+            return isVision || (isIOS && isSafari);
+        }
+
         // 외부 S3 URL(Cross-Origin)인 경우 브라우저 CORS 차단을 우회하기 위해 백엔드 동일 출처(Same-Origin) 스트리밍 엔드포인트로 변환
         function resolveSameOriginModelUrl(item) {
             if (!item || !item.modelUrl) return '';
@@ -321,14 +330,17 @@
             if (deleteForm && item.id != null) {
                 deleteForm.action = `/seller/goods/${goodsId}/objects/${item.id}/delete`;
             }
-            if (arLink) {
-                if (ext === '.usdz' && item.modelUrl) {
-                    arLink.href = resolveSameOriginModelUrl(item);
-                    arLink.style.display = 'inline-flex';
-                } else {
-                    arLink.style.display = 'none';
-                }
-            }
+            // USDZ Fallback UI 및 기타 뷰 제어 요소 참조
+            const usdzFallbackEl = document.getElementById('usdzFallbackState');
+            const usdzFallbackTitleEl = document.getElementById('usdzFallbackTitle');
+            const usdzFallbackDescEl = document.getElementById('usdzFallbackDesc');
+            const usdzActionBtn = document.getElementById('btnUsdzAction');
+            const usdzActionIcon = document.getElementById('usdzActionIcon');
+            const usdzActionText = document.getElementById('usdzActionText');
+            const stageZoomControls = document.getElementById('stageZoomControls');
+            const rotateHint = document.getElementById('infoRotateHint');
+
+            if (arLink) arLink.style.display = 'none';
 
             // 좌우 화살표 표시 제어
             const prevBtn = document.getElementById('btnPrevObj');
@@ -337,9 +349,7 @@
             if (prevBtn) prevBtn.style.display = showNav;
             if (nextBtn) nextBtn.style.display = showNav;
 
-            ensureThreeViewerInitialized();
-
-            // 기존 모델 제거
+            // 기존 Three.js 모델 및 캔버스 초기화
             if (activeModel && scene) {
                 scene.remove(activeModel);
                 activeModel = null;
@@ -352,6 +362,58 @@
             const progressTrackEl = document.getElementById('modelProgressTrack');
             const progressFillEl = document.getElementById('modelProgressFill');
             const retryBtnEl = document.getElementById('btnModelRetry');
+
+            // =========================================================================
+            // [USDZ 포맷 대응]: 웹 뷰어 미지원 분기 및 환경별(Vision Pro/PC) 다이나믹 UI
+            // =========================================================================
+            if (ext === '.usdz') {
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (stageZoomControls) stageZoomControls.style.display = 'none';
+                if (rotateHint) rotateHint.style.display = 'none';
+
+                const modelUrl = resolveSameOriginModelUrl(item);
+
+                if (isAppleArSupported()) {
+                    // Apple Vision Pro / iOS Safari: 시스템 AR Quick Look 실행
+                    if (usdzFallbackTitleEl) usdzFallbackTitleEl.textContent = 'Apple Vision Pro / AR 전용 오브제';
+                    if (usdzFallbackDescEl) {
+                        usdzFallbackDescEl.innerHTML = '웹 브라우저 3D 뷰어 대신<br>실물 크기의 3D 공간 AR로 바로 감상하실 수 있습니다.';
+                    }
+                    if (usdzActionBtn) {
+                        usdzActionBtn.href = modelUrl;
+                        usdzActionBtn.setAttribute('rel', 'ar');
+                        usdzActionBtn.removeAttribute('download');
+                    }
+                    if (usdzActionIcon) usdzActionIcon.textContent = '🥽';
+                    if (usdzActionText) usdzActionText.textContent = 'Vision Pro / AR 공간에서 보기';
+                } else {
+                    // PC, 맥북, 안드로이드 브라우저: 웹 미지원 안내 및 파일 다운로드
+                    if (usdzFallbackTitleEl) usdzFallbackTitleEl.textContent = 'Apple Vision Pro / iOS 전용 3D 오브제';
+                    if (usdzFallbackDescEl) {
+                        usdzFallbackDescEl.innerHTML = '해당 3D 모델(USDZ)은 웹 브라우저 3D 뷰어를 지원하지 않습니다.<br>아래 버튼을 눌러 파일을 다운로드한 뒤 전용 기기에서 확인해 주세요.';
+                    }
+                    if (usdzActionBtn) {
+                        usdzActionBtn.href = modelUrl;
+                        usdzActionBtn.removeAttribute('rel');
+                        const safeName = item.name ? item.name.replace(/[^a-zA-Z0-9가-힣_-]/g, '_') : 'object';
+                        usdzActionBtn.setAttribute('download', `${safeName}.usdz`);
+                    }
+                    if (usdzActionIcon) usdzActionIcon.textContent = '📥';
+                    if (usdzActionText) usdzActionText.textContent = 'USDZ 원본 파일 다운로드';
+                }
+
+                if (usdzFallbackEl) usdzFallbackEl.style.display = 'flex';
+                return; // Three.js 로딩 시도 중단 (134MB 대용량 다운로드 및 파싱 에러 방지)
+            }
+
+            // =========================================================================
+            // [GLB 등 일반 3D 포맷 대응]: Three.js 웹 캔버스 정상 렌더링
+            // =========================================================================
+            if (usdzFallbackEl) usdzFallbackEl.style.display = 'none';
+            if (stageZoomControls) stageZoomControls.style.display = 'flex';
+            if (rotateHint) rotateHint.style.display = 'flex';
+
+            ensureThreeViewerInitialized();
 
             if (loadingEl) loadingEl.classList.remove('hidden');
             if (spinnerEl) spinnerEl.style.display = 'block';
